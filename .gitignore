@@ -1,3 +1,5 @@
+.external/*
+
 # dependencies
 /node_modules
 /.pnp
@@ -30,6 +32,10 @@ pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# local data
+/data/
 
 # typescript
 *.tsbuildinfo

@@ -1,0 +1,147 @@
+import type { ColumnFiltersState } from "@tanstack/react-table"
+import type { DashboardScope } from "@/lib/dashboard/stats"
+import { OVERDUE_LABEL, WORKFLOW_STATUS } from "@/lib/statuses/workflow"
+
+export type ChartFilterScope = DashboardScope["type"]
+
+export function breakdownColumnId(scope: ChartFilterScope): string {
+  switch (scope) {
+    case "global":
+      return "organization"
+    case "organization":
+      return "subdivisionName"
+    case "subdivision":
+      return "orderTitle"
+  }
+}
+
+export function overdueInitialFilters(): ColumnFiltersState {
+  return [{ id: "status", value: [OVERDUE_LABEL] }]
+}
+
+function filterValues(filters: ColumnFiltersState, id: string): string[] {
+  return (filters.find((f) => f.id === id)?.value as string[]) ?? []
+}
+
+function setFilter(
+  filters: ColumnFiltersState,
+  id: string,
+  values: string[] | undefined
+): ColumnFiltersState {
+  const rest = filters.filter((f) => f.id !== id)
+  if (!values?.length) return rest
+  return [...rest, { id, value: values }]
+}
+
+function arraysEqual(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false
+  const sortedA = [...a].sort()
+  const sortedB = [...b].sort()
+  return sortedA.every((v, i) => v === sortedB[i])
+}
+
+export function toggleStatusFilter(
+  filters: ColumnFiltersState,
+  status: string
+): ColumnFiltersState {
+  const current = filterValues(filters, "status")
+  if (current.length === 1 && current[0] === status) {
+    return setFilter(filters, "status", undefined)
+  }
+  const withoutBreakdown = filters.filter(
+    (f) =>
+      f.id !== "organization" &&
+      f.id !== "subdivisionName" &&
+      f.id !== "orderTitle"
+  )
+  return setFilter(withoutBreakdown, "status", [status])
+}
+
+export function toggleBreakdownFilter(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string
+): ColumnFiltersState {
+  const columnId = breakdownColumnId(scope)
+  const current = filterValues(filters, columnId)
+  if (current.length === 1 && current[0] === label) {
+    return setFilter(filters, columnId, undefined)
+  }
+  const withoutStatus = setFilter(filters, "status", undefined)
+  return setFilter(withoutStatus, columnId, [label])
+}
+
+export function toggleCompletionSegmentFilter(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  segment: "completed" | "active"
+): ColumnFiltersState {
+  const columnId = breakdownColumnId(scope)
+  const statusValues =
+    segment === "completed"
+      ? [WORKFLOW_STATUS.COMPLETED]
+      : [WORKFLOW_STATUS.NOT_STARTED, WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
+
+  const breakdownCurrent = filterValues(filters, columnId)
+  const statusCurrent = filterValues(filters, "status")
+
+  if (
+    breakdownCurrent.length === 1 &&
+    breakdownCurrent[0] === label &&
+    arraysEqual(statusCurrent, statusValues)
+  ) {
+    return filters.filter((f) => f.id !== columnId && f.id !== "status")
+  }
+
+  const rest = filters.filter((f) => f.id !== columnId && f.id !== "status")
+  return [
+    ...rest,
+    { id: columnId, value: [label] },
+    { id: "status", value: statusValues },
+  ]
+}
+
+export function isStatusFilterActive(
+  filters: ColumnFiltersState,
+  status: string
+): boolean {
+  const values = filterValues(filters, "status")
+  return values.length === 1 && values[0] === status
+}
+
+export function isBreakdownFilterActive(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string
+): boolean {
+  const values = filterValues(filters, breakdownColumnId(scope))
+  return values.length === 1 && values[0] === label
+}
+
+export function isCompletionSegmentActive(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  segment: "completed" | "active"
+): boolean {
+  const statusValues =
+    segment === "completed"
+      ? [WORKFLOW_STATUS.COMPLETED]
+      : [WORKFLOW_STATUS.NOT_STARTED, WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
+
+  return (
+    isBreakdownFilterActive(filters, scope, label) &&
+    arraysEqual(filterValues(filters, "status"), statusValues)
+  )
+}
+
+export function hasChartLinkedFilters(filters: ColumnFiltersState): boolean {
+  return filters.some(
+    (f) =>
+      f.id === "status" ||
+      f.id === "organization" ||
+      f.id === "subdivisionName" ||
+      f.id === "orderTitle"
+  )
+}

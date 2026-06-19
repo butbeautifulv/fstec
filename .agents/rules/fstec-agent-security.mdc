@@ -1,0 +1,32 @@
+---
+description: Security controls for FSTEC measures tracking platform
+alwaysApply: false
+---
+
+# FSTEC — security controls
+
+Platform for tracking FSTEC security measures across subsidiaries (ДЗО). Public assignment links + admin panel.
+
+## Required controls
+
+| Control | Implementation |
+|---------|----------------|
+| Admin access | iron-session cookie; `SESSION_SECRET` ≥ 32 chars; middleware on `/admin/*` |
+| Public access | Unguessable `access_links.token`; optional `expiresAt`; `revokedAt` |
+| Rate limiting | `lib/public/rate-limit.ts` on public API |
+| Secrets | `.env.local` only; `.env.example` without values |
+| Database | PostgreSQL via Docker; never commit dumps with PII |
+| HTTPS | Required in production |
+
+## Skepticism checklist
+
+- Public routes must not expose admin data or unscoped order items.
+- Token must scope to single order + organization.
+- Do not log passwords or session secrets.
+- Validate all public write endpoints against active token.
+
+## Verify
+
+- Grep diff for `password` in console.log — reject.
+- Confirm `.env.local` not in git status before commit.
+- curl revoked/expired token → 404.

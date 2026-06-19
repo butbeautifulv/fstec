@@ -1,0 +1,36 @@
+---
+description: Metacognition on errors — 5 Whys, Gemba Kaizen, 1% continuous improvement
+alwaysApply: true
+---
+
+# FSTEC agent — metacognition & Kaizen
+
+When any error appears — test failure, build break, unexpected runtime — **stop guessing**.
+
+Full skill: [.agents/skills/fstec-karpathy-guidelines/SKILL.md](../skills/fstec-karpathy-guidelines/SKILL.md) § Metacognition.
+
+## Trigger
+
+- `npm run typecheck`, `lint`, or `build` exits non-zero.
+- Same failure twice after a fix.
+- Cannot explain why in one sentence.
+
+## Method: 5 Whys
+
+Stop at a controllable root cause (code, config, missing env, plan gap).
+
+## Gemba in FSTEC
+
+- Reproduce: `npm run dev`, `curl` admin API and `/api/public/{token}`, inspect Postgres via `npm run db:studio`.
+- Smallest fix at the true failure point.
+- Re-run failing check; then full build.
+
+## Kaizen note (PR / phase plan)
+
+Symptom → root cause → fix → regression guard.
+
+## Critic gate on bugfix PRs
+
+- [ ] Root cause documented
+- [ ] Failing command re-run green
+- [ ] Kaizen note for non-trivial bugs

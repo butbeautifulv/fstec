@@ -1,0 +1,34 @@
+---
+description: Agent chain — keep docs, plans, and descriptions in sync after each phase merge
+alwaysApply: true
+---
+
+# FSTEC agent — documentation actualization
+
+## Where agents read truth
+
+| Artifact | When to update |
+|----------|----------------|
+| **Master / phase plans** (`docs/plans/`) | Phase `done`, merge SHA |
+| **[README.md](../../README.md)** | Quick start, env, deploy |
+| **[AGENTS.md](../../AGENTS.md)** | Workflow, verify checklist |
+| **[.env.example](../../.env.example)** | New env vars |
+
+## Agent chain
+
+1. **Plan** — scope, DoD, dependencies.
+2. **Implement** — one phase per branch.
+3. **Verify** — `npm run typecheck`, `lint`, `build`.
+4. **Critic** — [fstec-agent-critic.mdc](fstec-agent-critic.mdc).
+5. **Merge** — to `main`.
+6. **Document** — plans, README, AGENTS as applicable.
+
+## Phase plan template
+
+```markdown
+## Scope
+## Out of scope
+## Files
+## Acceptance (commands)
+## Docs to touch on merge
+```

@@ -1,15 +1,23 @@
-import { Geist, Geist_Mono, Inter } from "next/font/google"
+import type { Metadata } from "next"
+import { Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner"
+import { TooltipProvider } from "@/components/ui/tooltip"
+import { APP_NAME } from "@/lib/ui/branding"
+import { cn } from "@/lib/utils"
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'})
+const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-sans" })
 
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
+const geistMono = Geist_Mono({
+  subsets: ["latin", "cyrillic"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  title: APP_NAME,
+}
 
 export default function RootLayout({
   children,
@@ -18,12 +26,17 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="ru"
       suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", inter.variable)}
+      className={cn("antialiased", geist.variable, geistMono.variable, "font-sans")}
     >
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <TooltipProvider>
+            {children}
+            <Toaster closeButton position="bottom-right" toastOptions={{ duration: 4000 }} />
+          </TooltipProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

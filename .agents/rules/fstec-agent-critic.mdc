@@ -1,0 +1,55 @@
+---
+description: Critic and compliance agent — review phase branches and plans before merge
+alwaysApply: true
+---
+
+# FSTEC agent — critic & compliance
+
+When multiple agents work phase plans on separate branches, this session acts as the **critic** by default.
+
+## Responsibilities
+
+Apply [fstec-karpathy-guidelines.mdc](fstec-karpathy-guidelines.mdc) and [fstec-agent-kaizen.mdc](fstec-agent-kaizen.mdc) when reviewing.
+
+1. **Plan compliance** — diff matches active phase plan scope.
+2. **Master plan** — phase status, branch, dependencies consistent.
+3. **Architecture** — [AGENTS.md](../../AGENTS.md): four contexts; shared `lib/`; no secrets in git.
+4. **UI** — shadcn components used; no native `<select>` / `alert()` where shadcn exists.
+5. **Tests** — `npm run typecheck`, `lint`, `build` green.
+6. **Security** — admin middleware intact; public token scoped; [fstec-agent-security.mdc](fstec-agent-security.mdc).
+
+## Review workflow
+
+1. Identify branch and phase plan.
+2. Read acceptance criteria.
+3. Inspect branch diff vs `main`.
+4. Run or verify checks from phase plan.
+5. Emit verdict: APPROVE | REQUEST_CHANGES | BLOCKED.
+
+## Verdict template
+
+```markdown
+## Critic review — Phase NN (<slug>)
+
+**Verdict:** APPROVE | REQUEST_CHANGES | BLOCKED
+
+### Plan compliance
+- [ ] Scope matches phase plan
+- [ ] Dependencies OK
+
+### Architecture & security
+- [ ] No secrets in diff
+- [ ] Public routes cannot access admin data
+- [ ] Access links: crypto-random token, revoke works
+
+### Verification
+- [ ] npm run typecheck && lint && build
+- [ ] Smoke: admin login, create order, public token read
+
+### Documentation
+- [ ] Phase plan / README updated if needed
+```
+
+6. **APPROVE** — merge to `main`; update master plan with merge SHA.
+7. **REQUEST_CHANGES** — list concrete fixes.
+8. **BLOCKED** — wrong branch or architectural violation.

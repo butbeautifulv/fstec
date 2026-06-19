@@ -1,0 +1,43 @@
+---
+description: FSTEC agent end-of-task workflow — style, tests, commit, push
+alwaysApply: true
+---
+
+# FSTEC agent workflow
+
+Follow [AGENTS.md](../../AGENTS.md), [fstec-karpathy-guidelines.mdc](fstec-karpathy-guidelines.mdc), and [fstec-agent-kaizen.mdc](fstec-agent-kaizen.mdc) as source of truth.
+
+## Architecture (do not break)
+
+- Four contexts: `app/(public)/`, `app/(admin)/admin/(panel)/`, `app/api/`, `lib/` — shared logic in `lib/` only.
+- Public pages call `/api/public/[token]` only (scoped by token).
+- Admin uses session cookie + `/api/*`; domain logic in `lib/measures`, `lib/orders`, `lib/public`.
+- UI: use shadcn components per [.agents/skills/shadcn/SKILL.md](../skills/shadcn/SKILL.md); do not hand-roll if registry has it.
+- No secrets in git; no plaintext passwords in logs.
+
+## Multi-phase work (master plan → branch → phase commit → critic)
+
+1. **Master plan** — [docs/plans/fstec_master.plan.md](../../docs/plans/fstec_master.plan.md); phase list, deps, status table.
+2. **Phase plan** — scope for the current phase only in `docs/plans/`.
+3. **Branch** — `fstec/phase-<NN>-<slug>` from latest `main` ([fstec-agent-parallel-branches.mdc](fstec-agent-parallel-branches.mdc)).
+4. **Implement** — one phase per branch; push; open PR.
+5. **Critic** — review PR against plan + [fstec-agent-critic.mdc](fstec-agent-critic.mdc); APPROVE → merge `main`.
+6. **Master plan** — mark `done` with merge SHA after merge.
+7. **Documentation** — README, AGENTS.md, phase plans per [fstec-agent-documentation.mdc](fstec-agent-documentation.mdc).
+
+## Required before finishing a task
+
+1. Run `npm run typecheck`, `npm run lint`, and `npm run build` for touched code.
+2. **Commit** with a clear message (per phase when work was phased).
+3. **`git push origin HEAD`** unless the user forbade push.
+4. **Docs** — update README and phase plans if behavior or env changed.
+
+## Git hygiene
+
+- Never commit `.env.local`, secrets, or credentials.
+- PostgreSQL is runtime via Docker; never commit DB dumps with PII.
+
+## Env
+
+- Read [.env.example](../../.env.example) for required variables.
+- Copy to `.env.local` for local dev; never commit.

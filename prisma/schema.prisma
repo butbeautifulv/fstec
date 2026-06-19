@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+}
+
+enum DelayRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Organization {
+  id         Int           @id @default(autoincrement()) @map("organization_id")
+  name       String        @unique
+  shortCode  String?       @map("short_code")
+  createdAt  DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  subdivisions Subdivision[]
+  orders       Order[]
+  accessLinks  AccessLink[]
+
+  @@map("organizations")
+}
+
+model Subdivision {
+  id             Int          @id @default(autoincrement())
+  organizationId Int          @map("organization_id")
+  name           String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
+  accessLinks    AccessLink[]
+
+  @@unique([organizationId, name])
+  @@map("subdivisions")
+}
+
+model Status {
+  id         Int         @id @default(autoincrement())
+  name       String      @unique
+  sortOrder  Int         @default(0) @map("sort_order")
+  isTerminal Boolean     @default(false) @map("is_terminal")
+  orderItems OrderItem[]
+
+  @@map("statuses")
+}
+
+model User {
+  id           Int            @id @default(autoincrement()) @map("user_id")
+  email        String         @unique
+  name         String
+  passwordHash String         @map("password_hash")
+  role         UserRole       @default(ADMIN)
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  measures     Measure[]
+  orders       Order[]
+  reviewedDelays DelayRequest[] @relation("DelayReviewer")
+
+  @@map("users")
+}
+
+model Measure {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  code        String?
+  createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt   DateTime    @updatedAt @map("updated_at") @db.Timestamptz()
+  createdById Int         @map("created_by_id")
+  createdBy   User        @relation(fields: [createdById], references: [id])
+  orderItems  OrderItem[]
+
+  @@index([name])
+  @@map("measures")
+}
+
+model Order {
+  id             Int          @id @default(autoincrement())
+  title          String
+  organizationId Int          @map("organization_id")
+  createdById    Int          @map("created_by_id")
+  issuedAt       DateTime     @default(now()) @map("issued_at") @db.Timestamptz()
+  defaultDueAt   DateTime?    @map("default_due_at") @db.Timestamptz()
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  items          OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id             Int            @id @default(autoincrement())
+  orderId        Int            @map("order_id")
+  measureId      Int            @map("measure_id")
+  dueAt          DateTime       @map("due_at") @db.Timestamptz()
+  statusId       Int            @map("status_id")
+  subdivisionId  Int?           @map("subdivision_id")
+  order          Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  measure        Measure        @relation(fields: [measureId], references: [id])
+  status         Status         @relation(fields: [statusId], references: [id])
+  subdivision    Subdivision?   @relation(fields: [subdivisionId], references: [id])
+  responses      Response[]
+  delayRequests  DelayRequest[]
+
+  @@unique([orderId, measureId])
+  @@map("order_items")
+}
+
+model AccessLink {
+  id             Int           @id @default(autoincrement())
+  token          String        @unique
+  organizationId Int           @map("organization_id")
+  subdivisionId  Int?          @map("subdivision_id")
+  expiresAt      DateTime?     @map("expires_at") @db.Timestamptz()
+  revokedAt      DateTime?     @map("revoked_at") @db.Timestamptz()
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subdivision    Subdivision?  @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, subdivisionId])
+  @@map("access_links")
+}
+
+model Response {
+  id                Int       @id @default(autoincrement())
+  orderItemId       Int       @map("order_item_id")
+  result            String
+  commentary        String?
+  submittedByLabel  String?   @map("submitted_by_label")
+  submittedAt       DateTime  @default(now()) @map("submitted_at") @db.Timestamptz()
+  orderItem         OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("responses")
+}
+
+model DelayRequest {
+  id              Int                @id @default(autoincrement())
+  orderItemId     Int                @map("order_item_id")
+  requestedDueAt  DateTime           @map("requested_due_at") @db.Timestamptz()
+  justification   String?
+  status          DelayRequestStatus @default(PENDING)
+  reviewedById    Int?               @map("reviewed_by_id")
+  reviewedAt      DateTime?          @map("reviewed_at") @db.Timestamptz()
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz()
+  orderItem       OrderItem          @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  reviewedBy      User?              @relation("DelayReviewer", fields: [reviewedById], references: [id])
+
+  @@map("delay_requests")
+}

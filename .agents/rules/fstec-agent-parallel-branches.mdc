@@ -1,0 +1,45 @@
+---
+description: Parallel phase work — one git branch per stream, merge via PR after critic
+alwaysApply: true
+---
+
+# FSTEC agent — parallel branches
+
+Use **separate git branches** so multiple agents can execute different phase plans concurrently.
+
+## Branch naming
+
+| Pattern | Example |
+|---------|---------|
+| `fstec/phase-<NN>-<slug>` | `fstec/phase-21-rules-migration` |
+
+- `<NN>` = phase number from master plan (zero-padded optional).
+- `<slug>` = short kebab-case from phase plan title.
+
+## Starting a phase
+
+1. Read master plan and phase plan for this stream only.
+2. From up-to-date `main`: `git checkout -b fstec/phase-21-rules-migration`.
+3. Record branch in master plan status table.
+4. Implement → test → commit on branch.
+5. Push and open PR; do not merge unless user explicitly asked.
+
+## Subagent concurrency
+
+**Never spawn more than 4 Cursor Task subagents in a single orchestrator turn.**
+
+## Merge discipline
+
+- **`main` is integration branch.** Merge after critic APPROVE within the same wave.
+- New work starts from `git pull origin main`.
+- One branch = one phase.
+
+After merge:
+
+```bash
+npm run typecheck && npm run lint && npm run build
+```
+
+## Git add
+
+Never commit `.env.local`, secrets, or DB dumps with PII.

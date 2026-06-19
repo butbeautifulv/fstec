@@ -1,0 +1,26 @@
+---
+description: Karpathy-inspired guidelines for FSTEC — phased plans, surgical diffs, verifiable DoD
+alwaysApply: true
+---
+
+# FSTEC + Karpathy guidelines
+
+Merged with [AGENTS.md](../../AGENTS.md). Full skill: [.agents/skills/fstec-karpathy-guidelines/SKILL.md](../skills/fstec-karpathy-guidelines/SKILL.md). On errors: [fstec-agent-kaizen.mdc](fstec-agent-kaizen.mdc).
+
+**Tradeoff:** Caution over speed on non-trivial work.
+
+| Role | Focus |
+|------|-------|
+| **Orchestrator / critic** | Plan compliance, security, build green |
+| **Implementer** | Phase plan scope only; commit on branch |
+
+## Four principles
+
+1. **Think before coding** — read master + phase plan; state context: `public`, `admin`, `api`, `lib`.
+2. **Simplicity first** — minimum code for phase goal.
+3. **Surgical changes** — touch only phase plan files; match patterns in `app/` and `lib/`.
+4. **Goal-driven** — `npm run typecheck && lint && build` + phase smokes.
+
+## Planning rhythm
+
+Master plan → Phase plan → Branch `fstec/phase-NN-slug` → Implement → PR → Critic → Merge → Update master plan.

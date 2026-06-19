@@ -1,0 +1,25 @@
+---
+description: Subagent spawning for parallel phase work (orchestrator + critic)
+alwaysApply: true
+---
+
+# FSTEC agent — subagents
+
+Orchestrator and critic may spawn implementers via Cursor **Task** tool.
+
+## Workflow
+
+1. Pick phase from master plan.
+2. Launch Task with phase plan path and branch `fstec/phase-NN-slug`.
+3. **At most 4** Task calls per orchestrator message.
+4. Implementer: branch, commit, push, PR — **no merge**.
+5. Critic reviews per [fstec-agent-critic.mdc](fstec-agent-critic.mdc).
+
+## Implementer prompt (minimal)
+
+```text
+You are a FSTEC implementer on branch fstec/phase-NN-slug.
+Read: AGENTS.md, docs/plans/phase-NN-*.plan.md, fstec-karpathy-guidelines skill, shadcn skill for UI.
+Scope: phase plan only. npm run typecheck && lint && build before handoff.
+Do not merge; push branch and return PR link for critic.
+```
