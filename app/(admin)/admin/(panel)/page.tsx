@@ -1,10 +1,12 @@
 import Link from "next/link"
 import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
 import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
+import { PendingDelaysCard } from "@/components/dashboard/pending-delays-card"
 import { PageHeader } from "@/components/admin/page-header"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { labels } from "@/lib/ui/branding"
+import { countPendingDelayRequests } from "@/lib/delays"
 import { getScopedDashboardStats } from "@/lib/dashboard/stats"
 import { getScopedDashboardMatrix } from "@/lib/orders"
 
@@ -15,9 +17,10 @@ export default async function AdminDashboardPage({
 }) {
   const params = await searchParams
   const overdueOnly = params.overdue === "1"
-  const [stats, matrixItems] = await Promise.all([
+  const [stats, matrixItems, pendingDelayCount] = await Promise.all([
     getScopedDashboardStats({ type: "global" }),
     getScopedDashboardMatrix({ type: "global" }),
+    countPendingDelayRequests(),
   ])
 
   const serialized = JSON.parse(JSON.stringify(matrixItems))
@@ -40,6 +43,8 @@ export default async function AdminDashboardPage({
       />
 
       <DashboardStatCards stats={stats} />
+
+      <PendingDelaysCard count={pendingDelayCount} />
 
       {matrixItems.length === 0 && (
         <Alert>

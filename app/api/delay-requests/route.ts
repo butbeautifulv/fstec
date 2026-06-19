@@ -2,7 +2,31 @@ import { revalidatePath } from "next/cache"
 import { DelayRequestStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { requireAdminSession } from "@/lib/auth/session"
+import { countPendingDelayRequests, listDelayRequests } from "@/lib/delays"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+
+export async function GET(request: Request) {
+  try {
+    await requireAdminSession()
+    const { searchParams } = new URL(request.url)
+
+    if (searchParams.get("count") === "pending") {
+      const count = await countPendingDelayRequests()
+      return jsonOk({ count })
+    }
+
+    const statusParam = searchParams.get("status")
+    const status =
+      statusParam && statusParam in DelayRequestStatus
+        ? (statusParam as DelayRequestStatus)
+        : undefined
+
+    const rows = await listDelayRequests(status)
+    return jsonOk(rows)
+  } catch (error) {
+    return handleApiError(error)
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -45,6 +69,7 @@ export async function POST(request: Request) {
     }
 
     revalidatePath("/admin")
+    revalidatePath("/admin/delay-requests")
     revalidatePath(`/admin/orders/${delay.orderItem.orderId}`)
 
     return jsonOk({ ok: true })

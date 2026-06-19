@@ -21,7 +21,7 @@ npm run dev
 ```
 
 - Admin: http://localhost:3000/admin/login (seed: `admin@fstec.local` / `admin123`)
-- Public assignment link: `/p/{token}` — dev tokens: `dev-rostec`, `dev-sber`, `dev-sber-it`, `dev-aeroflot`, `dev-roscosmos`
+- Public assignment link: `/p/{token}` — полный список dev-токенов выводится в консоль после `npm run db:seed:mock`
 
 ## Architecture
 
@@ -40,8 +40,8 @@ npm run build        # production build
 npm run typecheck    # TypeScript check
 npm run lint         # ESLint
 npm run db:migrate   # Prisma migrate
-npm run db:seed      # seed admin + statuses + dev mock data
-npm run db:seed:mock # reset and re-seed mock data (organizations, orders, links)
+npm run db:seed      # seed admin + statuses + dev mock data (120 measures, 120 orders)
+npm run db:seed:mock # reset legacy/mock data and re-seed (see console for /p/{token} links)
 ```
 
 ## Agent workflow

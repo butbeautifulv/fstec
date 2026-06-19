@@ -2,100 +2,28 @@ import {
   DelayRequestStatus,
   PrismaClient,
 } from "@prisma/client"
+import {
+  generateMeasures,
+  generateSubdivisions,
+  orderTitle,
+  orgAccessToken,
+  pickMeasureCount,
+  pickStatusAndDue,
+  shuffleWithSeed,
+  subdivisionAccessToken,
+} from "./generators.js"
 import { WORKFLOW_STATUS } from "../lib/statuses/workflow"
 
 const MOCK_ORG_PREFIX = "DEV-"
+const MEASURE_COUNT = 120
+const ORDERS_PER_ORG = 30
+const SUBDIVISIONS_PER_ORG = 7
 
 const MOCK_ORGS = [
-  {
-    name: "ПАО «Ростех»",
-    shortCode: `${MOCK_ORG_PREFIX}ROST`,
-    subdivisions: ["Центральный аппарат", "Авиадвигатели", "Высокоточные комплексы"],
-    accessToken: "dev-rostec",
-  },
-  {
-    name: "ПАО «Сбербанк»",
-    shortCode: `${MOCK_ORG_PREFIX}SBER`,
-    subdivisions: ["IT-блок", "Департамент безопасности", "Цифровые сервисы"],
-    accessToken: "dev-sber",
-    subdivisionToken: "dev-sber-it",
-    subdivisionTokenFor: "IT-блок",
-  },
-  {
-    name: "Аэрофлот — Российские авиалинии",
-    shortCode: `${MOCK_ORG_PREFIX}AFLT`,
-    subdivisions: ["Коммерческий блок", "Технический центр"],
-    accessToken: "dev-aeroflot",
-  },
-  {
-    name: "Госкорпорация «Роскосмос»",
-    shortCode: `${MOCK_ORG_PREFIX}RSC`,
-    subdivisions: ["Центр управления полётами", "НПО им. Лавочкина"],
-    accessToken: "dev-roscosmos",
-  },
-] as const
-
-const MOCK_MEASURES = [
-  {
-    code: "IDM.1",
-    name: "Идентификация и аутентификация субъектов доступа",
-    description: "Организация идентификации и аутентификации пользователей и процессов.",
-  },
-  {
-    code: "IDM.2",
-    name: "Управление учётными записями и правами доступа",
-    description: "Создание, изменение, блокирование и удаление учётных записей.",
-  },
-  {
-    code: "AUD.1",
-    name: "Регистрация событий безопасности",
-    description: "Сбор, запись и хранение событий безопасности информации.",
-  },
-  {
-    code: "AUD.2",
-    name: "Анализ зарегистрированных событий безопасности",
-    description: "Регулярный анализ журналов и реагирование на инциденты.",
-  },
-  {
-    code: "AVZ.1",
-    name: "Антивирусная защита",
-    description: "Обнаружение и нейтрализация вредоносного программного обеспечения.",
-  },
-  {
-    code: "NET.1",
-    name: "Межсетевое экранирование",
-    description: "Контроль сетевого трафика на границах сегментов.",
-  },
-  {
-    code: "BKP.1",
-    name: "Резервное копирование и восстановление",
-    description: "Регламент резервного копирования критичных данных.",
-  },
-  {
-    code: "CRY.1",
-    name: "Криптографическая защита информации",
-    description: "Применение СКЗИ для защиты каналов и носителей.",
-  },
-  {
-    code: "PHY.1",
-    name: "Защита помещений и оборудования от НСД",
-    description: "Контроль физического доступа к серверным и рабочим зонам.",
-  },
-  {
-    code: "INT.1",
-    name: "Контроль целостности программного обеспечения",
-    description: "Контроль неизменности системного и прикладного ПО.",
-  },
-  {
-    code: "UPD.1",
-    name: "Управление обновлениями программного обеспечения",
-    description: "Планирование и установка обновлений безопасности.",
-  },
-  {
-    code: "HR.1",
-    name: "Обучение и инструктаж персонала по ИБ",
-    description: "Периодическое обучение сотрудников требованиям ИБ.",
-  },
+  { name: "ПАО «Ростех»", shortCode: `${MOCK_ORG_PREFIX}ROST` },
+  { name: "ПАО «Сбербанк»", shortCode: `${MOCK_ORG_PREFIX}SBER` },
+  { name: "Аэрофлот — Российские авиалинии", shortCode: `${MOCK_ORG_PREFIX}AFLT` },
+  { name: "Госкорпорация «Роскосмос»", shortCode: `${MOCK_ORG_PREFIX}RSC` },
 ] as const
 
 function daysFromNow(days: number) {
@@ -119,6 +47,60 @@ async function getStatusMap(prisma: PrismaClient) {
   }
 }
 
+async function clearLegacyTestData(prisma: PrismaClient) {
+  const legacyOrgs = await prisma.organization.findMany({
+    where: {
+      OR: [
+        { name: { contains: "ТЕСТ", mode: "insensitive" } },
+        { name: { contains: "Тест", mode: "insensitive" } },
+        { name: { contains: "TEST", mode: "insensitive" } },
+        { name: { contains: "DZO", mode: "insensitive" } },
+        { name: { contains: "ДЗО", mode: "insensitive" } },
+        {
+          AND: [
+            { shortCode: null },
+            { name: { contains: "тест", mode: "insensitive" } },
+          ],
+        },
+      ],
+      NOT: { shortCode: { startsWith: MOCK_ORG_PREFIX } },
+    },
+    select: { id: true },
+  })
+
+  if (legacyOrgs.length > 0) {
+    const orgIds = legacyOrgs.map((o) => o.id)
+    await prisma.order.deleteMany({ where: { organizationId: { in: orgIds } } })
+    await prisma.organization.deleteMany({ where: { id: { in: orgIds } } })
+    console.log(`Legacy test orgs removed: ${legacyOrgs.length}`)
+  }
+
+  const orphanMeasures = await prisma.measure.findMany({
+    where: {
+      code: null,
+      OR: [
+        { name: { contains: "тест", mode: "insensitive" } },
+        { name: { contains: "TEST", mode: "insensitive" } },
+        { name: { contains: "ТЕСТ", mode: "insensitive" } },
+      ],
+    },
+    select: { id: true },
+  })
+
+  if (orphanMeasures.length > 0) {
+    const used = await prisma.orderItem.findMany({
+      where: { measureId: { in: orphanMeasures.map((m) => m.id) } },
+      select: { measureId: true },
+    })
+    const usedIds = new Set(used.map((u) => u.measureId))
+    const deletable = orphanMeasures.filter((m) => !usedIds.has(m.id)).map((m) => m.id)
+    if (deletable.length > 0) {
+      await prisma.measure.deleteMany({ where: { id: { in: deletable } } })
+      console.log(`Legacy test measures removed: ${deletable.length}`)
+    }
+  }
+}
+
 async function clearMockData(prisma: PrismaClient) {
   const mockOrgs = await prisma.organization.findMany({
     where: { shortCode: { startsWith: MOCK_ORG_PREFIX } },
@@ -127,20 +109,15 @@ async function clearMockData(prisma: PrismaClient) {
   if (mockOrgs.length === 0) return
 
   const orgIds = mockOrgs.map((o) => o.id)
-
-  await prisma.order.deleteMany({
-    where: { organizationId: { in: orgIds } },
-  })
-
-  await prisma.organization.deleteMany({
-    where: { id: { in: orgIds } },
-  })
+  await prisma.order.deleteMany({ where: { organizationId: { in: orgIds } } })
+  await prisma.organization.deleteMany({ where: { id: { in: orgIds } } })
 }
 
 async function upsertMeasures(prisma: PrismaClient, adminId: number) {
+  const generated = generateMeasures(MEASURE_COUNT)
   const measures: { id: number; code: string }[] = []
 
-  for (const m of MOCK_MEASURES) {
+  for (const m of generated) {
     const existing = await prisma.measure.findFirst({ where: { code: m.code } })
     const row = existing
       ? await prisma.measure.update({
@@ -163,13 +140,19 @@ async function upsertMeasures(prisma: PrismaClient, adminId: number) {
 
 type OrgSeed = (typeof MOCK_ORGS)[number]
 
+type AccessLinkRow = { org: string; scope: string; token: string }
+
 async function seedOrganization(
   prisma: PrismaClient,
   adminId: number,
   org: OrgSeed,
+  orgIndex: number,
   statusIds: Awaited<ReturnType<typeof getStatusMap>>,
   measureIds: number[]
-) {
+): Promise<AccessLinkRow[]> {
+  const linkRows: AccessLinkRow[] = []
+  const subdivisionNames = generateSubdivisions(org.shortCode, SUBDIVISIONS_PER_ORG)
+
   const organization = await prisma.organization.upsert({
     where: { name: org.name },
     update: { shortCode: org.shortCode },
@@ -177,7 +160,7 @@ async function seedOrganization(
   })
 
   const subdivisions = new Map<string, number>()
-  for (const name of org.subdivisions) {
+  for (const name of subdivisionNames) {
     const sub = await prisma.subdivision.upsert({
       where: {
         organizationId_name: { organizationId: organization.id, name },
@@ -188,146 +171,121 @@ async function seedOrganization(
     subdivisions.set(name, sub.id)
   }
 
-  const tokens: string[] = [org.accessToken]
-  if ("subdivisionToken" in org) tokens.push(org.subdivisionToken)
-
+  const tokenPrefix = orgAccessToken(org.shortCode)
   await prisma.accessLink.deleteMany({
-    where: { token: { in: tokens } },
+    where: { token: { startsWith: tokenPrefix } },
   })
 
+  const orgToken = orgAccessToken(org.shortCode)
   await prisma.accessLink.create({
-    data: {
-      organizationId: organization.id,
-      token: org.accessToken,
-    },
+    data: { organizationId: organization.id, token: orgToken },
   })
+  linkRows.push({ org: org.name, scope: "Организация", token: orgToken })
 
-  if ("subdivisionToken" in org && org.subdivisionTokenFor) {
-    const subdivisionId = subdivisions.get(org.subdivisionTokenFor)
-    if (subdivisionId) {
-      await prisma.accessLink.create({
-        data: {
-          organizationId: organization.id,
-          subdivisionId,
-          token: org.subdivisionToken,
-        },
-      })
-    }
-  }
-
-  const existingOrder = await prisma.order.findFirst({
-    where: {
-      organizationId: organization.id,
-      title: { startsWith: "[DEV]" },
-    },
-  })
-  if (existingOrder) return organization
-
-  const orderTitles = [
-    `[DEV] Приказ о выполнении мер ИБ — ${org.shortCode}`,
-    `[DEV] План защиты персональных данных — ${org.shortCode}`,
-  ]
-
-  for (const [orderIndex, title] of orderTitles.entries()) {
-    const issuedAt = daysAgo(30 + orderIndex * 14)
-    const defaultDueAt = daysFromNow(45 - orderIndex * 10)
-
-    const order = await prisma.order.create({
-      data: {
-        title,
-        organizationId: organization.id,
-        createdById: adminId,
-        issuedAt,
-        defaultDueAt,
-      },
+  for (const [index, name] of subdivisionNames.entries()) {
+    const subdivisionId = subdivisions.get(name)!
+    const token = subdivisionAccessToken(org.shortCode, name, index)
+    await prisma.accessLink.create({
+      data: { organizationId: organization.id, subdivisionId, token },
     })
-
-    const subNames = [...org.subdivisions]
-    const pickedMeasures = measureIds.slice(
-      orderIndex * 4,
-      orderIndex * 4 + Math.min(6, measureIds.length - orderIndex * 4)
-    )
-
-    for (const [itemIndex, measureId] of pickedMeasures.entries()) {
-      const statusCycle = itemIndex % 4
-      let statusId = statusIds.notStarted
-      let dueAt = defaultDueAt
-
-      if (statusCycle === 0) {
-        statusId = statusIds.completed
-        dueAt = daysAgo(5)
-      } else if (statusCycle === 1) {
-        statusId = statusIds.inProgress
-        dueAt = daysFromNow(20)
-      } else if (statusCycle === 2) {
-        statusId = statusIds.inProgress
-        dueAt = daysAgo(7)
-      } else {
-        statusId = statusIds.notStarted
-        dueAt = daysAgo(3)
-      }
-
-      const subdivisionName = subNames[itemIndex % subNames.length]
-      const subdivisionId = subdivisions.get(subdivisionName) ?? null
-
-      const item = await prisma.orderItem.create({
-        data: {
-          orderId: order.id,
-          measureId,
-          statusId,
-          dueAt,
-          subdivisionId,
-        },
-      })
-
-      if (statusId === statusIds.completed) {
-        await prisma.response.create({
-          data: {
-            orderItemId: item.id,
-            result: "Выполнено в полном объёме",
-            commentary: "Подтверждающие документы направлены в центральный аппарат.",
-            submittedByLabel: `Ответственный ${subdivisionName}`,
-            submittedAt: daysAgo(2),
-          },
-        })
-      }
-
-      if (statusCycle === 2) {
-        await prisma.delayRequest.create({
-          data: {
-            orderItemId: item.id,
-            requestedDueAt: daysFromNow(30),
-            justification: "Требуется дополнительное время на согласование с подрядчиком.",
-            status: DelayRequestStatus.PENDING,
-          },
-        })
-      }
-
-      if (statusCycle === 1 && itemIndex === 1) {
-        await prisma.delayRequest.create({
-          data: {
-            orderItemId: item.id,
-            requestedDueAt: daysFromNow(40),
-            justification: "Перенос согласован ранее из-за миграции инфраструктуры.",
-            status: DelayRequestStatus.APPROVED,
-            reviewedById: adminId,
-            reviewedAt: daysAgo(1),
-          },
-        })
-        await prisma.response.create({
-          data: {
-            orderItemId: item.id,
-            result: "Частично выполнено",
-            commentary: "Внедрено на 70% рабочих мест, остальное — до конца квартала.",
-            submittedByLabel: `Ответственный ${subdivisionName}`,
-            submittedAt: daysAgo(4),
-          },
-        })
-      }
-    }
+    linkRows.push({ org: org.name, scope: name, token })
   }
 
-  return organization
+  const subNames = subdivisionNames
+  const shuffledMeasures = shuffleWithSeed(measureIds, orgIndex + 1)
+
+  for (let chunk = 0; chunk < ORDERS_PER_ORG; chunk += 10) {
+    await prisma.$transaction(async (tx) => {
+      for (let orderIndex = chunk; orderIndex < Math.min(chunk + 10, ORDERS_PER_ORG); orderIndex++) {
+        const issuedAt = daysAgo(5 + orderIndex * 6 + orgIndex * 3)
+        const defaultDueAt = daysFromNow(30 + (orderIndex % 20))
+
+        const order = await tx.order.create({
+          data: {
+            title: orderTitle(org.shortCode, orderIndex),
+            organizationId: organization.id,
+            createdById: adminId,
+            issuedAt,
+            defaultDueAt,
+          },
+        })
+
+        const itemCount = pickMeasureCount(orderIndex)
+        const start = (orderIndex * itemCount + orgIndex * 7) % shuffledMeasures.length
+        const picked = Array.from({ length: itemCount }, (_, i) =>
+          shuffledMeasures[(start + i) % shuffledMeasures.length]
+        )
+
+        for (const [itemIndex, measureId] of picked.entries()) {
+          const { status, dueDaysOffset } = pickStatusAndDue(itemIndex + orderIndex)
+          let statusId = statusIds.notStarted
+          if (status === "completed") statusId = statusIds.completed
+          else if (status === "inProgress" || status === "overdue") statusId = statusIds.inProgress
+
+          const dueAt = daysFromNow(dueDaysOffset)
+          const subdivisionName = subNames[(itemIndex + orderIndex) % subNames.length]
+          const subdivisionId = subdivisions.get(subdivisionName) ?? null
+
+          const item = await tx.orderItem.create({
+            data: {
+              orderId: order.id,
+              measureId,
+              statusId,
+              dueAt,
+              subdivisionId,
+            },
+          })
+
+          if (status === "completed") {
+            await tx.response.create({
+              data: {
+                orderItemId: item.id,
+                result: "Выполнено в полном объёме",
+                commentary: "Подтверждающие документы направлены в центральный аппарат.",
+                submittedByLabel: `Ответственный ${subdivisionName}`,
+                submittedAt: daysAgo(2),
+              },
+            })
+          }
+
+          if (status === "overdue") {
+            await tx.delayRequest.create({
+              data: {
+                orderItemId: item.id,
+                requestedDueAt: daysFromNow(30),
+                justification: "Требуется дополнительное время на согласование с подрядчиком.",
+                status: DelayRequestStatus.PENDING,
+              },
+            })
+          }
+
+          if (status === "inProgress" && itemIndex === 1) {
+            await tx.delayRequest.create({
+              data: {
+                orderItemId: item.id,
+                requestedDueAt: daysFromNow(40),
+                justification: "Перенос согласован ранее из-за миграции инфраструктуры.",
+                status: DelayRequestStatus.APPROVED,
+                reviewedById: adminId,
+                reviewedAt: daysAgo(1),
+              },
+            })
+            await tx.response.create({
+              data: {
+                orderItemId: item.id,
+                result: "Частично выполнено",
+                commentary: "Внедрено на 70% рабочих мест, остальное — до конца квартала.",
+                submittedByLabel: `Ответственный ${subdivisionName}`,
+                submittedAt: daysAgo(4),
+              },
+            })
+          }
+        }
+      }
+    })
+  }
+
+  return linkRows
 }
 
 export async function seedMockData(
@@ -336,6 +294,7 @@ export async function seedMockData(
   options: { force?: boolean } = {}
 ) {
   if (options.force) {
+    await clearLegacyTestData(prisma)
     await clearMockData(prisma)
     console.log("Mock data cleared")
   } else {
@@ -354,20 +313,36 @@ export async function seedMockData(
   const measures = await upsertMeasures(prisma, adminId)
   const measureIds = measures.map((m) => m.id)
 
-  for (const org of MOCK_ORGS) {
-    await seedOrganization(prisma, adminId, org, statusIds, measureIds)
+  const allLinks: AccessLinkRow[] = []
+  for (const [orgIndex, org] of MOCK_ORGS.entries()) {
+    const links = await seedOrganization(
+      prisma,
+      adminId,
+      org,
+      orgIndex,
+      statusIds,
+      measureIds
+    )
+    allLinks.push(...links)
   }
 
+  const orderCount = await prisma.order.count({
+    where: { title: { startsWith: "[DEV]" } },
+  })
+
   console.log("Mock data seeded:")
-  console.log(`  • ${MOCK_ORGS.length} organizations with subdivisions and access links`)
-  console.log(`  • ${MOCK_MEASURES.length} measures in catalog`)
-  console.log(`  • orders with mixed statuses, responses, and delay requests`)
+  console.log(`  • ${MOCK_ORGS.length} organizations`)
+  console.log(`  • ${SUBDIVISIONS_PER_ORG} subdivisions per org`)
+  console.log(`  • ${measures.length} measures in catalog`)
+  console.log(`  • ${orderCount} orders (${ORDERS_PER_ORG} per org)`)
+  console.log(`  • ${allLinks.length} access links`)
   console.log("")
   console.log("Public dev links:")
-  for (const org of MOCK_ORGS) {
-    console.log(`  • ${org.name}: /p/${org.accessToken}`)
-    if ("subdivisionToken" in org) {
-      console.log(`    └ ${org.subdivisionTokenFor}: /p/${org.subdivisionToken}`)
-    }
-  }
+  console.table(
+    allLinks.map((l) => ({
+      organization: l.org,
+      scope: l.scope,
+      url: `/p/${l.token}`,
+    }))
+  )
 }

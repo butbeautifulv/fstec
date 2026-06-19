@@ -1,21 +1,36 @@
 "use client"
 
+import { useMemo } from "react"
 import { usePathname } from "next/navigation"
-import { LayoutDashboardIcon, ShieldIcon } from "lucide-react"
+import { ShieldIcon } from "lucide-react"
 import { AppShell } from "@/components/shell/app-shell"
-import { ShellSidebar, type ShellSidebarLink } from "@/components/shell/shell-sidebar"
-import type { ShellNavOrder } from "@/components/shell/shell-nav-groups"
+import { ShellSidebar } from "@/components/shell/shell-sidebar"
 import {
   PublicBreadcrumb,
   PublicBreadcrumbProvider,
 } from "@/components/public/public-breadcrumb"
-import { APP_NAME } from "@/lib/ui/branding"
+import { buildPublicNavMainItems } from "@/lib/public/build-public-nav-main"
+import {
+  formatPublicBrandSubtitle,
+  formatPublicBrandTitle,
+  formatPublicBrandTooltip,
+} from "@/lib/ui/sidebar-brand"
+
+type PublicNavOrder = {
+  title: string
+  items: {
+    id: number
+    dueAt: Date
+    measure: { name: string }
+    status: { name: string; isTerminal: boolean }
+  }[]
+}
 
 type PublicShellContextValue = {
   token: string
   organizationName: string
   subdivisionName: string | null
-  navOrders: ShellNavOrder[]
+  navOrders: PublicNavOrder[]
 }
 
 function PublicSidebar({
@@ -25,28 +40,24 @@ function PublicSidebar({
   navOrders,
 }: PublicShellContextValue) {
   const pathname = usePathname()
-  const links: ShellSidebarLink[] = [
-    { href: `/p/${token}`, label: "Сводка", icon: LayoutDashboardIcon },
-  ]
+  const navItems = useMemo(
+    () => buildPublicNavMainItems(token, navOrders, pathname),
+    [token, navOrders, pathname]
+  )
+  const subtitle = formatPublicBrandSubtitle(organizationName, subdivisionName)
 
   return (
     <ShellSidebar
       variant="inset"
+      groupLabel="Навигация"
       brand={{
         href: `/p/${token}`,
-        title: organizationName,
-        subtitle: subdivisionName ?? APP_NAME,
+        title: formatPublicBrandTitle(),
+        subtitle,
+        subtitleTitle: formatPublicBrandTooltip(organizationName, subdivisionName),
         icon: ShieldIcon,
       }}
-      links={links}
-      pathname={pathname}
-      navOrders={navOrders}
-      isLinkActive={(link, path) => {
-        if (link.href === `/p/${token}`) {
-          return path === `/p/${token}` || path === `/p/${token}/`
-        }
-        return path === link.href || path.startsWith(`${link.href}/`)
-      }}
+      navItems={navItems}
     />
   )
 }
