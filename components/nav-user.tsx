@@ -20,6 +20,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { OverflowText } from "@/components/shared/overflow-text"
 import { ChevronsUpDownIcon, LogOutIcon, UserCircleIcon } from "lucide-react"
 import Link from "next/link"
 
@@ -61,8 +62,8 @@ export function NavUser({
                 <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
               </Avatar>
               <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <OverflowText className="w-full min-w-0 font-medium">{user.name}</OverflowText>
+                <OverflowText className="w-full min-w-0 text-xs">{user.email}</OverflowText>
               </div>
               <ChevronsUpDownIcon className="ml-auto" />
             </SidebarMenuButton>
@@ -80,8 +81,8 @@ export function NavUser({
                   <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
                 </Avatar>
                 <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <OverflowText className="w-full min-w-0 font-medium">{user.name}</OverflowText>
+                  <OverflowText className="w-full min-w-0 text-xs">{user.email}</OverflowText>
                 </div>
               </div>
             </DropdownMenuLabel>

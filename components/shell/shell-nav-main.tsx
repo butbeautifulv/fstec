@@ -3,6 +3,7 @@
 import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 import { ChevronRightIcon } from "lucide-react"
+import { OverflowText } from "@/components/shared/overflow-text"
 import {
   Collapsible,
   CollapsibleContent,
@@ -47,7 +48,7 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
         <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
           <Link href={item.href} className="min-w-0">
             {Icon && <Icon className="shrink-0" />}
-            <span className="min-w-0 flex-1 truncate">{item.title}</span>
+            <OverflowText className="min-w-0 flex-1">{item.title}</OverflowText>
             {item.badge}
           </Link>
         </SidebarMenuButton>
@@ -67,7 +68,7 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
         <CollapsibleTrigger asChild>
           <SidebarMenuButton tooltip={item.title} className="min-w-0">
             {Icon && <Icon className="shrink-0" />}
-            <span className="min-w-0 flex-1 truncate">{item.title}</span>
+            <OverflowText className="min-w-0 flex-1">{item.title}</OverflowText>
             {item.badge}
             <ChevronRightIcon className="ml-auto size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
@@ -81,20 +82,19 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
                   isActive={child.isActive}
                   className={
                     child.badge
-                      ? "h-auto min-h-7 items-start overflow-hidden py-1.5 [&>span:nth-child(1)]:min-w-0 [&>span:nth-child(1)]:truncate [&>span:nth-child(2)]:shrink-0 [&>span:nth-child(2)]:overflow-visible [&>span:nth-child(2)]:whitespace-nowrap"
-                      : "overflow-hidden [&>span]:truncate"
+                      ? "h-auto min-h-7 items-start overflow-hidden py-1.5 [&>span:nth-child(2)]:shrink-0 [&>span:nth-child(2)]:overflow-visible [&>span:nth-child(2)]:whitespace-nowrap"
+                      : "overflow-hidden"
                   }
                 >
                   <Link
                     href={child.href}
-                    title={child.title}
                     className={
                       child.badge
                         ? "flex w-full min-w-0 flex-col gap-1 overflow-hidden"
                         : "block w-full min-w-0 overflow-hidden"
                     }
                   >
-                    <span className="truncate">{child.title}</span>
+                    <OverflowText className="w-full min-w-0">{child.title}</OverflowText>
                     {child.badge}
                   </Link>
                 </SidebarMenuSubButton>

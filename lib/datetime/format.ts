@@ -27,3 +27,15 @@ export function formatDisplayDateTime(iso: string, timeZone: string): string {
     minute: "2-digit",
   }).format(date)
 }
+
+/** Canonical YYYY-MM-DD key for faceted date filters (timezone-aware). */
+export function toFilterDateKey(iso: string, timeZone: string): string {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date)
+}

@@ -24,6 +24,18 @@ export function colMeta(title: string, opts: ColMetaOptions = {}) {
   }
 }
 
+export function textColumnMeta(
+  title: string,
+  /** Relative flex weight; redistributed among visible columns when some are hidden. */
+  widthClass = "w-[16%]",
+  opts: Omit<ColMetaOptions, "cellClassName"> = {}
+) {
+  return colMeta(title, {
+    ...opts,
+    cellClassName: cn("max-w-0", widthClass),
+  })
+}
+
 export function actionsColumnMeta(extra?: string) {
   return {
     faceted: false as const,

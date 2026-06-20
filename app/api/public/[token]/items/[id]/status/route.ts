@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/db"
 import { handleApiError, jsonError, jsonOk } from "@/lib/api/errors"
+import { assertPublicRateLimit } from "@/lib/api/public-guard"
+import { parseJsonBody } from "@/lib/api/parse-body"
+import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
+import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { getInProgressStatusId } from "@/lib/statuses"
 import { isNotStarted } from "@/lib/statuses/workflow"
-import { checkRateLimit } from "@/lib/public/rate-limit"
-import { getOrderItemForToken } from "@/lib/public/validate-token"
+import { getPublicOrderItem } from "@/lib/public/validate-token"
 import { statusActionSchema } from "@/lib/validations/public"
 
 type Params = { params: Promise<{ token: string; id: string }> }
@@ -11,20 +14,16 @@ type Params = { params: Promise<{ token: string; id: string }> }
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { token, id } = await params
-    const ip = request.headers.get("x-forwarded-for") ?? "local"
-    if (!checkRateLimit(`public-write:${ip}:${token}`)) {
-      return jsonError("Too many requests", 429)
-    }
+    const rateLimited = assertPublicRateLimit(request, token, "write")
+    if (rateLimited) return rateLimited
 
     const orderItemId = Number(id)
-    const { item } = await getOrderItemForToken(token, orderItemId)
+    const { link, item } = await getPublicOrderItem(token, orderItemId)
 
-    const parsed = statusActionSchema.safeParse(await request.json())
-    if (!parsed.success) {
-      return handleApiError(new Error(parsed.error.issues[0]?.message))
-    }
+    const body = await parseJsonBody(request, statusActionSchema)
+    if ("error" in body) return body.error
 
-    if (parsed.data.action === "start") {
+    if (body.data.action === "start") {
       if (!isNotStarted(item.status.name)) {
         return jsonError("Мера уже в работе или завершена", 400)
       }
@@ -36,6 +35,7 @@ export async function PATCH(request: Request, { params }: Params) {
         include: { status: true, measure: true },
       })
 
+      await invalidateDashboardOnMutation(scopeFromAccessLink(link))
       return jsonOk(updated)
     }
 

@@ -1,8 +1,18 @@
-import { OrganizationsManager } from "@/components/platform/organizations-manager"
+import { Suspense } from "react"
+import dynamic from "next/dynamic"
+import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 import { listOrganizations } from "@/lib/organizations"
 import { getHeadOrganizationId } from "@/lib/settings"
 
-export default async function OrganizationsPage() {
+const OrganizationsManager = dynamic(
+  () =>
+    import("@/components/platform/organizations-manager").then(
+      (mod) => mod.OrganizationsManager
+    ),
+  { loading: () => <TablePageSkeleton /> }
+)
+
+async function OrganizationsTableSection() {
   const [orgs, headOrganizationId] = await Promise.all([
     listOrganizations(),
     getHeadOrganizationId(),
@@ -10,5 +20,13 @@ export default async function OrganizationsPage() {
 
   return (
     <OrganizationsManager initialOrgs={orgs} headOrganizationId={headOrganizationId} />
+  )
+}
+
+export default function OrganizationsPage() {
+  return (
+    <Suspense fallback={<TablePageSkeleton />}>
+      <OrganizationsTableSection />
+    </Suspense>
   )
 }

@@ -1,33 +1,58 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
-import { AdminDashboardMatrix } from "@/components/platform/admin-dashboard-matrix"
-import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
-import {
-  PublicMeasuresTable,
-  type PublicItem,
-  type PublicStatus,
-} from "@/components/public/public-measures-table"
+import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts-skeleton"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import {
   overdueInitialFilters,
   toggleBreakdownFilter,
+  toggleOverdueLegendFilter,
+  toggleOverdueSegmentFilter,
   toggleStatusBreakdownFilter,
   toggleStatusFilter,
   toggleStatusFilterPreserveBreakdown,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
+import type { PublicItem, PublicStatus } from "@/components/public/public-measures-table"
 
-type MatrixItem = {
-  id: number
-  orderId: number
-  dueAt: string
-  isOverdue: boolean
-  measure: { id: number; name: string }
-  order: { title: string; organization: { id: number; name: string } }
-  status: { name: string; isTerminal: boolean }
-}
+const ScopedDashboardCharts = dynamic(
+  () =>
+    import("@/components/dashboard/scoped-dashboard-charts").then(
+      (mod) => mod.ScopedDashboardCharts
+    ),
+  {
+    ssr: false,
+    loading: () => <DashboardChartsSkeleton />,
+  }
+)
+
+const PlatformDashboardMatrix = dynamic(
+  () =>
+    import("@/components/platform/platform-dashboard-matrix").then(
+      (mod) => mod.PlatformDashboardMatrix
+    ),
+  { loading: () => null }
+)
+
+const ReportDashboardMatrix = dynamic(
+  () =>
+    import("@/components/report/report-dashboard-matrix").then(
+      (mod) => mod.ReportDashboardMatrix
+    ),
+  { loading: () => null }
+)
+
+const PublicMeasuresTable = dynamic(
+  () =>
+    import("@/components/public/public-measures-table").then(
+      (mod) => mod.PublicMeasuresTable
+    ),
+  { loading: () => null }
+)
+
+import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 
 type FilterControl = {
   columnFilters?: ColumnFiltersState
@@ -38,7 +63,7 @@ type AdminProps = {
   variant: "admin"
   scope: ChartFilterScope
   stats: ScopedDashboardStats
-  items: MatrixItem[]
+  items: DashboardMatrixRow[]
   overdueOnly?: boolean
 } & FilterControl
 
@@ -53,7 +78,16 @@ type PublicProps = {
   overdueOnly?: boolean
 } & FilterControl
 
-export function ScopedDashboardView(props: AdminProps | PublicProps) {
+type ReportProps = {
+  variant: "report"
+  scope: ChartFilterScope
+  stats: ScopedDashboardStats
+  token: string
+  items: DashboardMatrixRow[]
+  overdueOnly?: boolean
+} & FilterControl
+
+export function ScopedDashboardView(props: AdminProps | PublicProps | ReportProps) {
   const initialFilters = useMemo(
     () => (props.overdueOnly ? overdueInitialFilters() : []),
     [props.overdueOnly]
@@ -82,6 +116,14 @@ export function ScopedDashboardView(props: AdminProps | PublicProps) {
         onOverdueBarClick={(label) =>
           setColumnFilters((prev) => toggleBreakdownFilter(prev, scope, label))
         }
+        onOverdueSegmentClick={(label, segment) =>
+          setColumnFilters((prev) =>
+            toggleOverdueSegmentFilter(prev, scope, label, segment)
+          )
+        }
+        onOverdueLegendClick={(segment) =>
+          setColumnFilters((prev) => toggleOverdueLegendFilter(prev, segment))
+        }
         onStatusBreakdownClick={(label, status) =>
           setColumnFilters((prev) =>
             toggleStatusBreakdownFilter(prev, scope, label, status)
@@ -95,7 +137,14 @@ export function ScopedDashboardView(props: AdminProps | PublicProps) {
       />
 
       {props.variant === "admin" ? (
-        <AdminDashboardMatrix
+        <PlatformDashboardMatrix
+          items={props.items}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+      ) : props.variant === "report" ? (
+        <ReportDashboardMatrix
+          token={props.token}
           items={props.items}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}

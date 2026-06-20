@@ -16,7 +16,7 @@ export function useResourceDelete({
   onRemoved,
   successMessage,
   errorMessage = "Ошибка удаления",
-}: UseResourceDeleteOptions<T>) {
+}: UseResourceDeleteOptions) {
   const router = useRouter()
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)

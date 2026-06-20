@@ -2,9 +2,10 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
-import { FormSkeleton } from "@/components/shared/form-skeleton"
+import { FormCardAction, FormCardGrid } from "@/components/shared/form-card-grid"
+import { FormPageSkeleton } from "@/components/shared/skeletons/form-page-skeleton"
 import { useOrderCreateDraft } from "@/components/platform/order-create-draft"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,7 +34,15 @@ type Org = { id: number; name: string; subdivisions: { id: number; name: string 
 
 const PREVIEW_LIMIT = 5
 
-export function OrderCreateForm() {
+type OrderCreateFormProps = {
+  initialOrganizations?: Org[]
+  initialHeadOrganizationId?: number | null
+}
+
+export function OrderCreateForm({
+  initialOrganizations,
+  initialHeadOrganizationId,
+}: OrderCreateFormProps = {}) {
   const router = useRouter()
   const {
     draft,
@@ -43,13 +52,14 @@ export function OrderCreateForm() {
     setMeasuresCache,
     selectedIds,
   } = useOrderCreateDraft()
-  const [orgs, setOrgs] = useState<Org[]>([])
+  const [orgs, setOrgs] = useState<Org[]>(initialOrganizations ?? [])
   const [loading, setLoading] = useState(false)
-  const [dataLoading, setDataLoading] = useState(true)
+  const [dataLoading, setDataLoading] = useState(initialOrganizations == null)
   const [defaultOrgApplied, setDefaultOrgApplied] = useState(false)
+  const prefetchedDefaultOrgApplied = useRef(false)
 
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated || initialOrganizations != null) return
     Promise.all([
       fetch("/api/organizations").then((r) => r.json()),
       fetch("/api/settings").then((r) => r.json()),
@@ -68,7 +78,34 @@ export function OrderCreateForm() {
       }
       setDataLoading(false)
     })
-  }, [hydrated, draft.organizationId, defaultOrgApplied, updateDraft])
+  }, [
+    hydrated,
+    draft.organizationId,
+    defaultOrgApplied,
+    updateDraft,
+    initialOrganizations,
+  ])
+
+  useEffect(() => {
+    if (!hydrated || initialOrganizations == null) return
+    if (draft.organizationId || prefetchedDefaultOrgApplied.current) return
+
+    const headId = initialHeadOrganizationId
+    const defaultOrg =
+      headId != null && initialOrganizations.some((org) => org.id === headId)
+        ? headId
+        : initialOrganizations[0]?.id
+    if (defaultOrg != null) {
+      updateDraft({ organizationId: String(defaultOrg) })
+    }
+    prefetchedDefaultOrgApplied.current = true
+  }, [
+    hydrated,
+    draft.organizationId,
+    initialOrganizations,
+    initialHeadOrganizationId,
+    updateDraft,
+  ])
 
   useEffect(() => {
     if (!hydrated || draft.measuresCache.length > 0) return
@@ -128,14 +165,15 @@ export function OrderCreateForm() {
     }
   }
 
-  if (!hydrated || dataLoading) return <FormSkeleton fields={5} />
+  if (!hydrated || dataLoading) return <FormPageSkeleton fields={5} showBack={false} />
 
   const previewItems = selectedPreview.slice(0, PREVIEW_LIMIT)
   const previewRest = selectedPreview.length - previewItems.length
 
   return (
-    <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
-      <Card>
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FormCardGrid>
+        <Card>
         <CardHeader>
           <CardTitle className="text-base">Параметры поручения</CardTitle>
           <CardDescription>Организация, срок и подразделение для всех мер</CardDescription>
@@ -217,7 +255,7 @@ export function OrderCreateForm() {
               : "Выберите меры из каталога ФСТЭК"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="gap-4">
           {selectedPreview.length > 0 && (
             <ul className="space-y-1 text-sm">
               {previewItems.map((m) => (
@@ -233,14 +271,17 @@ export function OrderCreateForm() {
               )}
             </ul>
           )}
-          <Button type="button" variant="outline" asChild>
-            <Link href="/panel/orders/new/measures">
-              <ListChecks data-icon="inline-start" />
-              Выбрать меры
-            </Link>
-          </Button>
+          <FormCardAction>
+            <Button type="button" variant="outline" asChild>
+              <Link href="/panel/orders/new/measures">
+                <ListChecks data-icon="inline-start" />
+                Выбрать меры
+              </Link>
+            </Button>
+          </FormCardAction>
         </CardContent>
       </Card>
+      </FormCardGrid>
 
       <FormActionsBar>
         <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>

@@ -6,21 +6,12 @@ import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
 import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
 import type { PublicItem, PublicStatus } from "@/components/public/public-measures-table"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
+import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import {
   overdueInitialFilters,
   toggleStatusFilter,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
-
-type MatrixItem = {
-  id: number
-  orderId: number
-  dueAt: string
-  isOverdue: boolean
-  measure: { id: number; name: string }
-  order: { title: string; organization: { id: number; name: string } }
-  status: { name: string; isTerminal: boolean }
-}
 
 function activeStatusFromFilters(filters: ColumnFiltersState): string | undefined {
   const statusFilter = filters.find((f) => f.id === "status")
@@ -33,7 +24,7 @@ type AdminDashboardInteractiveProps = {
   variant: "admin"
   scope: ChartFilterScope
   stats: ScopedDashboardStats
-  items: MatrixItem[]
+  items: DashboardMatrixRow[]
   overdueOnly: boolean
 }
 
@@ -48,8 +39,17 @@ type PublicDashboardInteractiveProps = {
   overdueOnly: boolean
 }
 
+type ReportDashboardInteractiveProps = {
+  variant: "report"
+  scope: "global"
+  stats: ScopedDashboardStats
+  token: string
+  items: DashboardMatrixRow[]
+  overdueOnly: boolean
+}
+
 export function DashboardInteractive(
-  props: AdminDashboardInteractiveProps | PublicDashboardInteractiveProps
+  props: AdminDashboardInteractiveProps | PublicDashboardInteractiveProps | ReportDashboardInteractiveProps
 ) {
   const { stats, overdueOnly } = props
   const initialFilters = useMemo(
@@ -77,6 +77,18 @@ export function DashboardInteractive(
           variant="admin"
           scope={props.scope}
           stats={stats}
+          items={props.items}
+          overdueOnly={overdueOnly}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+      ) : props.variant === "report" ? (
+        <ScopedDashboardView
+          key={overdueOnly ? "overdue" : "all"}
+          variant="report"
+          scope={props.scope}
+          stats={stats}
+          token={props.token}
           items={props.items}
           overdueOnly={overdueOnly}
           columnFilters={columnFilters}

@@ -19,6 +19,28 @@ export function overdueInitialFilters(): ColumnFiltersState {
   return [{ id: "status", value: [OVERDUE_LABEL] }]
 }
 
+export const NON_OVERDUE_STATUSES = [
+  WORKFLOW_STATUS.NOT_STARTED,
+  WORKFLOW_STATUS.IN_PROGRESS,
+  WORKFLOW_STATUS.COMPLETED,
+] as const
+
+export type OverdueChartSegment = "overdue" | "nonOverdue"
+
+function overdueSegmentStatuses(segment: OverdueChartSegment): string[] {
+  return segment === "overdue" ? [OVERDUE_LABEL] : [...NON_OVERDUE_STATUSES]
+}
+
+function statusFilterMatches(
+  filters: ColumnFiltersState,
+  expected: string[]
+): boolean {
+  return arraysEqual(
+    [...filterValues(filters, "status")].sort(),
+    [...expected].sort()
+  )
+}
+
 function filterValues(filters: ColumnFiltersState, id: string): string[] {
   return (filters.find((f) => f.id === id)?.value as string[]) ?? []
 }
@@ -66,6 +88,59 @@ export function toggleStatusFilterPreserveBreakdown(
     return setFilter(filters, "status", undefined)
   }
   return setFilter(filters, "status", [status])
+}
+
+export function toggleOverdueSegmentFilter(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  segment: OverdueChartSegment
+): ColumnFiltersState {
+  const columnId = breakdownColumnId(scope)
+  const statusValues = overdueSegmentStatuses(segment)
+  const breakdownCurrent = filterValues(filters, columnId)
+
+  if (
+    breakdownCurrent.length === 1 &&
+    breakdownCurrent[0] === label &&
+    statusFilterMatches(filters, statusValues)
+  ) {
+    return filters.filter((f) => f.id !== columnId && f.id !== "status")
+  }
+
+  const rest = filters.filter((f) => f.id !== columnId && f.id !== "status")
+  return [
+    ...rest,
+    { id: columnId, value: [label] },
+    { id: "status", value: statusValues },
+  ]
+}
+
+export function toggleOverdueLegendFilter(
+  filters: ColumnFiltersState,
+  segment: OverdueChartSegment
+): ColumnFiltersState {
+  const statusValues = overdueSegmentStatuses(segment)
+  const hasOnlySegmentStatus =
+    statusFilterMatches(filters, statusValues) &&
+    !filters.some(
+      (f) =>
+        f.id === "organization" ||
+        f.id === "subdivisionName" ||
+        f.id === "orderTitle"
+    )
+
+  if (hasOnlySegmentStatus) {
+    return filters.filter((f) => f.id !== "status")
+  }
+
+  const withoutBreakdown = filters.filter(
+    (f) =>
+      f.id !== "organization" &&
+      f.id !== "subdivisionName" &&
+      f.id !== "orderTitle"
+  )
+  return setFilter(withoutBreakdown, "status", statusValues)
 }
 
 export function toggleBreakdownFilter(
@@ -156,6 +231,39 @@ export function isBreakdownFilterActive(
 ): boolean {
   const values = filterValues(filters, breakdownColumnId(scope))
   return values.length === 1 && values[0] === label
+}
+
+export function isOverdueSegmentHighlighted(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  segment: OverdueChartSegment
+): boolean {
+  const statusValues = overdueSegmentStatuses(segment)
+  const breakdownMatch = isBreakdownFilterActive(filters, scope, label)
+  const statusMatch = statusFilterMatches(filters, statusValues)
+  const hasBreakdown = filters.some((f) => f.id === breakdownColumnId(scope))
+  const hasStatus = filters.some((f) => f.id === "status")
+
+  if (hasBreakdown && hasStatus) return breakdownMatch && statusMatch
+  if (hasBreakdown) return breakdownMatch
+  if (hasStatus) return statusMatch
+  return false
+}
+
+export function isOverdueLegendActive(
+  filters: ColumnFiltersState,
+  segment: OverdueChartSegment
+): boolean {
+  return (
+    statusFilterMatches(filters, overdueSegmentStatuses(segment)) &&
+    !filters.some(
+      (f) =>
+        f.id === "organization" ||
+        f.id === "subdivisionName" ||
+        f.id === "orderTitle"
+    )
+  )
 }
 
 export function isStatusBreakdownActive(

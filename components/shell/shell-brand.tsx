@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
+import { OverflowText } from "@/components/shared/overflow-text"
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -34,9 +35,7 @@ export function ShellBrand({
               </div>
             )}
             <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium" title={title}>
-                {title}
-              </span>
+              <OverflowText className="w-full min-w-0 font-medium">{title}</OverflowText>
               {subtitle && (
                 <span
                   className="line-clamp-2 text-xs text-muted-foreground"

@@ -3,6 +3,7 @@ import {
   Building2Icon,
   CalendarClockIcon,
   ClipboardListIcon,
+  FileTextIcon,
   LayoutDashboardIcon,
   ShieldIcon,
 } from "lucide-react"
@@ -53,6 +54,13 @@ const NAV_DEFS: NavDef[] = [
     icon: CalendarClockIcon,
     match: (p) => p.startsWith("/panel/delay-requests"),
     permission: Permission.delaysRead,
+  },
+  {
+    title: "Отчёты",
+    href: "/panel/responses",
+    icon: FileTextIcon,
+    match: (p) => p.startsWith("/panel/responses"),
+    permission: Permission.ordersRead,
   },
 ]
 

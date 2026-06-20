@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { prisma } from "@/lib/db"
 import { WORKFLOW_STATUS } from "@/lib/statuses/workflow"
 
@@ -25,13 +26,11 @@ export async function getCompletedStatusId() {
   return getStatusIdByName(WORKFLOW_STATUS.COMPLETED)
 }
 
-export function getWorkflowStatuses() {
+export const getWorkflowStatuses = cache(() => {
   return prisma.status.findMany({
     where: { name: { in: [...WORKFLOW_STATUS_NAMES] } },
     orderBy: { sortOrder: "asc" },
   })
-}
+})
 
-export function listSelectableStatuses() {
-  return getWorkflowStatuses()
-}
+export const listSelectableStatuses = cache(() => getWorkflowStatuses())

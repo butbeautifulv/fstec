@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   flexRender,
   getCoreRowModel,
@@ -31,6 +31,8 @@ import {
   ACTIONS_COLUMN_CELL_CLASS,
   isActionsColumn,
 } from "@/lib/data-table/column-meta"
+import { buildVisibleColumnWidths, stripPercentWidthClass } from "@/lib/data-table/column-width"
+import { wrapTableHeaderContent } from "@/lib/data-table/header-text"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { cn } from "@/lib/utils"
 
@@ -39,7 +41,7 @@ function getColumnCellClassName(
   meta: ColumnDef<unknown, unknown>["meta"]
 ) {
   return cn(
-    meta?.cellClassName,
+    stripPercentWidthClass(meta?.cellClassName),
     isActionsColumn(columnId, meta) && ACTIONS_COLUMN_CELL_CLASS
   )
 }
@@ -57,6 +59,7 @@ export function DataTable<TData>({
   className,
   columnFilters: controlledColumnFilters,
   onColumnFiltersChange,
+  hideOnMobileColumnIds,
 }: {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
@@ -70,6 +73,8 @@ export function DataTable<TData>({
   className?: string
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+  /** Column ids hidden below the `sm` breakpoint (filters still apply). */
+  hideOnMobileColumnIds?: string[]
 }) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -78,6 +83,26 @@ export function DataTable<TData>({
 
   const columnFilters = controlledColumnFilters ?? internalColumnFilters
   const setColumnFilters = onColumnFiltersChange ?? setInternalColumnFilters
+
+  useEffect(() => {
+    if (!hideOnMobileColumnIds?.length) return
+
+    const media = window.matchMedia("(max-width: 639px)")
+    const sync = () => {
+      const compact = media.matches
+      setColumnVisibility((prev) => {
+        const next = { ...prev }
+        for (const id of hideOnMobileColumnIds) {
+          next[id] = !compact
+        }
+        return next
+      })
+    }
+
+    sync()
+    media.addEventListener("change", sync)
+    return () => media.removeEventListener("change", sync)
+  }, [hideOnMobileColumnIds])
 
   const table = useReactTable({
     data,
@@ -109,6 +134,23 @@ export function DataTable<TData>({
   const hasToolbar =
     searchPlaceholder || filters || showColumnToggle || hasActiveFilters
 
+  const columnWidths = useMemo(() => {
+    const headers =
+      table.getHeaderGroups()[0]?.headers.filter((header) => header.column.getIsVisible()) ??
+      []
+
+    return buildVisibleColumnWidths(
+      headers.map((header) => ({
+        id: header.column.id,
+        meta: header.column.columnDef.meta,
+      }))
+    )
+  }, [table, columnVisibility])
+
+  const visibleHeaders =
+    table.getHeaderGroups()[0]?.headers.filter((header) => header.column.getIsVisible()) ??
+    []
+
   const defaultEmpty = (
     <div className="flex flex-col items-center gap-2 py-4">
       <p className="text-sm text-muted-foreground">
@@ -123,9 +165,9 @@ export function DataTable<TData>({
   )
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-3", className)}>
       {hasToolbar && (
-        <div className="flex flex-col gap-2">
+        <div className="flex min-w-0 flex-col gap-2 overflow-x-hidden">
           <DataTableToolbar
             table={table}
             searchPlaceholder={searchPlaceholder}
@@ -136,20 +178,37 @@ export function DataTable<TData>({
         </div>
       )}
       <div className="rounded-md border">
-        <Table className="w-full">
+        <Table className="w-full table-fixed border-separate border-spacing-0">
+          <colgroup>
+            {visibleHeaders.map((header) => (
+              <col
+                key={header.id}
+                style={{ width: columnWidths.get(header.column.id) }}
+              />
+            ))}
+          </colgroup>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
+                {headerGroup.headers
+                  .filter((header) => header.column.getIsVisible())
+                  .map((header) => {
                   const meta = header.column.columnDef.meta
+                  const actions = isActionsColumn(header.column.id, meta)
                   return (
                     <TableHead
                       key={header.id}
-                      className={getColumnCellClassName(header.column.id, meta)}
+                      className={cn(
+                        getColumnCellClassName(header.column.id, meta),
+                        !actions && "overflow-hidden"
+                      )}
+                      style={{ width: columnWidths.get(header.column.id) }}
                     >
                       {header.isPlaceholder
                         ? null
-                        : flexRender(header.column.columnDef.header, header.getContext())}
+                        : wrapTableHeaderContent(
+                            flexRender(header.column.columnDef.header, header.getContext())
+                          )}
                     </TableHead>
                   )
                 })}
@@ -159,7 +218,7 @@ export function DataTable<TData>({
           <TableBody>
             {isEmpty ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24">
+                <TableCell colSpan={visibleHeaders.length || columns.length} className="h-24">
                   {empty ?? defaultEmpty}
                 </TableCell>
               </TableRow>
@@ -176,7 +235,11 @@ export function DataTable<TData>({
                     return (
                       <TableCell
                         key={cell.id}
-                        className={getColumnCellClassName(cell.column.id, meta)}
+                        className={cn(
+                          getColumnCellClassName(cell.column.id, meta),
+                          !actions && "overflow-hidden"
+                        )}
+                        style={{ width: columnWidths.get(cell.column.id) }}
                       >
                         {actions ? (
                           <div className="flex items-center justify-center">{content}</div>

@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
+import { TextCell } from "@/lib/data-table/text-cell"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTableShell } from "@/components/platform/data-table-shell"
+import { ShareLinkActions } from "@/components/shared/share-link-actions"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -16,14 +18,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
-import { Check, Copy, Pencil, Plus, Trash2 } from "lucide-react"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 
 type LinkRow = {
   id: number
@@ -46,27 +43,7 @@ function getActiveForSubdivision(links: LinkRow[], subdivisionId: number | null)
 }
 
 function CopyLinkButton({ token }: { token: string }) {
-  const [copied, setCopied] = useState(false)
-
-  function copyUrl() {
-    const url = `${window.location.origin}/p/${token}`
-    void navigator.clipboard.writeText(url)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    notify.success("Ссылка скопирована")
-  }
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button size="icon-sm" variant="outline" onClick={copyUrl}>
-          {copied ? <Check /> : <Copy />}
-          <span className="sr-only">Копировать ссылку</span>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{copied ? "Скопировано" : "Копировать ссылку"}</TooltipContent>
-    </Tooltip>
-  )
+  return <ShareLinkActions path={`/p/${token}`} />
 }
 
 export function OrgLinksPanel({
@@ -205,13 +182,11 @@ export function OrgLinksPanel({
                   const subLink = getActiveForSubdivision(links, sub.id)
                   return (
                     <TableRow key={sub.id}>
-                      <TableCell>
-                        <Link
+                      <TableCell className="max-w-0 w-[30%]">
+                        <TextCell
+                          text={sub.name}
                           href={`/panel/organizations/${organizationId}/subdivisions/${sub.id}/edit`}
-                          className="font-medium hover:underline"
-                        >
-                          {sub.name}
-                        </Link>
+                        />
                       </TableCell>
                       <TableCell>
                         {subLink ? (

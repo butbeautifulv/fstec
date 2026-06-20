@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
 import { deleteOrderItem, updateOrderItem } from "@/lib/orders"
 import { orderItemUpdateSchema } from "@/lib/validations/orders"
 
@@ -17,6 +18,7 @@ export async function PATCH(request: Request, { params }: Params) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const item = await updateOrderItem(orderId, Number(itemId), parsed.data)
+    await invalidateDashboardOnMutation()
     revalidatePath("/panel/orders")
     revalidatePath(`/panel/orders/${orderId}`)
     revalidatePath("/panel")
@@ -32,6 +34,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     const { id, itemId } = await params
     const orderId = Number(id)
     await deleteOrderItem(orderId, Number(itemId))
+    await invalidateDashboardOnMutation()
     revalidatePath("/panel/orders")
     revalidatePath(`/panel/orders/${orderId}`)
     revalidatePath("/panel")

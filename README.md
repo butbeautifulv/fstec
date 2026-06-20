@@ -7,27 +7,27 @@
 - Next.js 16 (App Router) + TypeScript
 - PostgreSQL + Prisma
 - shadcn/ui + Tailwind CSS
-- iron-session (admin auth)
+- iron-session (platform auth)
 
 ## Quick start
 
 ```bash
 cp .env.example .env.local
-docker compose up -d db
+docker compose up -d db minio
 npm install
 npm run db:migrate
 npm run db:seed
 npm run dev
 ```
 
-- Admin: http://localhost:3000/admin/login (seed: `admin@fstec.local` / `admin123`)
+- Platform login: http://localhost:3000/login (seed: `admin@fstec.local` / `admin123`)
 - Public assignment link: `/p/{token}` — полный список dev-токенов выводится в консоль после `npm run db:seed:mock`
 
 ## Architecture
 
 | Context | Path | Purpose |
 |---------|------|---------|
-| `admin` | `app/(admin)/admin/(panel)/` | Admin panel |
+| `platform` | `app/(platform)/panel/` | Authenticated workspace (`/panel/*`) |
 | `public` | `app/(public)/p/[token]/` | ДЗО assignment pages |
 | `api` | `app/api/` | Route Handlers |
 | `lib` | `lib/` | Domain logic + Prisma |

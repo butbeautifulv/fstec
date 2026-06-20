@@ -10,7 +10,7 @@ import {
   UserCircle,
   Users,
 } from "lucide-react"
-import { useAdminMe } from "@/components/platform/use-platform-user"
+import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { Permission } from "@/lib/auth/permissions"
 import { cn } from "@/lib/utils"
 
@@ -56,7 +56,7 @@ const items: SettingsNavItem[] = [
 
 export function SettingsNav() {
   const pathname = usePathname()
-  const { can } = useAdminMe()
+  const { can } = usePlatformUser()
 
   const visible = items.filter(
     (item) => item.always === true || (item.permission != null && can(item.permission))
@@ -95,7 +95,7 @@ export function SettingsNav() {
 }
 
 export function SettingsNavCompact() {
-  const { can } = useAdminMe()
+  const { can } = usePlatformUser()
   if (!can(Permission.settingsWrite)) return null
 
   return (

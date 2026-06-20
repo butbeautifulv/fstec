@@ -1,7 +1,9 @@
+import { getFilterTimeZone } from "@/lib/datetime/filter-timezone"
 import {
   formatDisplayDate,
   formatDisplayDateTime,
   isIsoDateString,
+  toFilterDateKey,
 } from "@/lib/datetime/format"
 
 type FilterColumnMeta = {
@@ -10,14 +12,31 @@ type FilterColumnMeta = {
 }
 
 /** Canonical string for faceted filter match (must match row cell values). */
-export function normalizeFilterValue(value: unknown): string {
+export function normalizeFilterValue(
+  value: unknown,
+  meta?: FilterColumnMeta,
+  timeZone = getFilterTimeZone()
+): string {
   if (value == null || value === "") return "—"
-  if (value instanceof Date) return value.toISOString()
+  if (value instanceof Date) {
+    const iso = value.toISOString()
+    if (meta?.valueType === "date") return toFilterDateKey(iso, timeZone)
+    return iso
+  }
+
   const str = String(value)
+  if (str === "—") return str
+
+  if (meta?.valueLabels?.[str]) return str
+
   if (isIsoDateString(str)) {
     const date = new Date(str)
-    if (!Number.isNaN(date.getTime())) return date.toISOString()
+    if (!Number.isNaN(date.getTime())) {
+      if (meta?.valueType === "date") return toFilterDateKey(str, timeZone)
+      return date.toISOString()
+    }
   }
+
   return str
 }
 
@@ -28,20 +47,21 @@ export function formatFilterDisplayValue(
 ): string {
   if (value == null || value === "") return "—"
 
-  const str = normalizeFilterValue(value)
+  const str = normalizeFilterValue(value, meta, timeZone)
   if (str === "—") return str
 
   if (meta?.valueLabels?.[str]) return meta.valueLabels[str]
 
+  const raw = value instanceof Date ? value.toISOString() : String(value)
   const asDate =
     meta?.valueType === "date" ||
     meta?.valueType === "datetime" ||
-    isIsoDateString(str)
+    isIsoDateString(raw)
 
   if (asDate) {
     return meta?.valueType === "datetime"
-      ? formatDisplayDateTime(str, timeZone)
-      : formatDisplayDate(str, timeZone)
+      ? formatDisplayDateTime(raw, timeZone)
+      : formatDisplayDate(raw, timeZone)
   }
 
   return str

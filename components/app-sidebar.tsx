@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 import { PlusIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -22,33 +22,42 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-export function AppSidebar() {
+export function AppSidebar({
+  pendingDelays = 0,
+  pendingResponses = 0,
+}: {
+  pendingDelays?: number
+  pendingResponses?: number
+}) {
   const pathname = usePathname()
   const { me, can } = usePlatformUser()
-  const [pendingDelays, setPendingDelays] = useState(0)
-
-  useEffect(() => {
-    void fetch("/api/delay-requests?count=pending")
-      .then((r) => r.json())
-      .then((data) => setPendingDelays(data.count ?? 0))
-      .catch(() => setPendingDelays(0))
-  }, [pathname])
 
   const navItems = useMemo(() => {
     const items = filterNavByPermission(buildPlatformNavItems(pathname), can)
-    return items.map((item) =>
-      item.href === "/panel/delay-requests" && pendingDelays > 0
-        ? {
-            ...item,
-            badge: (
-              <Badge variant="destructive" className="ml-auto shrink-0">
-                {pendingDelays}
-              </Badge>
-            ),
-          }
-        : item
-    )
-  }, [pathname, pendingDelays, can])
+    return items.map((item) => {
+      if (item.href === "/panel/delay-requests" && pendingDelays > 0) {
+        return {
+          ...item,
+          badge: (
+            <Badge variant="destructive" className="ml-auto shrink-0">
+              {pendingDelays}
+            </Badge>
+          ),
+        }
+      }
+      if (item.href === "/panel/responses" && pendingResponses > 0) {
+        return {
+          ...item,
+          badge: (
+            <Badge variant="destructive" className="ml-auto shrink-0">
+              {pendingResponses}
+            </Badge>
+          ),
+        }
+      }
+      return item
+    })
+  }, [pathname, pendingDelays, pendingResponses, can])
 
   const settingsActive = pathname.startsWith("/panel/settings")
   const showSettings = me != null

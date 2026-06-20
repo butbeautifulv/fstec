@@ -2,8 +2,9 @@
 
 import type { Column } from "@tanstack/react-table"
 import { ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter"
+import { Button } from "@/components/ui/button"
+import { TableHeaderText } from "@/lib/data-table/header-text"
 import { cn } from "@/lib/utils"
 
 type DataTableColumnHeaderProps<TData, TValue> = {
@@ -22,18 +23,31 @@ export function DataTableColumnHeader<TData, TValue>({
   const showFaceted = canFilter && column.columnDef.meta?.faceted !== false
 
   if (!canSort && !showFaceted) {
-    return <div className={cn(className)}>{title}</div>
+    return <TableHeaderText text={title} className={className} />
   }
 
+  const hasControls = canSort || showFaceted
+
   return (
-    <div className={cn("flex items-center gap-1", className)}>
-      <span className="truncate">{title}</span>
-      <div className="flex items-center">
+    <div
+      className={cn(
+        "flex min-w-0 w-full max-w-full items-center gap-0.5 overflow-hidden",
+        className
+      )}
+    >
+      <TableHeaderText
+        text={title}
+        className={cn(
+          "min-w-0 flex-1",
+          hasControls && "max-sm:sr-only max-sm:w-0 max-sm:flex-none"
+        )}
+      />
+      <div className="flex shrink-0 items-center">
         {canSort && (
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 shrink-0"
+            className="size-7 shrink-0 max-sm:size-6"
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             {column.getIsSorted() === "desc" ? (

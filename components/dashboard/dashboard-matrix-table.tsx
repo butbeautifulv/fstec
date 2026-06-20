@@ -1,38 +1,37 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo } from "react"
 import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { Badge } from "@/components/ui/badge"
-import { colMeta } from "@/lib/data-table/column-meta"
+import { colMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
+import { TextCell } from "@/lib/data-table/text-cell"
+import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import { labels } from "@/lib/ui/branding"
 import { getDisplayStatusName } from "@/lib/statuses/workflow"
 import { format } from "date-fns"
 
-type MatrixItem = {
-  id: number
-  orderId: number
-  dueAt: string
-  isOverdue: boolean
-  measure: { id: number; name: string }
-  order: { title: string; organization: { id: number; name: string } }
-  status: { name: string; isTerminal: boolean }
+export type DashboardMatrixLinkTargets = {
+  organization: (orgId: number) => string
+  order: (orderId: number) => string
+  measure: (row: DashboardMatrixRow) => string
 }
 
-export function AdminDashboardMatrix({
+export function DashboardMatrixTable({
   items,
+  linkTargets,
   columnFilters,
   onColumnFiltersChange,
 }: {
-  items: MatrixItem[]
+  items: DashboardMatrixRow[]
+  linkTargets: DashboardMatrixLinkTargets
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
 }) {
-  const columns = useMemo<ColumnDef<MatrixItem>[]>(
+  const columns = useMemo<ColumnDef<DashboardMatrixRow>[]>(
     () => [
       {
         id: "organization",
@@ -41,16 +40,15 @@ export function AdminDashboardMatrix({
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
         cell: ({ row }) => (
-          <Link
-            href={`/panel/organizations/${row.original.order.organization.id}`}
-            className="hover:underline"
-          >
-            {row.original.order.organization.name}
-          </Link>
+          <TextCell
+            text={row.original.order.organization.name}
+            href={linkTargets.organization(row.original.order.organization.id)}
+            linkClassName="font-normal"
+          />
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: colMeta(labels.org),
+        meta: textColumnMeta(labels.org, "w-[16%]"),
       },
       {
         id: "order",
@@ -59,16 +57,14 @@ export function AdminDashboardMatrix({
           <DataTableColumnHeader column={column} title="Поручение" />
         ),
         cell: ({ row }) => (
-          <Link
-            href={`/panel/orders/${row.original.orderId}`}
-            className="underline-offset-4 hover:underline"
-          >
-            {row.original.order.title}
-          </Link>
+          <TextCell
+            text={row.original.order.title}
+            href={linkTargets.order(row.original.orderId)}
+          />
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: colMeta("Поручение"),
+        meta: textColumnMeta("Поручение", "w-[20%]"),
       },
       {
         id: "measure",
@@ -77,14 +73,12 @@ export function AdminDashboardMatrix({
           <DataTableColumnHeader column={column} title="Мера" />
         ),
         cell: ({ row }) => (
-          <Link
-            href={`/panel/measures/${row.original.measure.id}/edit`}
-            className="font-medium hover:underline"
-          >
-            {row.original.measure.name}
-          </Link>
+          <TextCell
+            text={row.original.measure.name}
+            href={linkTargets.measure(row.original)}
+          />
         ),
-        meta: colMeta("Мера"),
+        meta: textColumnMeta("Мера", "min-w-[10rem] w-[28%]"),
       },
       {
         id: "status",
@@ -99,7 +93,7 @@ export function AdminDashboardMatrix({
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: colMeta("Статус"),
+        meta: colMeta("Статус", { cellClassName: "w-32" }),
       },
       {
         accessorKey: "dueAt",
@@ -108,10 +102,10 @@ export function AdminDashboardMatrix({
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.dueAt), "dd.MM.yyyy"),
-        meta: colMeta("Срок", { valueType: "date" }),
+        meta: colMeta("Срок", { valueType: "date", cellClassName: "w-28" }),
       },
     ],
-    []
+    [linkTargets]
   )
 
   return (
@@ -120,6 +114,7 @@ export function AdminDashboardMatrix({
       data={items}
       columnFilters={columnFilters}
       onColumnFiltersChange={onColumnFiltersChange}
+      hideOnMobileColumnIds={["organization", "order"]}
       searchPlaceholder={`Поиск по ${labels.org.toLowerCase()}, поручению, мере…`}
       globalFilterFn={(row, _columnId, filterValue) => {
         const q = String(filterValue).toLowerCase()

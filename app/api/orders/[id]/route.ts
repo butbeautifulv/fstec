@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { parseJsonBody } from "@/lib/api/parse-body"
+import { revalidatePanelOrder } from "@/lib/api/revalidate-panel"
 import { deleteOrder, getOrder, updateOrder } from "@/lib/orders"
 import { updateOrderSchema } from "@/lib/validations/orders"
 
@@ -23,14 +24,11 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     await requirePermission(Permission.ordersWrite)
     const id = Number((await params).id)
-    const parsed = updateOrderSchema.safeParse(await request.json())
-    if (!parsed.success) {
-      return handleApiError(new Error(parsed.error.issues[0]?.message))
-    }
-    const order = await updateOrder(id, parsed.data)
-    revalidatePath("/panel/orders")
-    revalidatePath(`/panel/orders/${id}`)
-    revalidatePath("/panel")
+    const body = await parseJsonBody(request, updateOrderSchema)
+    if ("error" in body) return body.error
+
+    const order = await updateOrder(id, body.data)
+    await revalidatePanelOrder(id)
     return jsonOk(order)
   } catch (error) {
     return handleApiError(error)
@@ -44,8 +42,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     const order = await getOrder(id)
     if (!order) throw new Error("NOT_FOUND")
     await deleteOrder(id)
-    revalidatePath("/panel/orders")
-    revalidatePath("/panel")
+    await revalidatePanelOrder()
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

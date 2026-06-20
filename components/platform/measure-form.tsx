@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardGrid } from "@/components/shared/form-card-grid"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -59,7 +60,7 @@ export function MeasureForm({
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <FormCardGrid>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Основное</CardTitle>
@@ -106,7 +107,7 @@ export function MeasureForm({
             </Field>
           </CardContent>
         </Card>
-      </div>
+      </FormCardGrid>
 
       <FormActionsBar error={error}>
         <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>

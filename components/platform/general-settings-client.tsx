@@ -5,6 +5,7 @@ import { useCallback, useState } from "react"
 import type { LocaleId } from "@/lib/i18n/locales"
 import { parseApiError, useCrudSubmit } from "@/components/platform/crud/use-crud-submit"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardLayout } from "@/components/shared/form-card-grid"
 import { PageHeader } from "@/components/shared/page-header"
 import { useLocale } from "@/components/locale-provider"
 import { useTimezone } from "@/components/timezone-provider"
@@ -92,21 +93,32 @@ export function GeneralSettingsClient({
         backLabel="Настройки"
       />
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Общие</CardTitle>
-          <CardDescription>
-            Головная {labels.org.toLowerCase()}, часовой пояс и язык по умолчанию
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="head-org">Головная {labels.org.toLowerCase()}</FieldLabel>
-              <Select value={headOrganizationId} onValueChange={setHeadOrganizationId}>
-                <SelectTrigger id="head-org" className="w-full max-w-md">
-                  <SelectValue placeholder={`Выберите ${labels.org.toLowerCase()}`} />
-                </SelectTrigger>
+      <FormCardLayout
+        singleCard
+        actions={
+          <FormActionsBar error={error}>
+            <Button type="button" onClick={() => void submit()} disabled={loading}>
+              {loading && <Spinner data-icon="inline-start" />}
+              {loading ? "Сохранение..." : "Сохранить"}
+            </Button>
+          </FormActionsBar>
+        }
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Общие</CardTitle>
+            <CardDescription>
+              Головная {labels.org.toLowerCase()}, часовой пояс и язык по умолчанию
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="head-org">Головная {labels.org.toLowerCase()}</FieldLabel>
+                <Select value={headOrganizationId} onValueChange={setHeadOrganizationId}>
+                  <SelectTrigger id="head-org" className="w-full">
+                    <SelectValue placeholder={`Выберите ${labels.org.toLowerCase()}`} />
+                  </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Не выбрана</SelectItem>
                   {organizations.map((org) => (
@@ -120,7 +132,7 @@ export function GeneralSettingsClient({
             <Field>
               <FieldLabel htmlFor="timezone">Часовой пояс</FieldLabel>
               <Select value={timezone} onValueChange={setTimezone}>
-                <SelectTrigger id="timezone" className="w-full max-w-md">
+                <SelectTrigger id="timezone" className="w-full">
                   <SelectValue placeholder="Часовой пояс" />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,7 +147,7 @@ export function GeneralSettingsClient({
             <Field>
               <FieldLabel htmlFor="global-locale">Язык системы</FieldLabel>
               <Select value={locale} onValueChange={(v) => setLocale(v as LocaleId)}>
-                <SelectTrigger id="global-locale" className="w-full max-w-md">
+                <SelectTrigger id="global-locale" className="w-full">
                   <SelectValue placeholder="Язык" />
                 </SelectTrigger>
                 <SelectContent>
@@ -147,16 +159,10 @@ export function GeneralSettingsClient({
                 </SelectContent>
               </Select>
             </Field>
-          </FieldGroup>
-        </CardContent>
-      </Card>
-
-      <FormActionsBar error={error}>
-        <Button type="button" onClick={() => void submit()} disabled={loading}>
-          {loading && <Spinner data-icon="inline-start" />}
-          {loading ? "Сохранение..." : "Сохранить"}
-        </Button>
-      </FormActionsBar>
+            </FieldGroup>
+          </CardContent>
+        </Card>
+      </FormCardLayout>
     </div>
   )
 }

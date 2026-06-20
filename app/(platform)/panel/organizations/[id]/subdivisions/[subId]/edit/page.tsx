@@ -11,10 +11,12 @@ export default async function EditSubdivisionPage({
 }) {
   const { id, subId } = await params
   const orgId = Number(id)
-  const org = await getOrganization(orgId)
+  const subdivisionId = Number(subId)
+  const [org, subdivision] = await Promise.all([
+    getOrganization(orgId),
+    getSubdivision(subdivisionId),
+  ])
   if (!org) notFound()
-
-  const subdivision = await getSubdivision(Number(subId))
   if (!subdivision || subdivision.organizationId !== orgId) notFound()
 
   return (

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
@@ -9,9 +8,11 @@ import { EditOrderDialog } from "@/components/platform/crud/edit-order-dialog"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { colMeta, actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import { createOrganizationColumn } from "@/lib/data-table/columns"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn, numberSortFn } from "@/lib/data-table/sort-helpers"
+import { TextCell } from "@/lib/data-table/text-cell"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
 import { labels } from "@/lib/ui/branding"
 import { format } from "date-fns"
@@ -45,33 +46,18 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
           <DataTableColumnHeader column={column} title="Название" />
         ),
         cell: ({ row }) => (
-          <Link
+          <TextCell
+            text={row.original.title}
             href={`/panel/orders/${row.original.id}`}
-            className="font-medium hover:underline"
-          >
-            {row.original.title}
-          </Link>
+          />
         ),
-        meta: colMeta("Название"),
+        meta: textColumnMeta("Название", "w-[28%]"),
       },
-      {
-        id: "organization",
-        accessorFn: (row) => row.organization.name,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={labels.org} />
-        ),
-        cell: ({ row }) => (
-          <Link
-            href={`/panel/organizations/${row.original.organization.id}`}
-            className="hover:underline"
-          >
-            {row.original.organization.name}
-          </Link>
-        ),
-        enableColumnFilter: true,
-        filterFn: facetedFilter,
-        meta: colMeta(labels.org),
-      },
+      createOrganizationColumn<Order>(
+        (row) => row.organization,
+        (org) => `/panel/organizations/${org.id}`,
+        "w-[20%]"
+      ),
       {
         id: "items",
         header: ({ column }) => (
@@ -80,7 +66,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         accessorFn: (row) => row._count.items,
         sortingFn: numberSortFn,
         cell: ({ row }) => row.original._count.items,
-        meta: colMeta("Мер"),
+        meta: colMeta("Мер", { cellClassName: "w-20" }),
       },
       {
         accessorKey: "issuedAt",
@@ -89,7 +75,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.issuedAt), "dd.MM.yyyy"),
-        meta: colMeta("Дата", { valueType: "date" }),
+        meta: colMeta("Дата", { valueType: "date", cellClassName: "w-28" }),
       },
       {
         id: "actions",

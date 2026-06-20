@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { parseApiError, useCrudSubmit } from "@/components/platform/crud/use-crud-submit"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardLayout } from "@/components/shared/form-card-grid"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -57,42 +58,47 @@ export function SubdivisionForm({
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Основное</CardTitle>
-          <CardDescription>Название подразделения для разграничения доступа</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Field>
-            <FieldLabel htmlFor="sub-name">Название</FieldLabel>
-            <Input
-              id="sub-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-            />
-          </Field>
-        </CardContent>
-      </Card>
-
-      <FormActionsBar error={error}>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => router.back()}
-          disabled={loading}
-        >
-          Отмена
-        </Button>
-        <Button
-          type="button"
-          onClick={() => void submit()}
-          disabled={loading || !name.trim()}
-        >
-          {loading && <Spinner data-icon="inline-start" />}
-          {loading ? "Сохранение..." : isEdit ? "Сохранить" : "Добавить"}
-        </Button>
-      </FormActionsBar>
+      <FormCardLayout
+        singleCard
+        actions={
+          <FormActionsBar error={error}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              disabled={loading}
+            >
+              Отмена
+            </Button>
+            <Button
+              type="button"
+              onClick={() => void submit()}
+              disabled={loading || !name.trim()}
+            >
+              {loading && <Spinner data-icon="inline-start" />}
+              {loading ? "Сохранение..." : isEdit ? "Сохранить" : "Добавить"}
+            </Button>
+          </FormActionsBar>
+        }
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Основное</CardTitle>
+            <CardDescription>Название подразделения для разграничения доступа</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Field>
+              <FieldLabel htmlFor="sub-name">Название</FieldLabel>
+              <Input
+                id="sub-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </Field>
+          </CardContent>
+        </Card>
+      </FormCardLayout>
     </div>
   )
 }

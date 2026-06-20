@@ -1,15 +1,16 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { DataTable, DataTableColumnHeader, DataTableRowLink } from "@/components/data-table"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import {
+  createOrderItemContextColumns,
+  orderItemContextSearchFields,
+} from "@/lib/data-table/columns"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { DELAY_STATUS_LABELS, DELAY_STATUS_VARIANT } from "@/lib/ui/delay-status"
-import { labels } from "@/lib/ui/branding"
-import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { DelayRequestStatus } from "@prisma/client"
 import { Badge } from "@/components/ui/badge"
@@ -32,14 +33,6 @@ export type DelayRequestTableRow = {
   }
 }
 
-function TruncatedCell({ text, className }: { text: string; className?: string }) {
-  return (
-    <span className={cn("block min-w-0 truncate", className)} title={text}>
-      {text}
-    </span>
-  )
-}
-
 export function DelayRequestsTable({
   initialRows,
 }: {
@@ -47,63 +40,13 @@ export function DelayRequestsTable({
 }) {
   const columns = useMemo<ColumnDef<DelayRequestTableRow>[]>(
     () => [
-      {
-        id: "organization",
-        accessorFn: (row) => row.orderItem.order.organization.name,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title={labels.org} />
-        ),
-        cell: ({ row }) => {
-          const org = row.original.orderItem.order.organization
-          return (
-            <Link
-              href={`/panel/organizations/${org.id}`}
-              className="block min-w-0 font-medium hover:underline"
-            >
-              <TruncatedCell text={org.name} />
-            </Link>
-          )
-        },
-        meta: colMeta(labels.org, { cellClassName: "max-w-0 w-[12%]" }),
-      },
-      {
-        id: "order",
-        accessorFn: (row) => row.orderItem.order.title,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Поручение" />
-        ),
-        cell: ({ row }) => {
-          const title = row.original.orderItem.order.title
-          return (
-            <Link
-              href={`/panel/orders/${row.original.orderItem.order.id}`}
-              className="block min-w-0 font-medium hover:underline"
-            >
-              <TruncatedCell text={title} />
-            </Link>
-          )
-        },
-        meta: colMeta("Поручение", { cellClassName: "max-w-0 w-[16%]" }),
-      },
-      {
-        id: "measure",
-        accessorFn: (row) => row.orderItem.measure.name,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Мера" />
-        ),
-        cell: ({ row }) => {
-          const name = row.original.orderItem.measure.name
-          return (
-            <Link
-              href={`/panel/measures/${row.original.orderItem.measure.id}/edit`}
-              className="block min-w-0 hover:underline"
-            >
-              <TruncatedCell text={name} />
-            </Link>
-          )
-        },
-        meta: colMeta("Мера", { cellClassName: "max-w-0 min-w-[10rem] w-[32%]" }),
-      },
+      ...createOrderItemContextColumns<DelayRequestTableRow>(
+        (row) => ({
+          organization: row.orderItem.order.organization,
+          order: row.orderItem.order,
+          measure: row.orderItem.measure,
+        })
+      ),
       {
         id: "currentDue",
         accessorFn: (row) => row.orderItem.dueAt,
@@ -161,12 +104,14 @@ export function DelayRequestsTable({
       globalFilterFn={(row, _columnId, filterValue) => {
         const q = String(filterValue).toLowerCase()
         if (!q) return true
-        return [
-          row.orderItem.order.organization.name,
-          row.orderItem.order.title,
-          row.orderItem.measure.name,
-          row.justification ?? "",
-        ]
+        return orderItemContextSearchFields(
+          {
+            organization: row.orderItem.order.organization,
+            order: row.orderItem.order,
+            measure: row.orderItem.measure,
+          },
+          [row.justification ?? ""]
+        )
           .join(" ")
           .toLowerCase()
           .includes(q)

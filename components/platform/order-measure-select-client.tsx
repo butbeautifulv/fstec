@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
-import { FormSkeleton } from "@/components/shared/form-skeleton"
+import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 import { MeasureSelectTable } from "@/components/platform/measure-select-table"
 import {
   useOrderCreateDraft,
@@ -13,16 +13,29 @@ import {
 import { PageHeader } from "@/components/shared/page-header"
 import { Button } from "@/components/ui/button"
 
-export function OrderMeasureSelectClient() {
+type OrderMeasureSelectClientProps = {
+  initialMeasures?: OrderCreateMeasure[]
+}
+
+export function OrderMeasureSelectClient({
+  initialMeasures,
+}: OrderMeasureSelectClientProps = {}) {
   const router = useRouter()
   const { draft, selectedIds, setSelectedMeasureIds, setMeasuresCache } =
     useOrderCreateDraft()
   const hasCache = draft.measuresCache.length > 0
-  const [measures, setMeasures] = useState<OrderCreateMeasure[]>(draft.measuresCache)
-  const [loading, setLoading] = useState(!hasCache)
+  const hasInitialMeasures = initialMeasures != null && initialMeasures.length > 0
+  const [measures, setMeasures] = useState<OrderCreateMeasure[]>(
+    hasCache ? draft.measuresCache : (initialMeasures ?? [])
+  )
+  const [loading, setLoading] = useState(!hasCache && !hasInitialMeasures)
 
   useEffect(() => {
     if (hasCache) return
+    if (hasInitialMeasures) {
+      setMeasuresCache(initialMeasures)
+      return
+    }
     let cancelled = false
     fetch("/api/measures")
       .then((r) => r.json())
@@ -35,13 +48,13 @@ export function OrderMeasureSelectClient() {
     return () => {
       cancelled = true
     }
-  }, [hasCache, setMeasuresCache])
+  }, [hasCache, hasInitialMeasures, initialMeasures, setMeasuresCache])
 
   function handleSelectionChange(next: Set<number>) {
     setSelectedMeasureIds([...next])
   }
 
-  if (loading) return <FormSkeleton fields={3} />
+  if (loading) return <TablePageSkeleton columns={6} />
 
   return (
     <div className="flex flex-col gap-6">

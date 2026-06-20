@@ -1,5 +1,5 @@
-import { PageSkeleton } from "@/components/platform/page-skeleton"
+import { RouteSkeleton } from "@/components/shared/skeletons/route-skeleton"
 
 export default function AdminLoading() {
-  return <PageSkeleton />
+  return <RouteSkeleton variant="dashboard" showReportLink />
 }

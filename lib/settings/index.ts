@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { prisma } from "@/lib/db"
 import { DEFAULT_LOCALE } from "@/lib/i18n/locales"
 import { DEFAULT_TIMEZONE } from "@/lib/datetime/timezones"
@@ -60,7 +61,11 @@ export async function updateAppSettings(data: UpdateSettingsInput) {
   })
 }
 
-export async function getHeadOrganizationId() {
-  const settings = await getAppSettings()
-  return settings.headOrganizationId
-}
+export const getHeadOrganizationId = cache(async () => {
+  await ensureAppSettings()
+  const settings = await prisma.appSettings.findUnique({
+    where: { id: SETTINGS_ID },
+    select: { headOrganizationId: true },
+  })
+  return settings?.headOrganizationId ?? null
+})

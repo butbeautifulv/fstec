@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/db"
 import {
   getDisplayStatusName,
   isOrderItemOverdue,
@@ -6,6 +5,8 @@ import {
   STATUS_DISPLAY_ORDER,
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
+import type { ScopedDashboardItem } from "@/lib/dashboard/fetch-scoped-items"
+import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 
 export type StatusDistribution = { status: string; count: number; fill: string }
 
@@ -41,25 +42,16 @@ const CHART_COLORS = [
   "var(--chart-5)",
 ]
 
-type ItemRow = Awaited<ReturnType<typeof fetchScopedItems>>[number]
+type ItemRow = ScopedDashboardItem
 
-async function fetchScopedItems(scope: DashboardScope) {
-  return prisma.orderItem.findMany({
-    where: {
-      ...(scope.type === "organization" && {
-        order: { organizationId: scope.organizationId },
-      }),
-      ...(scope.type === "subdivision" && {
-        order: { organizationId: scope.organizationId },
-        subdivisionId: scope.subdivisionId,
-      }),
-    },
-    include: {
-      status: true,
-      subdivision: true,
-      order: { include: { organization: true } },
-    },
-  })
+export function buildScopedStatsFromItems(
+  scope: DashboardScope,
+  items: ItemRow[],
+  now: Date
+): ScopedDashboardStats {
+  if (scope.type === "global") return buildGlobalStats(items, now)
+  if (scope.type === "organization") return buildOrganizationStats(items, now)
+  return buildSubdivisionStats(items, now)
 }
 
 function buildStatusDistribution(items: ItemRow[], now: Date): StatusDistribution[] {
@@ -206,12 +198,8 @@ function buildSubdivisionStats(items: ItemRow[], now: Date): ScopedDashboardStat
 export async function getScopedDashboardStats(
   scope: DashboardScope
 ): Promise<ScopedDashboardStats> {
-  const items = await fetchScopedItems(scope)
-  const now = new Date()
-
-  if (scope.type === "global") return buildGlobalStats(items, now)
-  if (scope.type === "organization") return buildOrganizationStats(items, now)
-  return buildSubdivisionStats(items, now)
+  const { stats } = await getScopedDashboard(scope)
+  return stats
 }
 
 /** @deprecated Use getScopedDashboardStats({ type: "global" }) */

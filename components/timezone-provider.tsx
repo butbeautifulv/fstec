@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react"
 import { DEFAULT_TIMEZONE, TIMEZONE_OPTIONS } from "@/lib/datetime/timezones"
+import { setFilterTimeZone } from "@/lib/datetime/filter-timezone"
 
 type TimezoneContextValue = {
   timeZone: string
@@ -35,9 +36,13 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
         if (cancelled) return
         const tz = data.timezone && isValidTimezone(data.timezone) ? data.timezone : DEFAULT_TIMEZONE
         setTimeZoneState(tz)
+        setFilterTimeZone(tz)
       })
       .catch(() => {
-        if (!cancelled) setTimeZoneState(DEFAULT_TIMEZONE)
+        if (!cancelled) {
+          setTimeZoneState(DEFAULT_TIMEZONE)
+          setFilterTimeZone(DEFAULT_TIMEZONE)
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false)
@@ -48,7 +53,10 @@ export function TimezoneProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setTimeZone = useCallback((next: string) => {
-    if (isValidTimezone(next)) setTimeZoneState(next)
+    if (isValidTimezone(next)) {
+      setTimeZoneState(next)
+      setFilterTimeZone(next)
+    }
   }, [])
 
   const value = useMemo(

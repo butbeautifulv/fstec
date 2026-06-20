@@ -87,7 +87,7 @@ export function DelayRequestDetailClient({
         backLabel="Переносы"
         actions={
           delay.status === DelayRequestStatus.PENDING ? (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button disabled={processing} onClick={() => void reviewDelay("approve")}>
                 Одобрить
               </Button>

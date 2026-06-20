@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useState } from "react"
 import { parseApiError, useCrudSubmit } from "@/components/platform/crud/use-crud-submit"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardGrid } from "@/components/shared/form-card-grid"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -53,7 +54,7 @@ export function OrganizationForm({ organization }: { organization?: Org }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
+      <FormCardGrid>
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Основное</CardTitle>
@@ -88,7 +89,7 @@ export function OrganizationForm({ organization }: { organization?: Org }) {
             </Field>
           </CardContent>
         </Card>
-      </div>
+      </FormCardGrid>
 
       <FormActionsBar error={error}>
         <Button

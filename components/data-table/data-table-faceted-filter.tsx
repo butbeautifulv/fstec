@@ -20,6 +20,7 @@ import {
   formatFilterDisplayValue,
   normalizeFilterValue,
 } from "@/lib/data-table/format-filter-value"
+import { OverflowText } from "@/components/shared/overflow-text"
 import { cn } from "@/lib/utils"
 
 type DataTableFacetedFilterProps<TData, TValue> = {
@@ -36,15 +37,23 @@ export function DataTableFacetedFilter<TData, TValue>({
   const facets = column.getFacetedUniqueValues()
   const selectedValues = new Set((column.getFilterValue() as string[]) ?? [])
 
-  const options = Array.from(facets.keys())
-    .map((value) => {
-      const raw = normalizeFilterValue(value)
-      return {
-        label: formatFilterDisplayValue(value, meta, timeZone),
-        value: raw,
-        count: facets.get(value) ?? 0,
-      }
-    })
+  const options = Array.from(facets.entries())
+    .reduce(
+      (acc, [value, count]) => {
+        const raw = normalizeFilterValue(value, meta, timeZone)
+        const label = formatFilterDisplayValue(value, meta, timeZone)
+        const existing = acc.get(raw)
+        if (existing) {
+          existing.count += count ?? 0
+        } else {
+          acc.set(raw, { label, count: count ?? 0 })
+        }
+        return acc
+      },
+      new Map<string, { label: string; count: number }>()
+    )
+  const sortedOptions = Array.from(options.entries())
+    .map(([value, { label, count }]) => ({ value, label, count }))
     .sort((a, b) => a.label.localeCompare(b.label, "ru"))
 
   const filterTitle = title ?? meta?.title ?? column.id
@@ -52,7 +61,7 @@ export function DataTableFacetedFilter<TData, TValue>({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative size-7 shrink-0">
+        <Button variant="ghost" size="icon" className="relative size-7 shrink-0 max-sm:size-6">
           <ListFilterIcon className="size-3.5" />
           {selectedValues.size > 0 && (
             <Badge
@@ -71,7 +80,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           <CommandList>
             <CommandEmpty>Нет значений</CommandEmpty>
             <CommandGroup>
-              {options.map((option) => {
+              {sortedOptions.map((option) => {
                 const isSelected = selectedValues.has(option.value)
                 return (
                   <CommandItem
@@ -84,7 +93,9 @@ export function DataTableFacetedFilter<TData, TValue>({
                     }}
                   >
                     <Checkbox checked={isSelected} className="pointer-events-none" />
-                    <span className="flex-1 truncate">{option.label}</span>
+                    <OverflowText className="min-w-0 flex-1">
+                      {option.label}
+                    </OverflowText>
                     <span className="text-muted-foreground tabular-nums">{option.count}</span>
                     <CheckIcon
                       className={cn("size-4", isSelected ? "opacity-100" : "opacity-0")}
@@ -94,7 +105,7 @@ export function DataTableFacetedFilter<TData, TValue>({
               })}
             </CommandGroup>
           </CommandList>
-          {options.length > 0 && (
+          {sortedOptions.length > 0 && (
             <>
               <Separator />
               <div className="flex items-center gap-2 p-2">
@@ -103,7 +114,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                   size="sm"
                   className="h-8 flex-1"
                   onClick={() =>
-                    column.setFilterValue(options.map((option) => option.value))
+                    column.setFilterValue(sortedOptions.map((option) => option.value))
                   }
                 >
                   Выбрать все

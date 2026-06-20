@@ -1,6 +1,9 @@
+import { Suspense } from "react"
 import { notFound } from "next/navigation"
+import { PublicNavSidebarSection } from "@/components/public/public-nav-sidebar-section"
 import { PublicShell } from "@/components/public/public-shell"
-import { validateAccessToken } from "@/lib/public/validate-token"
+import { PublicSidebarNavSkeleton } from "@/components/public/public-sidebar-nav-skeleton"
+import { validateAccessLink } from "@/lib/public/validate-token"
 
 type Params = { params: Promise<{ token: string }> }
 
@@ -12,7 +15,7 @@ export default async function PublicTokenLayout({
   params: Params["params"]
 }) {
   const { token } = await params
-  const ctx = await validateAccessToken(token)
+  const ctx = await validateAccessLink(token)
   if (!ctx) notFound()
 
   return (
@@ -20,7 +23,11 @@ export default async function PublicTokenLayout({
       token={token}
       organizationName={ctx.organization.name}
       subdivisionName={ctx.subdivision?.name ?? null}
-      navOrders={ctx.orders}
+      navContent={
+        <Suspense fallback={<PublicSidebarNavSkeleton />}>
+          <PublicNavSidebarSection token={token} />
+        </Suspense>
+      }
     >
       {children}
     </PublicShell>

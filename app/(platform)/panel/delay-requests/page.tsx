@@ -1,9 +1,9 @@
 import Link from "next/link"
-import { DelayRequestsTable } from "@/components/platform/delay-requests-table"
+import { DelayRequestsTableSuspense } from "@/components/platform/delay-requests-table-section"
 import { PageHeader } from "@/components/shared/page-header"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
-import { countPendingDelayRequests, listDelayRequests } from "@/lib/delays"
+import { countPendingDelayRequests } from "@/lib/delays"
 import { DelayRequestStatus } from "@prisma/client"
 
 export default async function DelayRequestsPage({
@@ -17,12 +17,7 @@ export default async function DelayRequestsPage({
       ? (params.status as DelayRequestStatus)
       : undefined
 
-  const [rows, pendingCount] = await Promise.all([
-    listDelayRequests(statusFilter),
-    countPendingDelayRequests(),
-  ])
-
-  const serialized = JSON.parse(JSON.stringify(rows))
+  const pendingCount = await countPendingDelayRequests()
 
   return (
     <div className="flex flex-col gap-6">
@@ -71,7 +66,7 @@ export default async function DelayRequestsPage({
         </Alert>
       )}
 
-      <DelayRequestsTable initialRows={serialized} />
+      <DelayRequestsTableSuspense statusFilter={statusFilter} />
     </div>
   )
 }

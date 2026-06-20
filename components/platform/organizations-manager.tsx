@@ -7,9 +7,11 @@ import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-al
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { PageHeader } from "@/components/shared/page-header"
+import { OverflowText } from "@/components/shared/overflow-text"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { colMeta, actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
+import { TextCell } from "@/lib/data-table/text-cell"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
@@ -30,17 +32,13 @@ function SubdivisionsCell({ subdivisions }: { subdivisions: Org["subdivisions"] 
 
   if (subdivisions.length >= 3) {
     return (
-      <span className="block truncate" title={fullLabel}>
-        {subdivisions.length} подразделений
-      </span>
+      <OverflowText title={fullLabel}>
+        {`${subdivisions.length} подразделений`}
+      </OverflowText>
     )
   }
 
-  return (
-    <span className="block truncate" title={fullLabel}>
-      {fullLabel}
-    </span>
-  )
+  return <OverflowText>{fullLabel}</OverflowText>
 }
 
 export function OrganizationsManager({
@@ -67,19 +65,20 @@ export function OrganizationsManager({
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
         cell: ({ row }) => (
-          <span className="flex items-center gap-2">
-            <Link
+          <span className="flex min-w-0 items-center gap-2">
+            <TextCell
+              text={row.original.name}
               href={`/panel/organizations/${row.original.id}`}
-              className="font-medium hover:underline"
-            >
-              {row.original.name}
-            </Link>
+              className="min-w-0 flex-1"
+            />
             {row.original.id === headOrganizationId && (
-              <Badge variant="secondary">Головная</Badge>
+              <Badge variant="secondary" className="shrink-0">
+                Головная
+              </Badge>
             )}
           </span>
         ),
-        meta: colMeta(labels.org),
+        meta: textColumnMeta(labels.org, "w-[28%]"),
       },
       {
         accessorKey: "shortCode",
@@ -87,7 +86,7 @@ export function OrganizationsManager({
           <DataTableColumnHeader column={column} title="Код" />
         ),
         cell: ({ row }) => row.original.shortCode ?? "—",
-        meta: colMeta("Код"),
+        meta: colMeta("Код", { cellClassName: "w-24" }),
       },
       {
         id: "subdivisions",

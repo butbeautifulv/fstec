@@ -10,8 +10,14 @@ function createPrismaClient() {
   })
 }
 
+const REQUIRED_PRISMA_DELEGATES = [
+  "appSettings",
+  "reportLink",
+  "responseAttachment",
+] as const
+
 function isStaleClient(client: PrismaClient) {
-  return !("appSettings" in client)
+  return REQUIRED_PRISMA_DELEGATES.some((delegate) => !(delegate in client))
 }
 
 function getPrismaClient() {

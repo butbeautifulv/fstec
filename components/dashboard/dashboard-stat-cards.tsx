@@ -31,27 +31,41 @@ function countForStatus(
   return distribution.find((row) => row.status === status)?.count ?? 0
 }
 
-const CARD_META: Record<
-  (typeof STATUS_DISPLAY_ORDER)[number],
-  { hint: string; icon: LucideIcon; badge?: (value: number, total: number) => string | null }
-> = {
+function formatPercentBadge(value: number, total: number): string | null {
+  return total > 0 ? `${Math.round((value / total) * 100)}%` : null
+}
+
+type CardMeta = {
+  hint: string
+  icon: LucideIcon
+  badge?: (value: number, total: number) => string | null
+  badgeVariant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link"
+}
+
+const CARD_META: Record<(typeof STATUS_DISPLAY_ORDER)[number], CardMeta> = {
   [WORKFLOW_STATUS.NOT_STARTED]: {
     hint: "Ожидают начала работы",
     icon: ClockIcon,
+    badge: formatPercentBadge,
+    badgeVariant: "outline",
   },
   [WORKFLOW_STATUS.IN_PROGRESS]: {
     hint: "Активное исполнение",
     icon: LoaderIcon,
+    badge: formatPercentBadge,
+    badgeVariant: "outline",
   },
   [WORKFLOW_STATUS.COMPLETED]: {
     hint: "Завершённые меры",
     icon: CheckCircle2Icon,
-    badge: (value, total) => (total > 0 ? `${Math.round((value / total) * 100)}%` : null),
+    badge: formatPercentBadge,
+    badgeVariant: "outline",
   },
   [OVERDUE_LABEL]: {
     hint: "Срок прошёл, не завершено",
     icon: AlertTriangleIcon,
-    badge: (value) => (value > 0 ? "Требует внимания" : null),
+    badge: formatPercentBadge,
+    badgeVariant: "destructive",
   },
 }
 
@@ -72,11 +86,11 @@ export function DashboardStatCards({
     const Icon = meta.icon
     const badge = meta.badge?.(value, total) ?? null
 
-    return { status, value, hint: meta.hint, Icon, badge }
+    return { status, value, hint: meta.hint, Icon, badge, badgeVariant: meta.badgeVariant }
   })
 
   return (
-    <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 @2xl/main:grid-cols-2 @4xl/main:grid-cols-4">
       {cards.map((card) => {
         const interactive = Boolean(onStatusClick)
         const isActive = interactive && activeStatus === card.status
@@ -90,7 +104,7 @@ export function DashboardStatCards({
               </CardTitle>
               {card.badge && (
                 <CardAction>
-                  <Badge variant="outline">{card.badge}</Badge>
+                  <Badge variant={card.badgeVariant ?? "outline"}>{card.badge}</Badge>
                 </CardAction>
               )}
             </CardHeader>

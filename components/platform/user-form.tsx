@@ -5,8 +5,9 @@ import { useCallback, useMemo, useState } from "react"
 import type { UserRole } from "@prisma/client"
 import { parseApiError, useCrudSubmit } from "@/components/platform/crud/use-crud-submit"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardGrid } from "@/components/shared/form-card-grid"
 import { PasswordFieldsGroup } from "@/components/platform/password-fields-group"
-import { useAdminMe } from "@/components/platform/use-platform-user"
+import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -45,7 +46,7 @@ export function UserForm({ user }: { user?: User }) {
   const [passwordConfirm, setPasswordConfirm] = useState("")
   const [role, setRole] = useState<UserRole>(user?.role ?? "OPERATOR")
   const [mustChangePassword, setMustChangePassword] = useState(false)
-  const { me } = useAdminMe()
+  const { me } = usePlatformUser()
 
   const isSelf = isEdit && me != null && me.id === user.id
 
@@ -113,9 +114,10 @@ export function UserForm({ user }: { user?: User }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Учётная запись</CardTitle>
+      <FormCardGrid>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Учётная запись</CardTitle>
           <CardDescription>
             {isEdit
               ? "Изменение данных пользователя админ-панели"
@@ -168,13 +170,13 @@ export function UserForm({ user }: { user?: User }) {
             </Field>
           </FieldGroup>
         </CardContent>
-      </Card>
+        </Card>
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">
-            {isEdit ? "Новый пароль" : "Пароль"}
-          </CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {isEdit ? "Новый пароль" : "Пароль"}
+            </CardTitle>
           <CardDescription>
             {isEdit
               ? "Заполните только если нужно сменить пароль"
@@ -193,7 +195,8 @@ export function UserForm({ user }: { user?: User }) {
             onMustChangePasswordChange={setMustChangePassword}
           />
         </CardContent>
-      </Card>
+        </Card>
+      </FormCardGrid>
 
       <FormActionsBar error={error}>
         <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>

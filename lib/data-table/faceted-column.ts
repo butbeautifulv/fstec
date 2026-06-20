@@ -6,7 +6,9 @@ export const FACETED_COLUMN_META = { faceted: true } as const
 export const facetedFilterFn: FilterFn<unknown> = (row, columnId, filterValue) => {
   const values = filterValue as string[] | undefined
   if (!values?.length) return true
-  return values.includes(normalizeFilterValue(row.getValue(columnId)))
+  const cell = row.getAllCells().find((c) => c.column.id === columnId)
+  const meta = cell?.column.columnDef.meta
+  return values.includes(normalizeFilterValue(row.getValue(columnId), meta))
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

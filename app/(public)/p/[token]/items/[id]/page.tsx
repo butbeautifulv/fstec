@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { PublicItemDetail } from "@/components/public/public-item-detail"
-import { getOrderItemForToken } from "@/lib/public/validate-token"
+import { getPublicOrderItem } from "@/lib/public/validate-token"
+import { serializePublicStatuses } from "@/lib/public/serialize-public"
 import { getWorkflowStatuses } from "@/lib/statuses"
 
 type Params = { params: Promise<{ token: string; id: string }> }
@@ -11,23 +12,37 @@ export default async function PublicItemPage({ params }: Params) {
 
   let ctx
   try {
-    ctx = await getOrderItemForToken(token, orderItemId)
+    const [itemCtx, statuses] = await Promise.all([
+      getPublicOrderItem(token, orderItemId),
+      getWorkflowStatuses(),
+    ])
+    ctx = { ...itemCtx, statuses }
   } catch {
     notFound()
   }
 
-  const statuses = await getWorkflowStatuses()
-
   const item = ctx.item
-  const order = ctx.orders.find((o) => o.items.some((i) => i.id === item.id))
+  const latest = item.responses[0]
 
   return (
     <PublicItemDetail
       token={token}
-      organizationName={ctx.link.organization.name}
-      subdivisionName={ctx.link.subdivision?.name ?? null}
-      statuses={statuses}
-      orderId={order?.id ?? item.orderId}
+      organizationName={ctx.organization.name}
+      subdivisionName={ctx.subdivision?.name ?? null}
+      statuses={serializePublicStatuses(ctx.statuses)}
+      orderId={item.order.id}
+      latestResponse={
+        latest
+          ? {
+              reviewStatus: latest.reviewStatus,
+              reviewNote: latest.reviewNote,
+              result: latest.result,
+              commentary: latest.commentary,
+              submittedAt: latest.submittedAt.toISOString(),
+              submittedByLabel: latest.submittedByLabel,
+            }
+          : null
+      }
       item={{
         id: item.id,
         dueAt: item.dueAt.toISOString(),
@@ -37,7 +52,7 @@ export default async function PublicItemPage({ params }: Params) {
           description: item.measure.description,
         },
         status: { id: item.status.id, name: item.status.name },
-        orderTitle: order?.title ?? "Поручение",
+        orderTitle: item.order.title,
       }}
     />
   )

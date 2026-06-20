@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation"
 import { PublicDashboardPage } from "@/components/public/public-dashboard-page"
-import { getScopedDashboardStats, scopeFromAccessLink } from "@/lib/dashboard/stats"
-import { mapOrdersToPublicItems } from "@/lib/public/map-public-items"
-import { validateAccessToken } from "@/lib/public/validate-token"
+import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
+import { scopeFromAccessLink } from "@/lib/dashboard/stats"
+import { mapSerializedMatrixToPublicItems } from "@/lib/public/map-public-items"
+import { serializePublicStatuses } from "@/lib/public/serialize-public"
+import { validateAccessLink } from "@/lib/public/validate-token"
 import { getWorkflowStatuses } from "@/lib/statuses"
 
 type Params = { params: Promise<{ token: string }> }
@@ -18,25 +20,25 @@ export default async function PublicLinkPage({
   const { overdue: overdueParam } = await searchParams
   const overdueOnly = overdueParam === "1"
 
-  const ctx = await validateAccessToken(token)
-  if (!ctx) notFound()
+  const linkCtx = await validateAccessLink(token)
+  if (!linkCtx) notFound()
 
-  const scope = scopeFromAccessLink(ctx.link)
-  const [stats, statuses] = await Promise.all([
-    getScopedDashboardStats(scope),
+  const scope = scopeFromAccessLink(linkCtx.link)
+  const [dashboard, statuses] = await Promise.all([
+    getCachedScopedDashboard(scope),
     getWorkflowStatuses(),
   ])
 
-  const flatItems = mapOrdersToPublicItems(ctx.orders)
+  const flatItems = mapSerializedMatrixToPublicItems(dashboard.items)
 
   return (
     <PublicDashboardPage
       token={token}
-      organizationName={ctx.organization.name}
-      subdivisionName={ctx.subdivision?.name ?? null}
-      stats={JSON.parse(JSON.stringify(stats))}
-      items={JSON.parse(JSON.stringify(flatItems))}
-      statuses={JSON.parse(JSON.stringify(statuses))}
+      organizationName={linkCtx.organization.name}
+      subdivisionName={linkCtx.subdivision?.name ?? null}
+      stats={dashboard.stats}
+      items={flatItems}
+      statuses={serializePublicStatuses(statuses)}
       overdueOnly={overdueOnly}
       scope={scope.type === "subdivision" ? "subdivision" : "organization"}
       showSubdivisionColumn={scope.type === "organization"}

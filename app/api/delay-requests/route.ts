@@ -5,6 +5,7 @@ import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { countPendingDelayRequests, listDelayRequests } from "@/lib/delays"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
 
 export async function GET(request: Request) {
   try {
@@ -69,6 +70,7 @@ export async function POST(request: Request) {
       })
     }
 
+    await invalidateDashboardOnMutation()
     revalidatePath("/panel")
     revalidatePath("/panel/delay-requests")
     revalidatePath(`/panel/orders/${delay.orderItem.orderId}`)

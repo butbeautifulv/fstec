@@ -1,3 +1,5 @@
+import type { DashboardMatrixItem } from "@/lib/dashboard/build-matrix"
+import type { SerializedMatrixItem } from "@/lib/dashboard/serialize-dashboard"
 import type { PublicItem } from "@/components/public/public-measures-table"
 
 type OrderItemInput = {
@@ -46,4 +48,39 @@ export function mapOrdersToPublicItems(
   orders: { id: number; title: string; issuedAt: Date; items: OrderItemInput[] }[]
 ): PublicItem[] {
   return orders.flatMap((order) => mapOrderItemsToPublicItems(order, order.items))
+}
+
+export function mapMatrixItemToPublicItem(
+  item: DashboardMatrixItem | SerializedMatrixItem
+): PublicItem {
+  const dueAt = typeof item.dueAt === "string" ? item.dueAt : item.dueAt.toISOString()
+  const issuedAt =
+    typeof item.order.issuedAt === "string"
+      ? item.order.issuedAt
+      : item.order.issuedAt.toISOString()
+
+  return {
+    id: item.id,
+    orderId: item.orderId,
+    dueAt,
+    measure: {
+      name: item.measure.name,
+      code: item.measure.code,
+      description: item.measure.description,
+    },
+    status: {
+      id: item.status.id,
+      name: item.status.name,
+      isTerminal: item.status.isTerminal,
+    },
+    orderTitle: item.order.title,
+    orderIssuedAt: issuedAt,
+    subdivisionName: item.subdivision?.name ?? null,
+  }
+}
+
+export function mapSerializedMatrixToPublicItems(
+  items: SerializedMatrixItem[]
+): PublicItem[] {
+  return items.map(mapMatrixItemToPublicItem)
 }

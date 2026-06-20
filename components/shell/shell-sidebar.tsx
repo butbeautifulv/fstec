@@ -15,6 +15,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { OverflowText } from "@/components/shared/overflow-text"
 import { ShellBrand } from "@/components/shell/shell-brand"
 import { ShellNavMain, type ShellNavMainItem } from "@/components/shell/shell-nav-main"
 import Link from "next/link"
@@ -28,6 +29,7 @@ export type ShellSidebarLink = {
 export function ShellSidebar({
   brand,
   navItems,
+  navContent,
   groupLabel,
   footer,
   primaryAction,
@@ -42,7 +44,8 @@ export function ShellSidebar({
     icon: LucideIcon
     logo?: React.ReactNode
   }
-  navItems: ShellNavMainItem[]
+  navItems?: ShellNavMainItem[]
+  navContent?: React.ReactNode
   groupLabel: string
   footer?: React.ReactNode
   primaryAction?: { href: string; label: string; icon: LucideIcon }
@@ -73,7 +76,7 @@ export function ShellSidebar({
               >
                 <Link href={primaryAction.href}>
                   <PrimaryIcon />
-                  <span className="truncate">{primaryAction.label}</span>
+                  <OverflowText className="min-w-0 flex-1">{primaryAction.label}</OverflowText>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -83,7 +86,7 @@ export function ShellSidebar({
       <SidebarContent className="flex min-h-0 flex-col overflow-hidden">
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-2 pb-2">
-            <ShellNavMain groupLabel={groupLabel} items={navItems} />
+            {navContent ?? <ShellNavMain groupLabel={groupLabel} items={navItems ?? []} />}
             {secondaryLinks && secondaryLinks.length > 0 && (
               <SidebarGroup>
                 <SidebarGroupLabel>Дополнительно</SidebarGroupLabel>
@@ -94,9 +97,9 @@ export function ShellSidebar({
                       return (
                         <SidebarMenuItem key={link.href}>
                           <SidebarMenuButton asChild tooltip={link.label}>
-                            <Link href={link.href}>
+                <Link href={link.href} className="min-w-0">
                               <Icon />
-                              <span>{link.label}</span>
+                              <OverflowText className="min-w-0 flex-1">{link.label}</OverflowText>
                             </Link>
                           </SidebarMenuButton>
                         </SidebarMenuItem>

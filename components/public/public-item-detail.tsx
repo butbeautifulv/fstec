@@ -1,12 +1,21 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ResponseReviewStatus } from "@prisma/client"
+import { ItemDetailHeaderActions } from "@/components/shared/item-detail/item-detail-header-actions"
+import { ItemDueStatusCard } from "@/components/shared/item-detail/item-due-status-card"
+import { ItemMeasureInfoCard } from "@/components/shared/item-detail/item-measure-info-card"
 import { PageHeader } from "@/components/shared/page-header"
+import {
+  CommentaryAttachmentsField,
+  useCommentaryAttachmentsState,
+} from "@/components/shared/commentary-attachments-field"
 import { DelayRequestDialog } from "@/components/public/delay-request-dialog"
 import {
   usePublicBreadcrumbLabel,
   usePublicBreadcrumbMiddle,
 } from "@/components/public/public-breadcrumb"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -29,10 +38,17 @@ import {
   isOrderItemOverdue,
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
-import { format } from "date-fns"
-import { CalendarClockIcon, ClipboardListIcon } from "lucide-react"
 
 type PublicStatus = { id: number; name: string; isTerminal: boolean }
+
+type LatestResponse = {
+  reviewStatus: ResponseReviewStatus
+  reviewNote: string | null
+  result: string
+  commentary: string | null
+  submittedAt: string
+  submittedByLabel: string | null
+}
 
 type PublicItem = {
   id: number
@@ -49,6 +65,7 @@ export function PublicItemDetail({
   statuses,
   organizationName,
   subdivisionName,
+  latestResponse: initialLatestResponse,
 }: {
   token: string
   item: PublicItem
@@ -56,6 +73,7 @@ export function PublicItemDetail({
   statuses: PublicStatus[]
   organizationName: string
   subdivisionName: string | null
+  latestResponse: LatestResponse | null
 }) {
   const statusMeta = statuses.find((s) => s.id === initialItem.status.id)
   const [item, setItem] = useState({
@@ -65,17 +83,22 @@ export function PublicItemDetail({
       isTerminal: statusMeta?.isTerminal ?? initialItem.status.name === WORKFLOW_STATUS.COMPLETED,
     },
   })
+  const [latestResponse, setLatestResponse] = useState(initialLatestResponse)
   const [submitter, setSubmitter] = useState("")
   const [result, setResult] = useState("")
+  const [commentaryState, setCommentaryState] = useCommentaryAttachmentsState()
   const [delayOpen, setDelayOpen] = useState(false)
   const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
   const isOverdue = isOrderItemOverdue(item)
-  const displayStatus = getDisplayStatusName(item)
   const completed = isCompleted(item.status)
   const canStart = isNotStarted(item.status.name)
-  const canSubmitReport = isInProgress(item.status.name) && !completed
+  const isPendingReview = latestResponse?.reviewStatus === ResponseReviewStatus.PENDING
+  const isRejected = latestResponse?.reviewStatus === ResponseReviewStatus.REJECTED
+  const canSubmitReport =
+    isInProgress(item.status.name) && !completed && !isPendingReview
+  const displayStatus = isPendingReview ? "На проверке" : getDisplayStatusName(item)
 
   const middleCrumbs = useMemo(
     () => [
@@ -124,23 +147,25 @@ export function PublicItemDetail({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         result,
-        commentary: null,
+        commentary: commentaryState.commentary.trim() || null,
         submittedByLabel: submitter || null,
+        attachmentIds: commentaryState.attachmentIds,
       }),
     })
     setSubmitting(false)
     if (res.ok) {
       const data = await res.json()
-      setItem((prev) => ({
-        ...prev,
-        status: {
-          id: data.item.status.id,
-          name: data.item.status.name,
-          isTerminal: data.item.status.isTerminal,
-        },
-      }))
+      setLatestResponse({
+        reviewStatus: ResponseReviewStatus.PENDING,
+        reviewNote: null,
+        result: data.response.result,
+        commentary: data.response.commentary,
+        submittedAt: data.response.submittedAt,
+        submittedByLabel: data.response.submittedByLabel,
+      })
       setResult("")
-      notify.success("Отчёт отправлен, мера завершена")
+      setCommentaryState({ commentary: "", attachmentIds: [] })
+      notify.success("Отчёт отправлен, ожидает проверки")
     } else {
       const data = await res.json().catch(() => null)
       notify.error(data?.error ?? "Не удалось отправить отчёт")
@@ -153,81 +178,68 @@ export function PublicItemDetail({
         title={item.measure.name}
         description={`${organizationName}${subdivisionName ? ` · ${subdivisionName}` : ""}`}
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {item.measure.code && (
-              <Badge variant="secondary" className="font-mono">
-                {item.measure.code}
-              </Badge>
-            )}
-            <Badge variant="outline">
-              <ClipboardListIcon data-icon="inline-start" />
-              {item.orderTitle}
-            </Badge>
-          </div>
+          <ItemDetailHeaderActions
+            code={item.measure.code}
+            orderTitle={item.orderTitle}
+          />
         }
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">О мере</CardTitle>
-            <CardDescription>Описание и контекст поручения</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {item.measure.description ? (
-              <p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                {item.measure.description}
-              </p>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Описание меры не указано администратором.
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{organizationName}</Badge>
-              {subdivisionName && <Badge variant="outline">{subdivisionName}</Badge>}
-            </div>
-          </CardContent>
-        </Card>
+        <ItemMeasureInfoCard
+          description={item.measure.description}
+          organizationName={organizationName}
+          subdivisionName={subdivisionName}
+        />
 
-        <Card className={isOverdue ? "border-destructive/40 bg-destructive/5" : ""}>
-          <CardHeader>
-            <CardTitle className="text-base">Срок и статус</CardTitle>
-            <CardDescription>Текущее состояние исполнения</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <span className="text-3xl font-medium tabular-nums">
-                {format(new Date(item.dueAt), "dd.MM.yyyy")}
-              </span>
-              <Badge variant={isOverdue ? "destructive" : completed ? "default" : "secondary"}>
-                {displayStatus}
-              </Badge>
-            </div>
-            {canStart && (
-              <Button onClick={startWork} disabled={starting} className="w-full sm:w-auto">
-                Взять в работу
-              </Button>
-            )}
-          </CardContent>
-          {!completed && (
-            <CardFooter>
+        <ItemDueStatusCard
+          dueAt={item.dueAt}
+          displayStatus={displayStatus}
+          isOverdue={isOverdue}
+          statusVariant={
+            isOverdue
+              ? "destructive"
+              : isPendingReview
+                ? "destructive"
+                : completed
+                  ? "default"
+                  : "secondary"
+          }
+          footer={
+            !completed ? (
               <Button variant="outline" size="sm" onClick={() => setDelayOpen(true)}>
                 <CalendarClockIcon data-icon="inline-start" />
                 Запросить перенос
               </Button>
-            </CardFooter>
+            ) : undefined
+          }
+        >
+          {canStart && (
+            <Button onClick={startWork} disabled={starting} className="w-full sm:w-auto">
+              Взять в работу
+            </Button>
           )}
-        </Card>
+        </ItemDueStatusCard>
       </div>
+
+      {isRejected && latestResponse?.reviewNote && (
+        <Alert variant="destructive">
+          <AlertTitle>Отчёт не принят</AlertTitle>
+          <AlertDescription className="whitespace-pre-wrap">
+            {latestResponse.reviewNote}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Card
         className={
           completed
             ? "border-primary/30 bg-primary/5"
-            : canSubmitReport
-              ? "border-primary/30"
-              : ""
+            : isPendingReview
+              ? "border-destructive/30 bg-destructive/5"
+              : canSubmitReport
+                ? "border-primary/30"
+                : ""
         }
       >
         <CardHeader>
@@ -235,14 +247,22 @@ export function PublicItemDetail({
           <CardDescription>
             {completed
               ? "Мера завершена, отчёт принят."
-              : canSubmitReport
-                ? "Опишите выполненные работы и отправьте отчёт."
-                : "Сначала возьмите меру в работу."}
+              : isPendingReview
+                ? "Отчёт отправлен и ожидает проверки оператором."
+                : isRejected
+                  ? "Исправьте замечания и отправьте отчёт повторно."
+                  : canSubmitReport
+                    ? "Опишите выполненные работы и отправьте отчёт."
+                    : "Сначала возьмите меру в работу."}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {completed ? (
             <p className="text-sm text-muted-foreground">Дополнительных действий не требуется.</p>
+          ) : isPendingReview ? (
+            <p className="text-sm text-muted-foreground">
+              После проверки статус меры обновится автоматически.
+            </p>
           ) : !canSubmitReport ? (
             <p className="text-sm text-muted-foreground">
               Нажмите «Взять в работу», чтобы открыть форму отчёта.
@@ -269,6 +289,11 @@ export function PublicItemDetail({
                   className="min-h-32"
                 />
               </Field>
+              <CommentaryAttachmentsField
+                presignUrl={`/api/public/${token}/items/${item.id}/attachments/presign`}
+                value={commentaryState}
+                onChange={setCommentaryState}
+              />
             </FieldGroup>
           )}
         </CardContent>

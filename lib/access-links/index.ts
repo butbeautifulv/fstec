@@ -1,9 +1,6 @@
-import { randomBytes } from "crypto"
 import { prisma } from "@/lib/db"
-
-function generateToken(): string {
-  return randomBytes(32).toString("base64url")
-}
+import { activeLinkWhere } from "@/lib/links/active-where"
+import { generateLinkToken } from "@/lib/links/generate-token"
 
 export async function createOrganizationAccessLink(organizationId: number) {
   await revokeActiveLinks(organizationId, null)
@@ -11,7 +8,7 @@ export async function createOrganizationAccessLink(organizationId: number) {
     data: {
       organizationId,
       subdivisionId: null,
-      token: generateToken(),
+      token: generateLinkToken(),
     },
     include: { subdivision: true },
   })
@@ -26,7 +23,7 @@ export async function createSubdivisionAccessLink(subdivisionId: number) {
     data: {
       organizationId: subdivision.organizationId,
       subdivisionId,
-      token: generateToken(),
+      token: generateLinkToken(),
     },
     include: { subdivision: true },
   })
@@ -66,8 +63,7 @@ export async function getActiveOrgLink(organizationId: number) {
     where: {
       organizationId,
       subdivisionId: null,
-      revokedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      ...activeLinkWhere(),
     },
     orderBy: { createdAt: "desc" },
   })
@@ -77,8 +73,7 @@ export async function getActiveSubdivisionLink(subdivisionId: number) {
   return prisma.accessLink.findFirst({
     where: {
       subdivisionId,
-      revokedAt: null,
-      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      ...activeLinkWhere(),
     },
     orderBy: { createdAt: "desc" },
   })

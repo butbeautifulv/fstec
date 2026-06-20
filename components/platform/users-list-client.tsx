@@ -9,10 +9,11 @@ import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-al
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { PageHeader } from "@/components/shared/page-header"
-import { useAdminMe } from "@/components/platform/use-platform-user"
+import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { colMeta, actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { ROLE_LABELS } from "@/lib/auth/permissions"
+import { TextCell } from "@/lib/data-table/text-cell"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { notify } from "@/lib/ui/feedback"
@@ -29,7 +30,7 @@ type UserRow = {
 
 export function UsersListClient({ initialUsers }: { initialUsers: UserRow[] }) {
   const router = useRouter()
-  const { me } = useAdminMe()
+  const { me } = usePlatformUser()
   const [users, setUsers] = useState(initialUsers)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deletePassword, setDeletePassword] = useState("")
@@ -68,21 +69,20 @@ export function UsersListClient({ initialUsers }: { initialUsers: UserRow[] }) {
           <DataTableColumnHeader column={column} title="Email" />
         ),
         cell: ({ row }) => (
-          <Link
+          <TextCell
+            text={row.original.email}
             href={`/panel/settings/users/${row.original.id}/edit`}
-            className="font-medium hover:underline"
-          >
-            {row.original.email}
-          </Link>
+          />
         ),
-        meta: colMeta("Email"),
+        meta: textColumnMeta("Email", "w-[28%]"),
       },
       {
         accessorKey: "name",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Имя" />
         ),
-        meta: colMeta("Имя"),
+        cell: ({ row }) => <TextCell text={row.original.name} />,
+        meta: textColumnMeta("Имя", "w-[20%]"),
       },
       {
         accessorKey: "role",
@@ -92,7 +92,7 @@ export function UsersListClient({ initialUsers }: { initialUsers: UserRow[] }) {
         cell: ({ row }) => (
           <Badge variant="secondary">{ROLE_LABELS[row.original.role]}</Badge>
         ),
-        meta: colMeta("Роль"),
+        meta: colMeta("Роль", { cellClassName: "w-32" }),
       },
       {
         accessorKey: "createdAt",
@@ -100,7 +100,7 @@ export function UsersListClient({ initialUsers }: { initialUsers: UserRow[] }) {
           <DataTableColumnHeader column={column} title="Добавлен" />
         ),
         cell: ({ row }) => format(new Date(row.original.createdAt), "dd.MM.yyyy"),
-        meta: colMeta("Добавлен", { valueType: "date" }),
+        meta: colMeta("Добавлен", { valueType: "date", cellClassName: "w-28" }),
       },
       {
         id: "actions",

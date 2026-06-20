@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from "react"
 import type { LocaleId } from "@/lib/i18n/locales"
 import { parseApiError, useCrudSubmit } from "@/components/platform/crud/use-crud-submit"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
+import { FormCardGrid } from "@/components/shared/form-card-grid"
 import { PageHeader } from "@/components/shared/page-header"
 import { PasswordFieldsGroup } from "@/components/platform/password-fields-group"
 import { PasswordInputField } from "@/components/platform/password-input-field"
@@ -97,9 +98,10 @@ export function AccountSettingsClient({ initialAccount }: { initialAccount: Acco
         backLabel="Настройки"
       />
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Профиль</CardTitle>
+      <FormCardGrid>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Профиль</CardTitle>
           <CardDescription>Имя, email и роль (только для просмотра)</CardDescription>
         </CardHeader>
         <CardContent>
@@ -134,7 +136,7 @@ export function AccountSettingsClient({ initialAccount }: { initialAccount: Acco
             <Field>
               <FieldLabel htmlFor="account-locale">Язык интерфейса</FieldLabel>
               <Select value={locale} onValueChange={setLocale}>
-                <SelectTrigger id="account-locale" className="w-full max-w-md">
+                <SelectTrigger id="account-locale" className="w-full">
                   <SelectValue placeholder="Язык" />
                 </SelectTrigger>
                 <SelectContent>
@@ -152,11 +154,11 @@ export function AccountSettingsClient({ initialAccount }: { initialAccount: Acco
             </Field>
           </FieldGroup>
         </CardContent>
-      </Card>
+        </Card>
 
-      <Card className="max-w-lg">
-        <CardHeader>
-          <CardTitle className="text-base">Новый пароль</CardTitle>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Новый пароль</CardTitle>
           <CardDescription>Оставьте пустым, если менять пароль не нужно</CardDescription>
         </CardHeader>
         <CardContent>
@@ -181,7 +183,8 @@ export function AccountSettingsClient({ initialAccount }: { initialAccount: Acco
             showTemporary={false}
           />
         </CardContent>
-      </Card>
+        </Card>
+      </FormCardGrid>
 
       <FormActionsBar error={error}>
         <Button type="button" onClick={() => void submit()} disabled={loading || !canSubmit}>

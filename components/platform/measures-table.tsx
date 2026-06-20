@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
@@ -9,6 +8,7 @@ import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { createMeasureColumn } from "@/lib/data-table/columns"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { format } from "date-fns"
 import { Pencil, Trash2 } from "lucide-react"
@@ -32,21 +32,11 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
 
   const columns = useMemo<ColumnDef<Measure>[]>(
     () => [
-      {
-        accessorKey: "name",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Название" />
-        ),
-        cell: ({ row }) => (
-          <Link
-            href={`/panel/measures/${row.original.id}/edit`}
-            className="font-medium hover:underline"
-          >
-            {row.original.name}
-          </Link>
-        ),
-        meta: colMeta("Название"),
-      },
+      createMeasureColumn<Measure>(
+        (row) => ({ id: row.id, name: row.name }),
+        (m) => `/panel/measures/${m.id}/edit`,
+        { width: "w-[40%]", title: "Название", linkClassName: undefined }
+      ),
       {
         accessorKey: "code",
         header: ({ column }) => (
@@ -55,7 +45,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         cell: ({ row }) => (
           <span className="font-mono">{row.original.code ?? "—"}</span>
         ),
-        meta: colMeta("Код"),
+        meta: colMeta("Код", { cellClassName: "w-28" }),
       },
       {
         accessorKey: "createdAt",
@@ -64,7 +54,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.createdAt), "dd.MM.yyyy"),
-        meta: colMeta("Создана", { valueType: "date" }),
+        meta: colMeta("Создана", { valueType: "date", cellClassName: "w-28" }),
       },
       {
         id: "actions",

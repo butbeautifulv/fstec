@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/db"
 import { getDefaultStatusId } from "@/lib/statuses"
+import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 import type { DashboardScope } from "@/lib/dashboard/stats"
-import { isOrderItemOverdue } from "@/lib/statuses/workflow"
 import type { CreateOrderInput } from "@/lib/validations/orders"
 
 export async function listOrders() {
@@ -26,8 +26,12 @@ export async function getOrder(id: number) {
           measure: true,
           status: true,
           subdivision: true,
-          responses: { orderBy: { submittedAt: "desc" } },
-          delayRequests: { orderBy: { createdAt: "desc" } },
+          responses: { orderBy: { submittedAt: "desc" }, take: 1 },
+          delayRequests: {
+            where: { status: "PENDING" },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
         },
       },
     },
@@ -112,30 +116,8 @@ export async function deleteOrderItem(orderId: number, itemId: number) {
 }
 
 export async function getScopedDashboardMatrix(scope: DashboardScope = { type: "global" }) {
-  const items = await prisma.orderItem.findMany({
-    where: {
-      ...(scope.type === "organization" && {
-        order: { organizationId: scope.organizationId },
-      }),
-      ...(scope.type === "subdivision" && {
-        order: { organizationId: scope.organizationId },
-        subdivisionId: scope.subdivisionId,
-      }),
-    },
-    include: {
-      status: true,
-      measure: true,
-      subdivision: true,
-      order: { include: { organization: true } },
-    },
-    orderBy: [{ order: { organization: { name: "asc" } } }, { measure: { name: "asc" } }],
-  })
-
-  const now = new Date()
-  return items.map((item) => ({
-    ...item,
-    isOverdue: isOrderItemOverdue(item, now),
-  }))
+  const { items } = await getScopedDashboard(scope)
+  return items
 }
 
 export async function getDashboardMatrix() {
