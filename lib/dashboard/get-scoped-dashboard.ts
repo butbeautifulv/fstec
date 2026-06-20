@@ -1,7 +1,6 @@
 import { cache } from "react"
 import { buildMatrixFromItems } from "@/lib/dashboard/build-matrix"
 import type { DashboardMatrixQuery } from "@/lib/dashboard/dashboard-query"
-import { resolveMatrixLimit } from "@/lib/dashboard/dashboard-query"
 import { fetchScopedItems } from "@/lib/dashboard/fetch-scoped-items"
 import { fetchScopedStats } from "@/lib/dashboard/fetch-scoped-stats"
 import { serializeDashboardScope } from "@/lib/dashboard/scope-key"
@@ -31,34 +30,24 @@ export function getScopedDashboardStats(scope: DashboardScope): Promise<ScopedDa
 export async function getScopedDashboardItems(
   scope: DashboardScope,
   query: DashboardMatrixQuery
-): Promise<{ items: DashboardMatrixItem[]; limit: number; truncated: boolean }> {
-  const limit = resolveMatrixLimit(query)
+): Promise<DashboardMatrixItem[]> {
   const now = new Date()
   const rows = await fetchScopedItems(scope, query, now)
-  const items = buildMatrixFromItems(rows, now)
-  return {
-    items,
-    limit,
-    truncated: items.length >= limit,
-  }
+  return buildMatrixFromItems(rows, now)
 }
 
 export async function getScopedDashboardItemsSerialized(
   scope: DashboardScope,
   query: DashboardMatrixQuery
-): Promise<{ items: SerializedMatrixItem[]; limit: number; truncated: boolean }> {
-  const result = await getScopedDashboardItems(scope, query)
-  return {
-    items: serializeMatrixItems(result.items),
-    limit: result.limit,
-    truncated: result.truncated,
-  }
+): Promise<SerializedMatrixItem[]> {
+  const items = await getScopedDashboardItems(scope, query)
+  return serializeMatrixItems(items)
 }
 
 /** @deprecated Use getScopedDashboardStats + getScopedDashboardItems */
 export async function getScopedDashboard(scope: DashboardScope): Promise<ScopedDashboardData> {
   const query: DashboardMatrixQuery = { overdueOnly: false }
-  const [stats, { items }] = await Promise.all([
+  const [stats, items] = await Promise.all([
     getScopedDashboardStats(scope),
     getScopedDashboardItems(scope, query),
   ])

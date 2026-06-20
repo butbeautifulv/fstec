@@ -1,13 +1,8 @@
 import type { Prisma } from "@prisma/client"
 import { prismaRead } from "@/lib/db"
 import type { DashboardMatrixQuery } from "@/lib/dashboard/dashboard-query"
-import { resolveMatrixLimit } from "@/lib/dashboard/dashboard-query"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import { OVERDUE_LABEL } from "@/lib/statuses/workflow"
-
-export type MatrixItemQuery = DashboardMatrixQuery & {
-  limit: number
-}
 
 const itemSelect = {
   id: true,
@@ -130,13 +125,11 @@ export async function fetchScopedItems(
   now: Date = new Date()
 ) {
   const matrixQuery = query ?? { overdueOnly: false }
-  const limit = Math.min(resolveMatrixLimit(matrixQuery), 200)
 
   return prismaRead.orderItem.findMany({
     where: buildMatrixItemWhere(scope, matrixQuery, now),
     select: itemSelect,
     orderBy: [{ order: { organization: { name: "asc" } } }, { measure: { name: "asc" } }],
-    take: limit,
   })
 }
 

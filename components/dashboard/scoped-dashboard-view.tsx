@@ -53,8 +53,6 @@ const MeasuresDataTable = dynamic(
 type DashboardViewBase = {
   baseHref: string
   matrixQuery: DashboardMatrixQuery
-  itemsTruncated?: boolean
-  matrixLimit?: number
   columnFilters: ColumnFiltersState
 }
 
@@ -96,13 +94,6 @@ export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportP
       props.variant === "report" ? props.token : undefined
     )
   }, [props, variantConfig.tableKind])
-
-  const truncatedHint =
-    props.itemsTruncated && props.matrixLimit ? (
-      <p className="text-muted-foreground text-sm">
-        Показаны первые {props.matrixLimit} мер. Уточните фильтр.
-      </p>
-    ) : null
 
   return (
     <>
@@ -165,28 +156,22 @@ export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportP
       />
 
       {variantConfig.tableKind === "measures" && props.variant === "public" ? (
-        <>
-          <MeasuresDataTable
-            basePath={`/p/${props.token}`}
-            items={props.items}
-            statuses={props.statuses}
-            showSubdivisionColumn={props.showSubdivisionColumn}
-            actionLabel="Заполнить"
-            columnFilters={columnFilters}
-            pageSize={50}
-          />
-          {truncatedHint}
-        </>
+        <MeasuresDataTable
+          basePath={`/p/${props.token}`}
+          items={props.items}
+          statuses={props.statuses}
+          showSubdivisionColumn={props.showSubdivisionColumn}
+          actionLabel="Заполнить"
+          columnFilters={columnFilters}
+          pageSize={50}
+        />
       ) : matrixLinkTargets && props.variant !== "public" ? (
-        <>
-          <DashboardMatrixTable
-            items={props.items}
-            linkTargets={matrixLinkTargets}
-            columnFilters={columnFilters}
-            pageSize={50}
-          />
-          {truncatedHint}
-        </>
+        <DashboardMatrixTable
+          items={props.items}
+          linkTargets={matrixLinkTargets}
+          columnFilters={columnFilters}
+          pageSize={50}
+        />
       ) : null}
     </>
   )

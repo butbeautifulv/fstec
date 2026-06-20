@@ -11,8 +11,6 @@ import {
 type DashboardInteractiveBase = {
   baseHref: string
   matrixQuery: DashboardMatrixQuery
-  itemsTruncated?: boolean
-  matrixLimit?: number
 }
 
 type PlatformInteractiveProps = DashboardInteractiveBase & {
@@ -71,16 +69,12 @@ export function toDashboardInteractiveProps(
   context: {
     baseHref: string
     matrixQuery: DashboardMatrixQuery
-    itemsTruncated?: boolean
-    matrixLimit?: number
   }
 ): DashboardInteractiveProps {
   const config = getDashboardVariantConfig(props.variant)
   const shared = {
     baseHref: context.baseHref,
     matrixQuery: context.matrixQuery,
-    itemsTruncated: context.itemsTruncated,
-    matrixLimit: context.matrixLimit,
   }
 
   if (props.variant === "platform") {

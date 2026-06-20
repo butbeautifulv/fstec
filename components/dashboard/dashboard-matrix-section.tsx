@@ -34,7 +34,7 @@ export async function DashboardMatrixSection({
   suspenseCharts,
   ...shellProps
 }: DashboardMatrixSectionProps) {
-  const [stats, matrix] = await Promise.all([
+  const [stats, items] = await Promise.all([
     getCachedScopedDashboardStats(scope),
     getScopedDashboardItems(scope, matrixQuery),
   ])
@@ -43,15 +43,15 @@ export async function DashboardMatrixSection({
   const statsTotal = statsItemTotal(stats)
   const itemCount =
     variant === "public"
-      ? mapSerializedMatrixToPublicItems(matrix.items).length
-      : matrix.items.length
+      ? mapSerializedMatrixToPublicItems(items).length
+      : items.length
 
   const interactiveShellProps =
     variant === "public"
       ? {
           variant: "public" as const,
           token: shellProps.token,
-          items: mapSerializedMatrixToPublicItems(matrix.items),
+          items: mapSerializedMatrixToPublicItems(items),
           statuses: publicStatuses ?? shellProps.statuses,
           scope: shellProps.publicScope,
           showSubdivisionColumn: shellProps.showSubdivisionColumn,
@@ -60,12 +60,12 @@ export async function DashboardMatrixSection({
         ? {
             variant: "report" as const,
             token: shellProps.token,
-            items: matrix.items,
+            items,
           }
         : {
             variant: "platform" as const,
             scope: shellProps.chartScope,
-            items: matrix.items,
+            items,
           }
 
   const filterKey = [
@@ -80,8 +80,6 @@ export async function DashboardMatrixSection({
       {...toDashboardInteractiveProps(interactiveShellProps, stats, {
         baseHref,
         matrixQuery,
-        itemsTruncated: matrix.truncated,
-        matrixLimit: matrix.limit,
       })}
     />
   )

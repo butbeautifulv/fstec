@@ -169,8 +169,7 @@ export async function deleteOrderItem(orderId: number, itemId: number) {
 }
 
 export async function getScopedDashboardMatrix(scope: DashboardScope = { type: "global" }) {
-  const { items } = await getScopedDashboardItems(scope, { overdueOnly: false })
-  return items
+  return getScopedDashboardItems(scope, { overdueOnly: false })
 }
 
 export async function getDashboardMatrix() {

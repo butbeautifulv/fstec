@@ -1,0 +1,20 @@
+# VM / Podman overlay — explicit image tags for baked production images.
+# Used with: podman compose -f docker-compose.prod.yml -f docker-compose.ha.yml -f docker-compose.vm.yml
+#
+# Build tags:
+#   sh docker/scripts/build-prod-images.sh
+# Deploy:
+#   sh docker/scripts/vm-deploy.sh
+
+services:
+  migrate:
+    image: ${FSTEC_IMAGE_REGISTRY:-localhost/fstec}/migrate:${FSTEC_IMAGE_TAG:-latest}
+
+  app:
+    image: ${FSTEC_IMAGE_REGISTRY:-localhost/fstec}/app:${FSTEC_IMAGE_TAG:-latest}
+
+  nginx:
+    image: ${FSTEC_IMAGE_REGISTRY:-localhost/fstec}/nginx:${FSTEC_IMAGE_TAG:-latest}
+
+  seed:
+    image: ${FSTEC_IMAGE_REGISTRY:-localhost/fstec}/seed:${FSTEC_IMAGE_TAG:-latest}

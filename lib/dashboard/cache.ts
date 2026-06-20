@@ -29,7 +29,7 @@ export const getCachedScopedDashboardStats = cache((scope: DashboardScope) =>
 export async function getScopedDashboardItems(
   scope: DashboardScope,
   query: DashboardMatrixQuery
-): Promise<{ items: SerializedMatrixItem[]; truncated: boolean; limit: number }> {
+): Promise<SerializedMatrixItem[]> {
   return getScopedDashboardItemsSerialized(scope, query)
 }
 
@@ -39,15 +39,14 @@ export async function getCachedScopedDashboard(
   options?: { limit?: number }
 ) {
   const query: DashboardMatrixQuery = { overdueOnly: false }
-  const [stats, matrix] = await Promise.all([
+  const [stats, items] = await Promise.all([
     getCachedScopedDashboardStats(scope),
     getScopedDashboardItems(scope, query),
   ])
 
-  const items =
-    options?.limit != null && options.limit > 0
-      ? matrix.items.slice(0, options.limit)
-      : matrix.items
+  if (options?.limit != null && options.limit > 0) {
+    return { stats, items: items.slice(0, options.limit) }
+  }
 
   return { stats, items }
 }
