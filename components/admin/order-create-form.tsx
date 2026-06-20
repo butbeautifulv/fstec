@@ -1,10 +1,11 @@
 "use client"
 
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { FormActionsBar } from "@/components/admin/form-actions-bar"
 import { FormSkeleton } from "@/components/admin/form-skeleton"
-import { MeasurePicker } from "@/components/admin/measure-picker"
+import { useOrderCreateDraft } from "@/components/admin/order-create-draft"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -26,54 +27,89 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { notify } from "@/lib/ui/feedback"
 import { labels } from "@/lib/ui/branding"
+import { ListChecks } from "lucide-react"
 
-type Measure = { id: number; name: string; code: string | null }
 type Org = { id: number; name: string; subdivisions: { id: number; name: string }[] }
+
+const PREVIEW_LIMIT = 5
 
 export function OrderCreateForm() {
   const router = useRouter()
-  const [title, setTitle] = useState("")
-  const [organizationId, setOrganizationId] = useState<string>("")
-  const [defaultDue, setDefaultDue] = useState("")
-  const [bulkSubdivisionId, setBulkSubdivisionId] = useState<string>("none")
-  const [measures, setMeasures] = useState<Measure[]>([])
+  const {
+    draft,
+    hydrated,
+    updateDraft,
+    clearDraft,
+    setMeasuresCache,
+    selectedIds,
+  } = useOrderCreateDraft()
   const [orgs, setOrgs] = useState<Org[]>([])
-  const [selected, setSelected] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(false)
   const [dataLoading, setDataLoading] = useState(true)
+  const [defaultOrgApplied, setDefaultOrgApplied] = useState(false)
 
   useEffect(() => {
+    if (!hydrated) return
     Promise.all([
-      fetch("/api/measures").then((r) => r.json()),
       fetch("/api/organizations").then((r) => r.json()),
-    ]).then(([m, o]) => {
-      setMeasures(m)
+      fetch("/api/settings").then((r) => r.json()),
+    ]).then(([o, settings]) => {
       setOrgs(o)
-      if (o[0]) setOrganizationId(String(o[0].id))
+      if (!draft.organizationId && !defaultOrgApplied) {
+        const headId = settings.headOrganization?.id as number | undefined
+        const defaultOrg =
+          headId != null && o.some((org: Org) => org.id === headId)
+            ? headId
+            : o[0]?.id
+        if (defaultOrg != null) {
+          updateDraft({ organizationId: String(defaultOrg) })
+        }
+        setDefaultOrgApplied(true)
+      }
       setDataLoading(false)
     })
-  }, [])
+  }, [hydrated, draft.organizationId, defaultOrgApplied, updateDraft])
+
+  useEffect(() => {
+    if (!hydrated || draft.measuresCache.length > 0) return
+    if (draft.selectedMeasureIds.length === 0) return
+    fetch("/api/measures")
+      .then((r) => r.json())
+      .then((data) => setMeasuresCache(data))
+  }, [
+    hydrated,
+    draft.measuresCache.length,
+    draft.selectedMeasureIds.length,
+    setMeasuresCache,
+  ])
 
   const selectedOrg = useMemo(
-    () => orgs.find((o) => String(o.id) === organizationId),
-    [orgs, organizationId]
+    () => orgs.find((o) => String(o.id) === draft.organizationId),
+    [orgs, draft.organizationId]
   )
+
+  const selectedPreview = useMemo(() => {
+    const byId = new Map(draft.measuresCache.map((m) => [m.id, m]))
+    return draft.selectedMeasureIds
+      .map((id) => byId.get(id))
+      .filter((m): m is NonNullable<typeof m> => m != null)
+  }, [draft.measuresCache, draft.selectedMeasureIds])
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!organizationId || selected.size === 0 || !defaultDue) return
+    if (!draft.organizationId || selectedIds.size === 0 || !draft.defaultDue) return
     setLoading(true)
-    const dueAt = new Date(defaultDue).toISOString()
+    const dueAt = new Date(draft.defaultDue).toISOString()
     const subdivisionId =
-      bulkSubdivisionId !== "none" ? Number(bulkSubdivisionId) : null
+      draft.bulkSubdivisionId !== "none" ? Number(draft.bulkSubdivisionId) : null
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        title,
-        organizationId: Number(organizationId),
+        title: draft.title,
+        organizationId: Number(draft.organizationId),
         defaultDueAt: dueAt,
-        items: [...selected].map((measureId) => ({
+        items: [...selectedIds].map((measureId) => ({
           measureId,
           dueAt,
           subdivisionId,
@@ -83,6 +119,7 @@ export function OrderCreateForm() {
     setLoading(false)
     if (res.ok) {
       const order = await res.json()
+      clearDraft()
       notify.success("Поручение создано")
       router.push(`/admin/orders/${order.id}`)
       router.refresh()
@@ -91,98 +128,125 @@ export function OrderCreateForm() {
     }
   }
 
-  if (dataLoading) return <FormSkeleton fields={5} />
+  if (!hydrated || dataLoading) return <FormSkeleton fields={5} />
+
+  const previewItems = selectedPreview.slice(0, PREVIEW_LIMIT)
+  const previewRest = selectedPreview.length - previewItems.length
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-4">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Параметры поручения</CardTitle>
-            <CardDescription>Организация, срок и подразделение для всех мер</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="title">Название поручения</FieldLabel>
-                <Input
-                  id="title"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="org">{labels.org}</FieldLabel>
-                <Select value={organizationId} onValueChange={setOrganizationId}>
-                  <SelectTrigger id="org" className="w-full">
-                    <SelectValue placeholder={`Выберите ${labels.org.toLowerCase()}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {orgs.map((o) => (
-                        <SelectItem key={o.id} value={String(o.id)}>
-                          {o.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="due">Срок исполнения (для всех мер)</FieldLabel>
-                <Input
-                  id="due"
-                  type="date"
-                  value={defaultDue}
-                  onChange={(e) => setDefaultDue(e.target.value)}
-                  required
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="subdivision">
-                  Подразделение (для всех выбранных мер)
-                </FieldLabel>
-                <Select value={bulkSubdivisionId} onValueChange={setBulkSubdivisionId}>
-                  <SelectTrigger id="subdivision" className="w-full">
-                    <SelectValue placeholder="Не назначено" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="none">Не назначено</SelectItem>
-                      {selectedOrg?.subdivisions.map((s) => (
-                        <SelectItem key={s.id} value={String(s.id)}>
-                          {s.name}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
+    <form onSubmit={onSubmit} className="flex max-w-lg flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Параметры поручения</CardTitle>
+          <CardDescription>Организация, срок и подразделение для всех мер</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="title">Название поручения</FieldLabel>
+              <Input
+                id="title"
+                value={draft.title}
+                onChange={(e) => updateDraft({ title: e.target.value })}
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="org">{labels.org}</FieldLabel>
+              <Select
+                value={draft.organizationId}
+                onValueChange={(value) => updateDraft({ organizationId: value })}
+              >
+                <SelectTrigger id="org" className="w-full">
+                  <SelectValue placeholder={`Выберите ${labels.org.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {orgs.map((o) => (
+                      <SelectItem key={o.id} value={String(o.id)}>
+                        {o.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="due">Срок исполнения (для всех мер)</FieldLabel>
+              <Input
+                id="due"
+                type="date"
+                value={draft.defaultDue}
+                onChange={(e) => updateDraft({ defaultDue: e.target.value })}
+                required
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="subdivision">
+                Подразделение (для всех выбранных мер)
+              </FieldLabel>
+              <Select
+                value={draft.bulkSubdivisionId}
+                onValueChange={(value) => updateDraft({ bulkSubdivisionId: value })}
+              >
+                <SelectTrigger id="subdivision" className="w-full">
+                  <SelectValue placeholder="Не назначено" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="none">Не назначено</SelectItem>
+                    {selectedOrg?.subdivisions.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          </FieldGroup>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Меры</CardTitle>
-            <CardDescription>
-              {selected.size > 0
-                ? `Выбрано мер: ${selected.size}`
-                : "Выберите меры из каталога ФСТЭК"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <MeasurePicker measures={measures} selected={selected} onChange={setSelected} />
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Меры</CardTitle>
+          <CardDescription>
+            {selectedIds.size > 0
+              ? `Выбрано мер: ${selectedIds.size}`
+              : "Выберите меры из каталога ФСТЭК"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          {selectedPreview.length > 0 && (
+            <ul className="space-y-1 text-sm">
+              {previewItems.map((m) => (
+                <li key={m.id} className="text-muted-foreground">
+                  {m.name}
+                  {m.code ? (
+                    <span className="ml-2 font-mono text-xs">{m.code}</span>
+                  ) : null}
+                </li>
+              ))}
+              {previewRest > 0 && (
+                <li className="text-muted-foreground">и ещё {previewRest}</li>
+              )}
+            </ul>
+          )}
+          <Button type="button" variant="outline" asChild>
+            <Link href="/admin/orders/new/measures">
+              <ListChecks data-icon="inline-start" />
+              Выбрать меры
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <FormActionsBar>
         <Button type="button" variant="outline" onClick={() => router.back()} disabled={loading}>
           Отмена
         </Button>
-        <Button type="submit" disabled={loading || selected.size === 0}>
+        <Button type="submit" disabled={loading || selectedIds.size === 0}>
           {loading && <Spinner data-icon="inline-start" />}
           {loading ? "Создание..." : "Создать поручение"}
         </Button>

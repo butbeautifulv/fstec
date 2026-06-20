@@ -27,7 +27,22 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import {
+  ACTIONS_COLUMN_CELL_CLASS,
+  isActionsColumn,
+} from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { cn } from "@/lib/utils"
+
+function getColumnCellClassName(
+  columnId: string,
+  meta: ColumnDef<unknown, unknown>["meta"]
+) {
+  return cn(
+    meta?.cellClassName,
+    isActionsColumn(columnId, meta) && ACTIONS_COLUMN_CELL_CLASS
+  )
+}
 
 export function DataTable<TData>({
   columns,
@@ -67,6 +82,7 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns,
+    defaultColumn: { filterFn: facetedFilter },
     state: { sorting, columnVisibility, globalFilter, columnFilters },
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
@@ -120,17 +136,23 @@ export function DataTable<TData>({
         </div>
       )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const meta = header.column.columnDef.meta
+                  return (
+                    <TableHead
+                      key={header.id}
+                      className={getColumnCellClassName(header.column.id, meta)}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -144,11 +166,26 @@ export function DataTable<TData>({
             ) : (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const meta = cell.column.columnDef.meta
+                    const actions = isActionsColumn(cell.column.id, meta)
+                    const content = flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={getColumnCellClassName(cell.column.id, meta)}
+                      >
+                        {actions ? (
+                          <div className="flex items-center justify-center">{content}</div>
+                        ) : (
+                          content
+                        )}
+                      </TableCell>
+                    )
+                  })}
                 </TableRow>
               ))
             )}

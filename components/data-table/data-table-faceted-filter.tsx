@@ -2,6 +2,7 @@
 
 import type { Column } from "@tanstack/react-table"
 import { CheckIcon, ListFilterIcon } from "lucide-react"
+import { useTimezone } from "@/components/timezone-provider"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -15,6 +16,10 @@ import {
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Separator } from "@/components/ui/separator"
+import {
+  formatFilterDisplayValue,
+  normalizeFilterValue,
+} from "@/lib/data-table/format-filter-value"
 import { cn } from "@/lib/utils"
 
 type DataTableFacetedFilterProps<TData, TValue> = {
@@ -26,16 +31,23 @@ export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
 }: DataTableFacetedFilterProps<TData, TValue>) {
+  const { timeZone } = useTimezone()
+  const meta = column.columnDef.meta
   const facets = column.getFacetedUniqueValues()
   const selectedValues = new Set((column.getFilterValue() as string[]) ?? [])
 
   const options = Array.from(facets.keys())
-    .map((value) => ({
-      label: value === "" || value == null ? "—" : String(value),
-      value: value === "" || value == null ? "—" : String(value),
-      count: facets.get(value) ?? 0,
-    }))
+    .map((value) => {
+      const raw = normalizeFilterValue(value)
+      return {
+        label: formatFilterDisplayValue(value, meta, timeZone),
+        value: raw,
+        count: facets.get(value) ?? 0,
+      }
+    })
     .sort((a, b) => a.label.localeCompare(b.label, "ru"))
+
+  const filterTitle = title ?? meta?.title ?? column.id
 
   return (
     <Popover>
@@ -50,12 +62,12 @@ export function DataTableFacetedFilter<TData, TValue>({
               {selectedValues.size}
             </Badge>
           )}
-          <span className="sr-only">Фильтр {title ?? column.id}</span>
+          <span className="sr-only">Фильтр {filterTitle}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-64 p-0" align="start">
         <Command>
-          <CommandInput placeholder={title ?? column.id} />
+          <CommandInput placeholder={filterTitle} />
           <CommandList>
             <CommandEmpty>Нет значений</CommandEmpty>
             <CommandGroup>

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { OrgBreadcrumb } from "@/components/admin/org-breadcrumb"
 import { OrganizationForm } from "@/components/admin/organization-form"
 import { PageHeader } from "@/components/admin/page-header"
 import { getOrganization } from "@/lib/organizations"
@@ -15,6 +16,7 @@ export default async function EditOrganizationPage({
 
   return (
     <div className="flex flex-col gap-6">
+      <OrgBreadcrumb organizationId={org.id} organizationName={org.name} />
       <PageHeader
         title={`Редактирование: ${org.name}`}
         description={`Изменение данных ${labels.orgGenitive}`}

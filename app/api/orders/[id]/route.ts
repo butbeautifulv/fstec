@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { deleteOrder, getOrder, updateOrder } from "@/lib/orders"
 import { updateOrderSchema } from "@/lib/validations/orders"
@@ -8,7 +9,7 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersRead)
     const id = Number((await params).id)
     const order = await getOrder(id)
     if (!order) throw new Error("NOT_FOUND")
@@ -20,7 +21,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersWrite)
     const id = Number((await params).id)
     const parsed = updateOrderSchema.safeParse(await request.json())
     if (!parsed.success) {
@@ -38,7 +39,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersWrite)
     const id = Number((await params).id)
     const order = await getOrder(id)
     if (!order) throw new Error("NOT_FOUND")

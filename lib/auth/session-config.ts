@@ -1,15 +1,20 @@
 import type { SessionOptions } from "iron-session"
+import type { UserRole } from "@prisma/client"
 
 export interface SessionData {
   userId: number
   email: string
+  role: UserRole
   isLoggedIn: boolean
+  mustChangePassword: boolean
 }
 
 export const defaultSession: SessionData = {
   userId: 0,
   email: "",
+  role: "VIEWER",
   isLoggedIn: false,
+  mustChangePassword: false,
 }
 
 function getSessionSecret(): string {

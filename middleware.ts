@@ -26,6 +26,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl)
   }
 
+  if (
+    session.mustChangePassword &&
+    pathname !== "/admin/change-password" &&
+    !pathname.startsWith("/api/auth/")
+  ) {
+    return NextResponse.redirect(new URL("/admin/change-password", request.url))
+  }
+
   return response
 }
 

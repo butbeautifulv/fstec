@@ -17,6 +17,7 @@ import {
 } from "@/lib/ui/sidebar-brand"
 
 type PublicNavOrder = {
+  id: number
   title: string
   items: {
     id: number

@@ -49,6 +49,8 @@ export function ShellSidebar({
   secondaryLinks?: ShellSidebarLink[]
   variant?: "sidebar" | "floating" | "inset"
 }) {
+  const PrimaryIcon = primaryAction?.icon
+
   return (
     <Sidebar collapsible="icon" variant={variant}>
       <SidebarHeader>
@@ -61,14 +63,27 @@ export function ShellSidebar({
           logo={brand.logo}
         />
       </SidebarHeader>
+      {primaryAction && PrimaryIcon && (
+        <div className="shrink-0 px-2 pb-2">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+              >
+                <Link href={primaryAction.href}>
+                  <PrimaryIcon />
+                  <span className="truncate">{primaryAction.label}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+      )}
       <SidebarContent className="flex min-h-0 flex-col overflow-hidden">
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-2 pb-2">
-            <ShellNavMain
-              groupLabel={groupLabel}
-              items={navItems}
-              primaryAction={primaryAction}
-            />
+            <ShellNavMain groupLabel={groupLabel} items={navItems} />
             {secondaryLinks && secondaryLinks.length > 0 && (
               <SidebarGroup>
                 <SidebarGroupLabel>Дополнительно</SidebarGroupLabel>

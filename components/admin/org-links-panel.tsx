@@ -1,8 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { ConfirmDeleteAlert } from "@/components/admin/crud/confirm-delete-alert"
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
+import { TableRowActions } from "@/components/admin/crud/table-row-actions"
+import { DataTableShell } from "@/components/admin/data-table-shell"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -19,7 +23,7 @@ import {
 } from "@/components/ui/tooltip"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
-import { Copy, Check } from "lucide-react"
+import { Check, Copy, Pencil, Plus, Trash2 } from "lucide-react"
 
 type LinkRow = {
   id: number
@@ -67,18 +71,18 @@ function CopyLinkButton({ token }: { token: string }) {
 
 export function OrgLinksPanel({
   organizationId,
-  organizationName,
-  subdivisions,
+  initialSubdivisions,
   initialLinks,
-  embedded = false,
 }: {
   organizationId: number
-  organizationName: string
-  subdivisions: Subdivision[]
+  initialSubdivisions: Subdivision[]
   initialLinks: LinkRow[]
-  embedded?: boolean
 }) {
+  const router = useRouter()
+  const [subdivisions, setSubdivisions] = useState(initialSubdivisions)
   const [links, setLinks] = useState(initialLinks)
+  const [deleteId, setDeleteId] = useState<number | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function generateOrgLink() {
     const res = await fetch(`/api/organizations/${organizationId}/links`, {
@@ -116,20 +120,26 @@ export function OrgLinksPanel({
     notify.success("Ссылка отозвана")
   }
 
+  async function confirmDelete() {
+    if (!deleteId) return
+    setDeleting(true)
+    const res = await fetch(`/api/subdivisions/${deleteId}`, { method: "DELETE" })
+    setDeleting(false)
+    if (res.ok) {
+      setSubdivisions((prev) => prev.filter((s) => s.id !== deleteId))
+      setDeleteId(null)
+      router.refresh()
+      notify.success("Подразделение удалено")
+    } else {
+      const data = await res.json().catch(() => null)
+      notify.error(data?.error ?? "Не удалось удалить подразделение")
+    }
+  }
+
   const orgLink = getActiveForSubdivision(links, null)
 
   return (
-    <div className="flex flex-col gap-8">
-      {!embedded && (
-        <div>
-          <Link href="/admin/organizations" className="text-sm text-muted-foreground hover:underline">
-            ← {labels.orgs}
-          </Link>
-          <h1 className="mt-2 text-xl font-medium">{organizationName}</h1>
-          <p className="text-sm text-muted-foreground">Ссылки для исполнителей</p>
-        </div>
-      )}
-
+    <div className="flex flex-col gap-6">
       <div className="rounded-md border p-4">
         <h2 className="mb-3 font-medium">Ссылка {labels.orgGenitive} (все меры организации)</h2>
         {orgLink ? (
@@ -152,15 +162,23 @@ export function OrgLinksPanel({
         )}
       </div>
 
-      <div>
-        <h2 className="mb-3 font-medium">Ссылки подразделений</h2>
-        <div className="rounded-md border">
+      <div className="flex flex-col gap-4">
+        <div className="flex justify-end">
+          <Button asChild>
+            <Link href={`/admin/organizations/${organizationId}/subdivisions/new`}>
+              <Plus data-icon="inline-start" />
+              Добавить подразделение
+            </Link>
+          </Button>
+        </div>
+
+        <DataTableShell>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Подразделение</TableHead>
+                <TableHead>Название</TableHead>
                 <TableHead>Ссылка</TableHead>
-                <TableHead />
+                <TableHead className="w-[70px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -169,8 +187,17 @@ export function OrgLinksPanel({
                   <TableCell colSpan={3}>
                     <EmptyTableState
                       title="Нет подразделений"
-                      description="Создайте подразделения для генерации ссылок"
-                    />
+                      description="Добавьте подразделения для разграничения доступа и генерации ссылок"
+                    >
+                      <Button size="sm" asChild>
+                        <Link
+                          href={`/admin/organizations/${organizationId}/subdivisions/new`}
+                        >
+                          <Plus data-icon="inline-start" />
+                          Добавить подразделение
+                        </Link>
+                      </Button>
+                    </EmptyTableState>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -178,19 +205,26 @@ export function OrgLinksPanel({
                   const subLink = getActiveForSubdivision(links, sub.id)
                   return (
                     <TableRow key={sub.id}>
-                      <TableCell>{sub.name}</TableCell>
+                      <TableCell>
+                        <Link
+                          href={`/admin/organizations/${organizationId}/subdivisions/${sub.id}/edit`}
+                          className="font-medium hover:underline"
+                        >
+                          {sub.name}
+                        </Link>
+                      </TableCell>
                       <TableCell>
                         {subLink ? (
-                          <code className="font-mono text-xs">/p/{subLink.token.slice(0, 12)}…</code>
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {subLink ? (
-                          <div className="flex justify-end gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <code className="font-mono text-xs">
+                              /p/{subLink.token.slice(0, 12)}…
+                            </code>
                             <CopyLinkButton token={subLink.token} />
-                            <Button size="sm" variant="outline" onClick={() => revoke(subLink.id)}>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => revoke(subLink.id)}
+                            >
                               Отозвать
                             </Button>
                           </div>
@@ -200,14 +234,40 @@ export function OrgLinksPanel({
                           </Button>
                         )}
                       </TableCell>
+                      <TableCell>
+                        <TableRowActions
+                          actions={[
+                            {
+                              label: "Изменить",
+                              icon: <Pencil data-icon="inline-start" />,
+                              href: `/admin/organizations/${organizationId}/subdivisions/${sub.id}/edit`,
+                            },
+                            {
+                              label: "Удалить",
+                              icon: <Trash2 data-icon="inline-start" />,
+                              destructive: true,
+                              onClick: () => setDeleteId(sub.id),
+                            },
+                          ]}
+                        />
+                      </TableCell>
                     </TableRow>
                   )
                 })
               )}
             </TableBody>
           </Table>
-        </div>
+        </DataTableShell>
       </div>
+
+      <ConfirmDeleteAlert
+        open={deleteId !== null}
+        onOpenChange={(o) => !o && setDeleteId(null)}
+        title="Удалить подразделение?"
+        description={`Подразделение будет удалено из ${labels.orgGenitive}.`}
+        onConfirm={confirmDelete}
+        loading={deleting}
+      />
     </div>
   )
 }

@@ -43,7 +43,12 @@ export function LoginForm({
       setError(data.error ?? "Ошибка входа")
       return
     }
-    router.push(searchParams.get("next") ?? "/admin")
+    const data = await res.json()
+    router.push(
+      data.mustChangePassword
+        ? "/admin/change-password"
+        : (searchParams.get("next") ?? "/admin")
+    )
     router.refresh()
   }
 

@@ -4,4 +4,5 @@ export { DataTablePagination } from "@/components/data-table/data-table-paginati
 export { DataTableColumnToggle } from "@/components/data-table/data-table-column-toggle"
 export { DataTableColumnHeader } from "@/components/data-table/data-table-column-header"
 export { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter"
+export { DataTableRowLink } from "@/components/data-table/data-table-row-link"
 export { DataTableActiveFilters } from "@/components/data-table/data-table-active-filters"

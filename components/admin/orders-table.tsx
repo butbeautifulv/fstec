@@ -9,7 +9,8 @@ import { EditOrderDialog } from "@/components/admin/crud/edit-order-dialog"
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
 import { TableRowActions } from "@/components/admin/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { facetedFilter, FACETED_COLUMN_META } from "@/lib/data-table/faceted-column"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn, numberSortFn } from "@/lib/data-table/sort-helpers"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
@@ -20,7 +21,7 @@ type Order = {
   id: number
   title: string
   issuedAt: string
-  organization: { name: string }
+  organization: { id: number; name: string }
   _count: { items: number }
 }
 
@@ -62,6 +63,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
             {row.original.title}
           </Link>
         ),
+        meta: colMeta("Название"),
       },
       {
         id: "organization",
@@ -69,10 +71,17 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
-        cell: ({ row }) => row.original.organization.name,
+        cell: ({ row }) => (
+          <Link
+            href={`/admin/organizations/${row.original.organization.id}`}
+            className="hover:underline"
+          >
+            {row.original.organization.name}
+          </Link>
+        ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: labels.org },
+        meta: colMeta(labels.org),
       },
       {
         id: "items",
@@ -82,6 +91,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         accessorFn: (row) => row._count.items,
         sortingFn: numberSortFn,
         cell: ({ row }) => row.original._count.items,
+        meta: colMeta("Мер"),
       },
       {
         accessorKey: "issuedAt",
@@ -90,12 +100,15 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.issuedAt), "dd.MM.yyyy"),
+        meta: colMeta("Дата", { valueType: "date" }),
       },
       {
         id: "actions",
         header: "",
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
+        meta: actionsColumnMeta(),
         cell: ({ row }) => (
           <TableRowActions
             actions={[

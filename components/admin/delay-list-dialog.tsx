@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { Badge } from "@/components/ui/badge"
@@ -66,22 +67,27 @@ export function DelayListDialog({
                   Запрошено {format(new Date(d.createdAt), "dd.MM.yyyy HH:mm")}
                 </div>
                 {d.justification && (
-                  <p className="mt-2 whitespace-pre-wrap">{d.justification}</p>
+                  <p className="mt-2 line-clamp-3 whitespace-pre-wrap">{d.justification}</p>
                 )}
-                {d.status === "PENDING" && (
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" onClick={() => reviewDelay(d.id, "approve")}>
-                      Одобрить
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => reviewDelay(d.id, "reject")}
-                    >
-                      Отклонить
-                    </Button>
-                  </div>
-                )}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" asChild>
+                    <Link href={`/admin/delay-requests/${d.id}`}>Подробнее</Link>
+                  </Button>
+                  {d.status === "PENDING" && (
+                    <>
+                      <Button size="sm" onClick={() => reviewDelay(d.id, "approve")}>
+                        Одобрить
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => reviewDelay(d.id, "reject")}
+                      >
+                        Отклонить
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             ))}
           </div>

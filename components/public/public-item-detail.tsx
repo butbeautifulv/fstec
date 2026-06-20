@@ -1,9 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { PageHeader } from "@/components/admin/page-header"
 import { DelayRequestDialog } from "@/components/public/delay-request-dialog"
-import { usePublicBreadcrumbLabel } from "@/components/public/public-breadcrumb"
+import {
+  usePublicBreadcrumbLabel,
+  usePublicBreadcrumbMiddle,
+} from "@/components/public/public-breadcrumb"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -42,12 +45,14 @@ type PublicItem = {
 export function PublicItemDetail({
   token,
   item: initialItem,
+  orderId,
   statuses,
   organizationName,
   subdivisionName,
 }: {
   token: string
   item: PublicItem
+  orderId: number
   statuses: PublicStatus[]
   organizationName: string
   subdivisionName: string | null
@@ -72,6 +77,19 @@ export function PublicItemDetail({
   const canStart = isNotStarted(item.status.name)
   const canSubmitReport = isInProgress(item.status.name) && !completed
 
+  const middleCrumbs = useMemo(
+    () => [
+      { label: "Сводка", href: `/p/${token}` },
+      { label: "Поручения", href: `/p/${token}/orders` },
+      {
+        label: item.orderTitle,
+        href: `/p/${token}/orders/${orderId}`,
+      },
+    ],
+    [token, orderId, item.orderTitle]
+  )
+
+  usePublicBreadcrumbMiddle(middleCrumbs)
   usePublicBreadcrumbLabel(item.measure.name)
 
   async function startWork() {

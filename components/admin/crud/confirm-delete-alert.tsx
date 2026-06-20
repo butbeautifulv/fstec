@@ -1,5 +1,6 @@
 "use client"
 
+import { PasswordInputField } from "@/components/admin/password-input-field"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,6 +19,10 @@ type ConfirmDeleteAlertProps = {
   description: string
   onConfirm: () => void | Promise<void>
   loading?: boolean
+  requirePassword?: boolean
+  password?: string
+  onPasswordChange?: (value: string) => void
+  passwordLabel?: string
 }
 
 export function ConfirmDeleteAlert({
@@ -27,7 +32,13 @@ export function ConfirmDeleteAlert({
   description,
   onConfirm,
   loading = false,
+  requirePassword = false,
+  password = "",
+  onPasswordChange,
+  passwordLabel = "Ваш пароль",
 }: ConfirmDeleteAlertProps) {
+  const canConfirm = !requirePassword || password.length > 0
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -35,11 +46,21 @@ export function ConfirmDeleteAlert({
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
+        {requirePassword && onPasswordChange && (
+          <PasswordInputField
+            id="confirm-delete-password"
+            label={passwordLabel}
+            value={password}
+            onChange={onPasswordChange}
+            required
+            autoComplete="current-password"
+          />
+        )}
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Отмена</AlertDialogCancel>
           <AlertDialogAction
             variant="destructive"
-            disabled={loading}
+            disabled={loading || !canConfirm}
             onClick={(e) => {
               e.preventDefault()
               void onConfirm()

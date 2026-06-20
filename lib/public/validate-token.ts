@@ -62,6 +62,16 @@ export async function validateAccessToken(token: string) {
   return { link, organization: link.organization, subdivision: link.subdivision, orders }
 }
 
+export async function getOrderForToken(token: string, orderId: number) {
+  const ctx = await validateAccessToken(token)
+  if (!ctx) return null
+
+  const order = ctx.orders.find((o) => o.id === orderId)
+  if (!order || order.items.length === 0) return null
+
+  return { link: ctx.link, organization: ctx.organization, subdivision: ctx.subdivision, order }
+}
+
 export async function getOrderItemForToken(
   token: string,
   orderItemId: number

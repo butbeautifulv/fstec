@@ -9,7 +9,9 @@ import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
 import { TableRowActions } from "@/components/admin/crud/table-row-actions"
 import { PageHeader } from "@/components/admin/page-header"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { facetedFilter, FACETED_COLUMN_META } from "@/lib/data-table/faceted-column"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
@@ -22,7 +24,33 @@ type Org = {
   subdivisions: { id: number; name: string }[]
 }
 
-export function OrganizationsManager({ initialOrgs }: { initialOrgs: Org[] }) {
+function SubdivisionsCell({ subdivisions }: { subdivisions: Org["subdivisions"] }) {
+  if (subdivisions.length === 0) return <>—</>
+
+  const fullLabel = subdivisions.map((s) => s.name).join(", ")
+
+  if (subdivisions.length >= 3) {
+    return (
+      <span className="block truncate" title={fullLabel}>
+        {subdivisions.length} подразделений
+      </span>
+    )
+  }
+
+  return (
+    <span className="block truncate" title={fullLabel}>
+      {fullLabel}
+    </span>
+  )
+}
+
+export function OrganizationsManager({
+  initialOrgs,
+  headOrganizationId,
+}: {
+  initialOrgs: Org[]
+  headOrganizationId: number | null
+}) {
   const router = useRouter()
   const [orgs, setOrgs] = useState(initialOrgs)
   const [deleteId, setDeleteId] = useState<number | null>(null)
@@ -52,13 +80,19 @@ export function OrganizationsManager({ initialOrgs }: { initialOrgs: Org[] }) {
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
         cell: ({ row }) => (
-          <Link
-            href={`/admin/organizations/${row.original.id}`}
-            className="font-medium hover:underline"
-          >
-            {row.original.name}
-          </Link>
+          <span className="flex items-center gap-2">
+            <Link
+              href={`/admin/organizations/${row.original.id}`}
+              className="font-medium hover:underline"
+            >
+              {row.original.name}
+            </Link>
+            {row.original.id === headOrganizationId && (
+              <Badge variant="secondary">Головная</Badge>
+            )}
+          </span>
         ),
+        meta: colMeta(labels.org),
       },
       {
         accessorKey: "shortCode",
@@ -66,6 +100,7 @@ export function OrganizationsManager({ initialOrgs }: { initialOrgs: Org[] }) {
           <DataTableColumnHeader column={column} title="Код" />
         ),
         cell: ({ row }) => row.original.shortCode ?? "—",
+        meta: colMeta("Код"),
       },
       {
         id: "subdivisions",
@@ -76,19 +111,20 @@ export function OrganizationsManager({ initialOrgs }: { initialOrgs: Org[] }) {
           row.subdivisions.length
             ? row.subdivisions.map((s) => s.name).join(", ")
             : "—",
-        cell: ({ row }) =>
-          row.original.subdivisions.length
-            ? row.original.subdivisions.map((s) => s.name).join(", ")
-            : "—",
+        cell: ({ row }) => (
+          <SubdivisionsCell subdivisions={row.original.subdivisions} />
+        ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Подразделения" },
+        meta: colMeta("Подразделения", { cellClassName: "max-w-0 w-[30%]" }),
       },
       {
         id: "actions",
         header: "",
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
+        meta: actionsColumnMeta(),
         cell: ({ row }) => (
           <TableRowActions
             actions={[
@@ -113,7 +149,7 @@ export function OrganizationsManager({ initialOrgs }: { initialOrgs: Org[] }) {
         ),
       },
     ],
-    []
+    [headOrganizationId]
   )
 
   return (

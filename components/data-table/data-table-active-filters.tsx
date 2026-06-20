@@ -2,10 +2,13 @@
 
 import type { Table } from "@tanstack/react-table"
 import { XIcon } from "lucide-react"
+import { useTimezone } from "@/components/timezone-provider"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { formatFilterDisplayValue } from "@/lib/data-table/format-filter-value"
 
 export function DataTableActiveFilters<TData>({ table }: { table: Table<TData> }) {
+  const { timeZone } = useTimezone()
   const columnFilters = table.getState().columnFilters
   if (columnFilters.length === 0) return null
 
@@ -13,14 +16,13 @@ export function DataTableActiveFilters<TData>({ table }: { table: Table<TData> }
     <div className="flex flex-wrap items-center gap-2">
       {columnFilters.map((filter) => {
         const column = table.getColumn(filter.id)
-        const title =
-          (column?.columnDef.meta as { title?: string } | undefined)?.title ??
-          filter.id
+        const meta = column?.columnDef.meta
+        const title = meta?.title ?? filter.id
         const values = (filter.value as string[]) ?? []
 
         return values.map((value) => (
           <Badge key={`${filter.id}-${value}`} variant="secondary" className="gap-1 pr-1">
-            {title}: {value}
+            {title}: {formatFilterDisplayValue(value, meta, timeZone)}
             <button
               type="button"
               className="rounded-sm hover:bg-muted"

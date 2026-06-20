@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
+import { cn } from "@/lib/utils"
 import {
   OVERDUE_LABEL,
   STATUS_DISPLAY_ORDER,
@@ -54,7 +55,15 @@ const CARD_META: Record<
   },
 }
 
-export function DashboardStatCards({ stats }: { stats: ScopedDashboardStats }) {
+export function DashboardStatCards({
+  stats,
+  activeStatus,
+  onStatusClick,
+}: {
+  stats: ScopedDashboardStats
+  activeStatus?: string
+  onStatusClick?: (status: string) => void
+}) {
   const total = stats.statusDistribution.reduce((sum, row) => sum + row.count, 0)
 
   const cards = STATUS_DISPLAY_ORDER.map((status) => {
@@ -68,27 +77,56 @@ export function DashboardStatCards({ stats }: { stats: ScopedDashboardStats }) {
 
   return (
     <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
-      {cards.map((card) => (
-        <Card key={card.status} className="@container/card shadow-xs">
-          <CardHeader>
-            <CardDescription>{card.status}</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {card.value}
-            </CardTitle>
-            {card.badge && (
-              <CardAction>
-                <Badge variant="outline">{card.badge}</Badge>
-              </CardAction>
+      {cards.map((card) => {
+        const interactive = Boolean(onStatusClick)
+        const isActive = interactive && activeStatus === card.status
+
+        const cardBody = (
+          <>
+            <CardHeader>
+              <CardDescription>{card.status}</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {card.value}
+              </CardTitle>
+              {card.badge && (
+                <CardAction>
+                  <Badge variant="outline">{card.badge}</Badge>
+                </CardAction>
+              )}
+            </CardHeader>
+            <CardFooter className="flex-col items-start gap-1.5 text-sm">
+              <div className="flex gap-2 font-medium">
+                <card.Icon className="size-4 text-muted-foreground" />
+                {card.hint}
+              </div>
+            </CardFooter>
+          </>
+        )
+
+        return (
+          <Card
+            key={card.status}
+            className={cn(
+              "@container/card shadow-xs transition-colors",
+              interactive && "hover:ring-2 hover:ring-ring/40",
+              isActive && "ring-2 ring-primary"
             )}
-          </CardHeader>
-          <CardFooter className="flex-col items-start gap-1.5 text-sm">
-            <div className="flex gap-2 font-medium">
-              <card.Icon className="size-4 text-muted-foreground" />
-              {card.hint}
-            </div>
-          </CardFooter>
-        </Card>
-      ))}
+          >
+            {interactive ? (
+              <button
+                type="button"
+                className="w-full text-left"
+                aria-pressed={isActive}
+                onClick={() => onStatusClick?.(card.status)}
+              >
+                {cardBody}
+              </button>
+            ) : (
+              cardBody
+            )}
+          </Card>
+        )
+      })}
     </div>
   )
 }

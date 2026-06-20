@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { PublicDashboardPage } from "@/components/public/public-dashboard-page"
-import type { PublicItem } from "@/components/public/public-measures-table"
 import { getScopedDashboardStats, scopeFromAccessLink } from "@/lib/dashboard/stats"
+import { mapOrdersToPublicItems } from "@/lib/public/map-public-items"
 import { validateAccessToken } from "@/lib/public/validate-token"
 import { getWorkflowStatuses } from "@/lib/statuses"
 
@@ -27,25 +27,7 @@ export default async function PublicLinkPage({
     getWorkflowStatuses(),
   ])
 
-  const flatItems: PublicItem[] = ctx.orders.flatMap((order) =>
-    order.items.map((item) => ({
-      id: item.id,
-      dueAt: item.dueAt.toISOString(),
-      measure: {
-        name: item.measure.name,
-        code: item.measure.code,
-        description: item.measure.description,
-      },
-      status: {
-        id: item.status.id,
-        name: item.status.name,
-        isTerminal: item.status.isTerminal,
-      },
-      orderTitle: order.title,
-      orderIssuedAt: order.issuedAt.toISOString(),
-      subdivisionName: item.subdivision?.name ?? null,
-    }))
-  )
+  const flatItems = mapOrdersToPublicItems(ctx.orders)
 
   return (
     <PublicDashboardPage

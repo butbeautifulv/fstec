@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import { AdminDashboardMatrix } from "@/components/admin/admin-dashboard-matrix"
 import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
@@ -24,8 +24,13 @@ type MatrixItem = {
   dueAt: string
   isOverdue: boolean
   measure: { id: number; name: string }
-  order: { title: string; organization: { name: string } }
+  order: { title: string; organization: { id: number; name: string } }
   status: { name: string; isTerminal: boolean }
+}
+
+type FilterControl = {
+  columnFilters?: ColumnFiltersState
+  onColumnFiltersChange?: Dispatch<SetStateAction<ColumnFiltersState>>
 }
 
 type AdminProps = {
@@ -34,7 +39,7 @@ type AdminProps = {
   stats: ScopedDashboardStats
   items: MatrixItem[]
   overdueOnly?: boolean
-}
+} & FilterControl
 
 type PublicProps = {
   variant: "public"
@@ -45,14 +50,18 @@ type PublicProps = {
   statuses: PublicStatus[]
   showSubdivisionColumn?: boolean
   overdueOnly?: boolean
-}
+} & FilterControl
 
 export function ScopedDashboardView(props: AdminProps | PublicProps) {
   const initialFilters = useMemo(
     () => (props.overdueOnly ? overdueInitialFilters() : []),
     [props.overdueOnly]
   )
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(initialFilters)
+  const [internalFilters, setInternalFilters] =
+    useState<ColumnFiltersState>(initialFilters)
+
+  const columnFilters = props.columnFilters ?? internalFilters
+  const setColumnFilters = props.onColumnFiltersChange ?? setInternalFilters
 
   const scope = props.scope
 

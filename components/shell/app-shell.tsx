@@ -1,5 +1,6 @@
 "use client"
 
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   SidebarInset,
   SidebarProvider,
@@ -27,6 +28,9 @@ export function AppShell({
           className="mr-2 data-vertical:h-4 data-vertical:self-auto"
         />
         {breadcrumb}
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+        </div>
       </header>
       <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
         {children}
@@ -38,7 +42,7 @@ export function AppShell({
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--sidebar-width": "calc(var(--spacing) * 88)",
           "--header-height": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }

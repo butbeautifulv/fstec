@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { deleteSubdivision, updateSubdivision } from "@/lib/organizations"
 import { subdivisionUpdateSchema } from "@/lib/validations/organizations"
@@ -9,7 +10,7 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const id = Number((await params).id)
     const parsed = subdivisionUpdateSchema.safeParse(await request.json())
     if (!parsed.success) {
@@ -26,7 +27,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const id = Number((await params).id)
     const sub = await prisma.subdivision.findUnique({ where: { id } })
     if (!sub) throw new Error("NOT_FOUND")

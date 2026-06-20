@@ -26,6 +26,9 @@ export function handleApiError(error: unknown) {
     if (error.message === "ORG_HAS_ORDERS") {
       return jsonError(`У ${labels.orgGenitive} есть поручения — сначала удалите их`, 409)
     }
+    if (error.message === "EMAIL_EXISTS") {
+      return jsonError("Пользователь с таким email уже существует", 409)
+    }
   }
   console.error(error)
   return jsonError("Internal server error", 500)

@@ -3,6 +3,7 @@
 import {
   ShellBreadcrumb,
   useShellBreadcrumbLabel,
+  useShellBreadcrumbMiddle,
   type ShellCrumb,
 } from "@/components/shell/shell-breadcrumb"
 
@@ -10,6 +11,10 @@ export { ShellBreadcrumbProvider as PublicBreadcrumbProvider } from "@/component
 
 export function usePublicBreadcrumbLabel(label: string | null) {
   useShellBreadcrumbLabel(label)
+}
+
+export function usePublicBreadcrumbMiddle(crumbs: ShellCrumb[]) {
+  useShellBreadcrumbMiddle(crumbs)
 }
 
 function extractToken(pathname: string): string | null {
@@ -20,10 +25,12 @@ function extractToken(pathname: string): string | null {
 export function buildPublicCrumbs(
   pathname: string,
   dynamicLabel: string | null,
+  middleCrumbs: ShellCrumb[],
   organizationName: string
 ): ShellCrumb[] {
   const token = extractToken(pathname)
   const baseHref = token ? `/p/${token}` : undefined
+  const ordersListHref = token ? `/p/${token}/orders` : undefined
   const crumbs: ShellCrumb[] = [{ label: organizationName, href: baseHref }]
 
   if (pathname === baseHref || pathname === `${baseHref}/`) {
@@ -31,9 +38,18 @@ export function buildPublicCrumbs(
     return crumbs
   }
 
-  if (pathname.includes("/items/")) {
+  if (
+    ordersListHref &&
+    (pathname === ordersListHref || pathname === `${ordersListHref}/`)
+  ) {
     crumbs.push({ label: "Сводка", href: baseHref })
-    crumbs.push({ label: dynamicLabel ?? "Мера" })
+    crumbs.push({ label: "Поручения" })
+    return crumbs
+  }
+
+  if (pathname.includes("/orders/") || pathname.includes("/items/")) {
+    crumbs.push(...middleCrumbs)
+    crumbs.push({ label: dynamicLabel ?? "…" })
     return crumbs
   }
 
@@ -44,8 +60,8 @@ export function buildPublicCrumbs(
 export function PublicBreadcrumb({ organizationName }: { organizationName: string }) {
   return (
     <ShellBreadcrumb
-      buildCrumbs={(pathname, dynamicLabel) =>
-        buildPublicCrumbs(pathname, dynamicLabel, organizationName)
+      buildCrumbs={(pathname, dynamicLabel, middleCrumbs) =>
+        buildPublicCrumbs(pathname, dynamicLabel, middleCrumbs, organizationName)
       }
     />
   )

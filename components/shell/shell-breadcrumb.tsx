@@ -21,16 +21,23 @@ import {
 
 export type ShellCrumb = { label: string; href?: string }
 
+function serializeCrumbs(crumbs: ShellCrumb[]) {
+  return JSON.stringify(crumbs)
+}
+
 const ShellBreadcrumbContext = createContext<{
   dynamicLabel: string | null
   setDynamicLabel: (label: string | null) => void
+  middleCrumbs: ShellCrumb[]
+  setMiddleCrumbs: (crumbs: ShellCrumb[]) => void
 } | null>(null)
 
 export function ShellBreadcrumbProvider({ children }: { children: ReactNode }) {
   const [dynamicLabel, setDynamicLabel] = useState<string | null>(null)
+  const [middleCrumbs, setMiddleCrumbs] = useState<ShellCrumb[]>([])
   const value = useMemo(
-    () => ({ dynamicLabel, setDynamicLabel }),
-    [dynamicLabel]
+    () => ({ dynamicLabel, setDynamicLabel, middleCrumbs, setMiddleCrumbs }),
+    [dynamicLabel, middleCrumbs]
   )
   return (
     <ShellBreadcrumbContext.Provider value={value}>
@@ -50,14 +57,34 @@ export function useShellBreadcrumbLabel(label: string | null) {
   }, [label, setDynamicLabel])
 }
 
+export function useShellBreadcrumbMiddle(crumbs: ShellCrumb[]) {
+  const ctx = useContext(ShellBreadcrumbContext)
+  const setMiddleCrumbs = ctx?.setMiddleCrumbs
+  const crumbsKey = serializeCrumbs(crumbs)
+
+  useEffect(() => {
+    if (!setMiddleCrumbs) return
+    setMiddleCrumbs(JSON.parse(crumbsKey) as ShellCrumb[])
+    return () => setMiddleCrumbs([])
+  }, [crumbsKey, setMiddleCrumbs])
+}
+
 export function ShellBreadcrumb({
   buildCrumbs,
 }: {
-  buildCrumbs: (pathname: string, dynamicLabel: string | null) => ShellCrumb[]
+  buildCrumbs: (
+    pathname: string,
+    dynamicLabel: string | null,
+    middleCrumbs: ShellCrumb[]
+  ) => ShellCrumb[]
 }) {
   const pathname = usePathname()
   const ctx = useContext(ShellBreadcrumbContext)
-  const crumbs = buildCrumbs(pathname, ctx?.dynamicLabel ?? null)
+  const crumbs = buildCrumbs(
+    pathname,
+    ctx?.dynamicLabel ?? null,
+    ctx?.middleCrumbs ?? []
+  )
 
   const items: ReactNode[] = []
   crumbs.forEach((crumb, index) => {

@@ -8,6 +8,7 @@ import { ConfirmDeleteAlert } from "@/components/admin/crud/confirm-delete-alert
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
 import { TableRowActions } from "@/components/admin/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { notify } from "@/lib/ui/feedback"
 import { format } from "date-fns"
@@ -57,6 +58,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
             {row.original.name}
           </Link>
         ),
+        meta: colMeta("Название"),
       },
       {
         accessorKey: "code",
@@ -66,6 +68,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         cell: ({ row }) => (
           <span className="font-mono">{row.original.code ?? "—"}</span>
         ),
+        meta: colMeta("Код"),
       },
       {
         accessorKey: "createdAt",
@@ -74,12 +77,15 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.createdAt), "dd.MM.yyyy"),
+        meta: colMeta("Создана", { valueType: "date" }),
       },
       {
         id: "actions",
         header: "",
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
+        meta: actionsColumnMeta(),
         cell: ({ row }) => (
           <TableRowActions
             actions={[

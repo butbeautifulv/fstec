@@ -45,9 +45,9 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
     return (
       <SidebarMenuItem>
         <SidebarMenuButton asChild isActive={item.isActive} tooltip={item.title}>
-          <Link href={item.href}>
-            {Icon && <Icon />}
-            <span className="truncate">{item.title}</span>
+          <Link href={item.href} className="min-w-0">
+            {Icon && <Icon className="shrink-0" />}
+            <span className="min-w-0 flex-1 truncate">{item.title}</span>
             {item.badge}
           </Link>
         </SidebarMenuButton>
@@ -65,19 +65,35 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
     >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          <SidebarMenuButton tooltip={item.title}>
-            {Icon && <Icon />}
-            <span className="truncate">{item.title}</span>
+          <SidebarMenuButton tooltip={item.title} className="min-w-0">
+            {Icon && <Icon className="shrink-0" />}
+            <span className="min-w-0 flex-1 truncate">{item.title}</span>
             {item.badge}
-            <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+            <ChevronRightIcon className="ml-auto size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
           </SidebarMenuButton>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <SidebarMenuSub>
+          <SidebarMenuSub className="mx-2 px-2">
             {item.children!.map((child) => (
               <SidebarMenuSubItem key={child.href}>
-                <SidebarMenuSubButton asChild isActive={child.isActive}>
-                  <Link href={child.href} className="min-w-0">
+                <SidebarMenuSubButton
+                  asChild
+                  isActive={child.isActive}
+                  className={
+                    child.badge
+                      ? "h-auto min-h-7 items-start overflow-hidden py-1.5 [&>span:nth-child(1)]:min-w-0 [&>span:nth-child(1)]:truncate [&>span:nth-child(2)]:shrink-0 [&>span:nth-child(2)]:overflow-visible [&>span:nth-child(2)]:whitespace-nowrap"
+                      : "overflow-hidden [&>span]:truncate"
+                  }
+                >
+                  <Link
+                    href={child.href}
+                    title={child.title}
+                    className={
+                      child.badge
+                        ? "flex w-full min-w-0 flex-col gap-1 overflow-hidden"
+                        : "block w-full min-w-0 overflow-hidden"
+                    }
+                  >
                     <span className="truncate">{child.title}</span>
                     {child.badge}
                   </Link>
@@ -94,33 +110,14 @@ function NavMainItem({ item }: { item: ShellNavMainItem }) {
 export function ShellNavMain({
   groupLabel,
   items,
-  primaryAction,
 }: {
   groupLabel: string
   items: ShellNavMainItem[]
-  primaryAction?: { href: string; label: string; icon: LucideIcon }
 }) {
-  const PrimaryIcon = primaryAction?.icon
-
   return (
     <SidebarGroup>
       <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
       <SidebarGroupContent className="flex flex-col gap-2">
-        {primaryAction && PrimaryIcon && (
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
-              >
-                <Link href={primaryAction.href}>
-                  <PrimaryIcon />
-                  <span>{primaryAction.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        )}
         <SidebarMenu>
           {items.map((item) => (
             <NavMainItem key={item.href ?? item.title} item={item} />

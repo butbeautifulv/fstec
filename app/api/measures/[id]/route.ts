@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { deleteMeasure, getMeasure, updateMeasure } from "@/lib/measures"
 import { measureSchema } from "@/lib/validations/measures"
@@ -8,7 +9,7 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.measuresRead)
     const id = Number((await params).id)
     const measure = await getMeasure(id)
     if (!measure) throw new Error("NOT_FOUND")
@@ -20,7 +21,7 @@ export async function GET(_request: Request, { params }: Params) {
 
 export async function PUT(request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.measuresWrite)
     const id = Number((await params).id)
     const parsed = measureSchema.safeParse(await request.json())
     if (!parsed.success) {
@@ -37,7 +38,7 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.measuresWrite)
     const id = Number((await params).id)
     await deleteMeasure(id)
     revalidatePath("/admin/measures")

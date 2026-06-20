@@ -11,13 +11,20 @@ import { EditOrderItemDialog } from "@/components/admin/crud/edit-order-item-dia
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
 import { TableRowActions } from "@/components/admin/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { facetedFilter, FACETED_COLUMN_META } from "@/lib/data-table/faceted-column"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { DelayListDialog } from "@/components/admin/delay-list-dialog"
 import { PageHeader } from "@/components/admin/page-header"
-import { ResponseListDialog } from "@/components/admin/response-list-dialog"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
 import {
@@ -25,7 +32,7 @@ import {
   isOrderItemOverdue,
 } from "@/lib/statuses/workflow"
 import { format } from "date-fns"
-import { Pencil, Trash2 } from "lucide-react"
+import { ChevronRightIcon, Pencil, Trash2 } from "lucide-react"
 
 type Status = { id: number; name: string; isTerminal?: boolean }
 type Subdivision = { id: number; name: string }
@@ -72,7 +79,6 @@ export function OrderDetailClient({
 }) {
   const router = useRouter()
   const [order, setOrder] = useState(initialOrder)
-  const [responseItemId, setResponseItemId] = useState<number | null>(null)
   const [delayItemId, setDelayItemId] = useState<number | null>(null)
   const [editOrderOpen, setEditOrderOpen] = useState(false)
   const [editItem, setEditItem] = useState<OrderItem | null>(null)
@@ -81,7 +87,6 @@ export function OrderDetailClient({
 
   useAdminBreadcrumbLabel(order.title)
 
-  const responseItem = order.items.find((i) => i.id === responseItemId)
   const delayItem = order.items.find((i) => i.id === delayItemId)
 
   const pendingCount = (item: OrderItem) =>
@@ -124,6 +129,7 @@ export function OrderDetailClient({
             {row.original.measure.name}
           </Link>
         ),
+        meta: colMeta("Мера"),
       },
       {
         id: "subdivision",
@@ -134,7 +140,7 @@ export function OrderDetailClient({
         cell: ({ row }) => row.original.subdivision?.name ?? "—",
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Подразделение" },
+        meta: colMeta("Подразделение"),
       },
       {
         id: "status",
@@ -152,7 +158,7 @@ export function OrderDetailClient({
         },
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Статус" },
+        meta: colMeta("Статус"),
       },
       {
         accessorKey: "dueAt",
@@ -161,28 +167,59 @@ export function OrderDetailClient({
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.dueAt), "dd.MM.yyyy"),
+        meta: colMeta("Срок", { valueType: "date" }),
       },
       {
         id: "reports",
         header: "Отчёты",
         enableSorting: false,
-        cell: ({ row }) =>
-          row.original.responses.length > 0 ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setResponseItemId(row.original.id)}
-            >
-              {row.original.responses.length} отчёт(ов)
-            </Button>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+        enableColumnFilter: false,
+        cell: ({ row }) => {
+          const { responses } = row.original
+          if (responses.length === 0) {
+            return <span className="text-muted-foreground">—</span>
+          }
+          if (responses.length === 1) {
+            return (
+              <Button size="sm" variant="outline" asChild>
+                <Link href={`/admin/responses/${responses[0].id}`}>
+                  1 отчёт
+                  <ChevronRightIcon data-icon="inline-end" />
+                </Link>
+              </Button>
+            )
+          }
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline">
+                  {responses.length} отчёта
+                  <ChevronRightIcon data-icon="inline-end" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuGroup>
+                  {responses.map((response) => (
+                    <DropdownMenuItem key={response.id} asChild>
+                      <Link href={`/admin/responses/${response.id}`}>
+                        {format(new Date(response.submittedAt), "dd.MM.yyyy HH:mm")}
+                        {response.submittedByLabel
+                          ? ` · ${response.submittedByLabel}`
+                          : ""}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        },
       },
       {
         id: "delays",
         header: "Переносы",
         enableSorting: false,
+        enableColumnFilter: false,
         cell: ({ row }) =>
           row.original.delayRequests.length > 0 ? (
             <Button
@@ -206,6 +243,8 @@ export function OrderDetailClient({
         header: "",
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
+        meta: actionsColumnMeta(),
         cell: ({ row }) => (
           <TableRowActions
             actions={[
@@ -232,7 +271,14 @@ export function OrderDetailClient({
     <div className="flex flex-col gap-6">
       <PageHeader
         title={order.title}
-        description={order.organization.name}
+        description={
+          <Link
+            href={`/admin/organizations/${order.organization.id}`}
+            className="hover:underline"
+          >
+            {order.organization.name}
+          </Link>
+        }
         backHref="/admin/orders"
         backLabel="Поручения"
         actions={
@@ -241,7 +287,7 @@ export function OrderDetailClient({
               Изменить поручение
             </Button>
             <Button variant="outline" size="sm" asChild>
-              <Link href={`/admin/organizations/${order.organization.id}?tab=links`}>
+              <Link href={`/admin/organizations/${order.organization.id}`}>
                 Ссылки {labels.orgGenitive}
               </Link>
             </Button>
@@ -313,16 +359,6 @@ export function OrderDetailClient({
         onConfirm={confirmDeleteItem}
         loading={deleting}
       />
-
-      {responseItem && (
-        <ResponseListDialog
-          open={responseItemId !== null}
-          onOpenChange={(o) => !o && setResponseItemId(null)}
-          measureName={responseItem.measure.name}
-          subdivisionName={responseItem.subdivision?.name}
-          responses={responseItem.responses}
-        />
-      )}
 
       {delayItem && (
         <DelayListDialog

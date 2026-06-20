@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import {
   createOrganization,
@@ -11,7 +12,7 @@ import { organizationSchema } from "@/lib/validations/organizations"
 
 export async function GET() {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsRead)
     const orgs = await listOrganizations()
     return jsonOk(orgs)
   } catch (error) {
@@ -21,7 +22,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const body = await request.json()
     const parsed = organizationSchema.safeParse(body)
     if (!parsed.success) {
@@ -37,7 +38,7 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const body = await request.json()
     const id = Number(body.id)
     if (!id) return handleApiError(new Error("id required"))
@@ -56,7 +57,7 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const { searchParams } = new URL(request.url)
     const id = Number(searchParams.get("id"))
     if (!id) return handleApiError(new Error("id required"))

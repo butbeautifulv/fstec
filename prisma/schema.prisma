@@ -8,7 +8,9 @@ datasource db {
 }
 
 enum UserRole {
-  ADMIN
+  SUPER_ADMIN
+  OPERATOR
+  VIEWER
 }
 
 enum DelayRequestStatus {
@@ -25,6 +27,7 @@ model Organization {
   subdivisions Subdivision[]
   orders       Order[]
   accessLinks  AccessLink[]
+  appSettingsHead AppSettings?
 
   @@map("organizations")
 }
@@ -52,15 +55,17 @@ model Status {
 }
 
 model User {
-  id           Int            @id @default(autoincrement()) @map("user_id")
-  email        String         @unique
-  name         String
-  passwordHash String         @map("password_hash")
-  role         UserRole       @default(ADMIN)
-  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz()
-  measures     Measure[]
-  orders       Order[]
-  reviewedDelays DelayRequest[] @relation("DelayReviewer")
+  id                 Int            @id @default(autoincrement()) @map("user_id")
+  email              String         @unique
+  name               String
+  passwordHash       String         @map("password_hash")
+  role               UserRole       @default(OPERATOR)
+  mustChangePassword Boolean        @default(false) @map("must_change_password")
+  locale             String?
+  createdAt          DateTime       @default(now()) @map("created_at") @db.Timestamptz()
+  measures           Measure[]
+  orders             Order[]
+  reviewedDelays     DelayRequest[] @relation("DelayReviewer")
 
   @@map("users")
 }
@@ -152,4 +157,15 @@ model DelayRequest {
   reviewedBy      User?              @relation("DelayReviewer", fields: [reviewedById], references: [id])
 
   @@map("delay_requests")
+}
+
+model AppSettings {
+  id                 Int           @id @default(1)
+  headOrganizationId Int?          @unique @map("head_organization_id")
+  timezone           String        @default("Europe/Moscow")
+  locale             String        @default("ru")
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz()
+  headOrganization   Organization? @relation(fields: [headOrganizationId], references: [id], onDelete: SetNull)
+
+  @@map("app_settings")
 }

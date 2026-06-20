@@ -69,18 +69,24 @@ async function main() {
 
   await migrateLegacyOverdueStatus()
 
+  await prisma.appSettings.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1, timezone: "Europe/Moscow" },
+  })
+
   const email = process.env.ADMIN_EMAIL ?? "admin@fstec.local"
   const password = process.env.ADMIN_PASSWORD ?? "admin123"
   const passwordHash = await bcrypt.hash(password, 12)
 
   const admin = await prisma.user.upsert({
     where: { email },
-    update: { passwordHash, name: "Admin", role: UserRole.ADMIN },
+    update: { passwordHash, name: "Admin", role: UserRole.SUPER_ADMIN },
     create: {
       email,
       name: "Admin",
       passwordHash,
-      role: UserRole.ADMIN,
+      role: UserRole.SUPER_ADMIN,
     },
   })
 

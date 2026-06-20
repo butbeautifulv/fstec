@@ -3,10 +3,14 @@
 import Link from "next/link"
 import { useMemo } from "react"
 import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
-import { DataTable, DataTableColumnHeader } from "@/components/data-table"
+import {
+  DataTable,
+  DataTableColumnHeader,
+  DataTableRowLink,
+} from "@/components/data-table"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { facetedFilter, FACETED_COLUMN_META } from "@/lib/data-table/faceted-column"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
 import { format } from "date-fns"
@@ -15,6 +19,7 @@ export type PublicStatus = { id: number; name: string; isTerminal: boolean }
 
 export type PublicItem = {
   id: number
+  orderId: number
   dueAt: string
   measure: { name: string; code: string | null; description: string | null }
   status: { id: number; name: string; isTerminal?: boolean }
@@ -33,6 +38,7 @@ export function PublicMeasuresTable({
   items,
   statuses,
   showSubdivisionColumn = false,
+  hideOrderColumn = false,
   columnFilters,
   onColumnFiltersChange,
 }: {
@@ -40,6 +46,7 @@ export function PublicMeasuresTable({
   items: PublicItem[]
   statuses: PublicStatus[]
   showSubdivisionColumn?: boolean
+  hideOrderColumn?: boolean
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
 }) {
@@ -66,18 +73,28 @@ export function PublicMeasuresTable({
   }, [items, statusById])
 
   const columns = useMemo<ColumnDef<Row>[]>(() => {
-    const base: ColumnDef<Row>[] = [
-      {
+    const base: ColumnDef<Row>[] = []
+
+    if (!hideOrderColumn) {
+      base.push({
         id: "orderTitle",
         accessorKey: "orderTitle",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Поручение" />
         ),
+        cell: ({ row }) => (
+          <Link
+            href={`/p/${token}/orders/${row.original.orderId}`}
+            className="hover:underline"
+          >
+            {row.original.orderTitle}
+          </Link>
+        ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Поручение" },
-      },
-    ]
+        meta: colMeta("Поручение"),
+      })
+    }
 
     if (showSubdivisionColumn) {
       base.push({
@@ -89,7 +106,7 @@ export function PublicMeasuresTable({
         cell: ({ row }) => row.original.subdivisionName ?? "Без подразделения",
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Подразделение" },
+        meta: colMeta("Подразделение"),
       })
     }
 
@@ -98,7 +115,15 @@ export function PublicMeasuresTable({
         id: "measure",
         header: "Мера",
         accessorFn: (row) => row.measure.name,
-        cell: ({ row }) => row.original.measure.name,
+        cell: ({ row }) => (
+          <Link
+            href={`/p/${token}/items/${row.original.id}`}
+            className="font-medium hover:underline"
+          >
+            {row.original.measure.name}
+          </Link>
+        ),
+        enableColumnFilter: false,
       },
       {
         id: "code",
@@ -109,6 +134,7 @@ export function PublicMeasuresTable({
             {row.original.measure.code ?? "—"}
           </span>
         ),
+        enableColumnFilter: false,
       },
       {
         accessorKey: "dueAt",
@@ -117,6 +143,7 @@ export function PublicMeasuresTable({
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.dueAt), "dd.MM.yyyy"),
+        meta: colMeta("Срок", { valueType: "date" }),
       },
       {
         id: "status",
@@ -131,23 +158,26 @@ export function PublicMeasuresTable({
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Статус" },
+        meta: colMeta("Статус"),
       },
       {
         id: "actions",
         header: "",
         enableSorting: false,
         enableHiding: false,
+        enableColumnFilter: false,
         cell: ({ row }) => (
-          <Button size="sm" variant="outline" asChild>
-            <Link href={`/p/${token}/items/${row.original.id}`}>Заполнить</Link>
-          </Button>
+          <DataTableRowLink
+            href={`/p/${token}/items/${row.original.id}`}
+            label="Заполнить"
+          />
         ),
+        meta: actionsColumnMeta(),
       }
     )
 
     return base
-  }, [token, showSubdivisionColumn])
+  }, [token, showSubdivisionColumn, hideOrderColumn])
 
   return (
     <DataTable

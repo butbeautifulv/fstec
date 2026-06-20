@@ -1,19 +1,18 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useCallback, useMemo, useState } from "react"
+import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
-import { DataTable, DataTableColumnHeader } from "@/components/data-table"
+import { DataTable, DataTableColumnHeader, DataTableRowLink } from "@/components/data-table"
+import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { DELAY_STATUS_LABELS } from "@/lib/delays"
 import { labels } from "@/lib/ui/branding"
-import { notify } from "@/lib/ui/feedback"
+import { cn } from "@/lib/utils"
 import { format } from "date-fns"
 import { DelayRequestStatus } from "@prisma/client"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 
 export type DelayRequestTableRow = {
   id: number
@@ -42,47 +41,19 @@ const STATUS_VARIANT: Record<
   REJECTED: "outline",
 }
 
+function TruncatedCell({ text, className }: { text: string; className?: string }) {
+  return (
+    <span className={cn("block min-w-0 truncate", className)} title={text}>
+      {text}
+    </span>
+  )
+}
+
 export function DelayRequestsTable({
   initialRows,
 }: {
   initialRows: DelayRequestTableRow[]
 }) {
-  const router = useRouter()
-  const [rows, setRows] = useState(initialRows)
-  const [processingId, setProcessingId] = useState<number | null>(null)
-
-  const reviewDelay = useCallback(
-    async (id: number, action: "approve" | "reject") => {
-      setProcessingId(id)
-      const res = await fetch("/api/delay-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, action }),
-      })
-      setProcessingId(null)
-      if (res.ok) {
-        notify.success(action === "approve" ? "Перенос одобрен" : "Перенос отклонён")
-        setRows((prev) =>
-          prev.map((row) =>
-            row.id === id
-              ? {
-                  ...row,
-                  status:
-                    action === "approve"
-                      ? DelayRequestStatus.APPROVED
-                      : DelayRequestStatus.REJECTED,
-                }
-              : row
-          )
-        )
-        router.refresh()
-      } else {
-        notify.error("Не удалось обработать запрос")
-      }
-    },
-    [router]
-  )
-
   const columns = useMemo<ColumnDef<DelayRequestTableRow>[]>(
     () => [
       {
@@ -91,7 +62,18 @@ export function DelayRequestsTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
-        cell: ({ row }) => row.original.orderItem.order.organization.name,
+        cell: ({ row }) => {
+          const org = row.original.orderItem.order.organization
+          return (
+            <Link
+              href={`/admin/organizations/${org.id}`}
+              className="block min-w-0 font-medium hover:underline"
+            >
+              <TruncatedCell text={org.name} />
+            </Link>
+          )
+        },
+        meta: colMeta(labels.org, { cellClassName: "max-w-0 w-[12%]" }),
       },
       {
         id: "order",
@@ -99,14 +81,18 @@ export function DelayRequestsTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Поручение" />
         ),
-        cell: ({ row }) => (
-          <Link
-            href={`/admin/orders/${row.original.orderItem.order.id}`}
-            className="font-medium hover:underline"
-          >
-            {row.original.orderItem.order.title}
-          </Link>
-        ),
+        cell: ({ row }) => {
+          const title = row.original.orderItem.order.title
+          return (
+            <Link
+              href={`/admin/orders/${row.original.orderItem.order.id}`}
+              className="block min-w-0 font-medium hover:underline"
+            >
+              <TruncatedCell text={title} />
+            </Link>
+          )
+        },
+        meta: colMeta("Поручение", { cellClassName: "max-w-0 w-[16%]" }),
       },
       {
         id: "measure",
@@ -114,14 +100,18 @@ export function DelayRequestsTable({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Мера" />
         ),
-        cell: ({ row }) => (
-          <Link
-            href={`/admin/measures/${row.original.orderItem.measure.id}/edit`}
-            className="hover:underline"
-          >
-            {row.original.orderItem.measure.name}
-          </Link>
-        ),
+        cell: ({ row }) => {
+          const name = row.original.orderItem.measure.name
+          return (
+            <Link
+              href={`/admin/measures/${row.original.orderItem.measure.id}/edit`}
+              className="block min-w-0 hover:underline"
+            >
+              <TruncatedCell text={name} />
+            </Link>
+          )
+        },
+        meta: colMeta("Мера", { cellClassName: "max-w-0 min-w-[10rem] w-[32%]" }),
       },
       {
         id: "currentDue",
@@ -131,32 +121,16 @@ export function DelayRequestsTable({
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.orderItem.dueAt), "dd.MM.yyyy"),
+        meta: colMeta("Текущий срок", { valueType: "date", cellClassName: "w-28" }),
       },
       {
         accessorKey: "requestedDueAt",
         header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Запрошенный срок" />
+          <DataTableColumnHeader column={column} title="Новый срок" />
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.requestedDueAt), "dd.MM.yyyy"),
-      },
-      {
-        accessorKey: "justification",
-        header: "Обоснование",
-        enableSorting: false,
-        cell: ({ row }) => (
-          <span className="line-clamp-2 max-w-xs text-muted-foreground">
-            {row.original.justification ?? "—"}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "createdAt",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Запрошено" />
-        ),
-        sortingFn: dateSortFn,
-        cell: ({ row }) => format(new Date(row.original.createdAt), "dd.MM.yyyy HH:mm"),
+        meta: colMeta("Новый срок", { valueType: "date", cellClassName: "w-28" }),
       },
       {
         accessorKey: "status",
@@ -168,43 +142,30 @@ export function DelayRequestsTable({
             {DELAY_STATUS_LABELS[row.original.status]}
           </Badge>
         ),
+        meta: colMeta("Статус", {
+          valueLabels: DELAY_STATUS_LABELS,
+          cellClassName: "w-32",
+        }),
       },
       {
         id: "actions",
         header: "",
         enableSorting: false,
         enableHiding: false,
-        cell: ({ row }) =>
-          row.original.status === DelayRequestStatus.PENDING ? (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                disabled={processingId === row.original.id}
-                onClick={() => void reviewDelay(row.original.id, "approve")}
-              >
-                Одобрить
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={processingId === row.original.id}
-                onClick={() => void reviewDelay(row.original.id, "reject")}
-              >
-                Отклонить
-              </Button>
-            </div>
-          ) : (
-            <span className="text-muted-foreground">—</span>
-          ),
+        enableColumnFilter: false,
+        cell: ({ row }) => (
+          <DataTableRowLink href={`/admin/delay-requests/${row.original.id}`} />
+        ),
+        meta: actionsColumnMeta(),
       },
     ],
-    [processingId, reviewDelay]
+    []
   )
 
   return (
     <DataTable
       columns={columns}
-      data={rows}
+      data={initialRows}
       searchPlaceholder="Поиск по организации, поручению, мере…"
       globalFilterFn={(row, _columnId, filterValue) => {
         const q = String(filterValue).toLowerCase()

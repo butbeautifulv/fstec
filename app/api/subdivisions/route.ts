@@ -1,12 +1,13 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { createSubdivision } from "@/lib/organizations"
 import { subdivisionSchema } from "@/lib/validations/organizations"
 
 export async function POST(request: Request) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const body = await request.json()
     const parsed = subdivisionSchema.safeParse(body)
     if (!parsed.success) {

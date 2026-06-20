@@ -27,6 +27,7 @@ export default async function PublicItemPage({ params }: Params) {
       organizationName={ctx.link.organization.name}
       subdivisionName={ctx.link.subdivision?.name ?? null}
       statuses={statuses}
+      orderId={order?.id ?? item.orderId}
       item={{
         id: item.id,
         dueAt: item.dueAt.toISOString(),

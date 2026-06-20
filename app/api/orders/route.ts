@@ -1,12 +1,13 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { createOrder, listOrders } from "@/lib/orders"
 import { createOrderSchema } from "@/lib/validations/orders"
 
 export async function GET() {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersRead)
     return jsonOk(await listOrders())
   } catch (error) {
     return handleApiError(error)
@@ -15,7 +16,7 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireAdminSession()
+    const session = await requirePermission(Permission.ordersWrite)
     const parsed = createOrderSchema.safeParse(await request.json())
     if (!parsed.success) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))

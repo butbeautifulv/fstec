@@ -12,7 +12,7 @@ export function PageHeader({
   className,
 }: {
   title: string
-  description?: string
+  description?: ReactNode
   actions?: ReactNode
   backHref?: string
   backLabel?: string

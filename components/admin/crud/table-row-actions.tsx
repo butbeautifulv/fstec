@@ -23,7 +23,7 @@ export function TableRowActions({ actions }: { actions: RowAction[] }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm">
+        <Button variant="outline" size="icon-xs">
           <MoreHorizontal />
           <span className="sr-only">Действия</span>
         </Button>

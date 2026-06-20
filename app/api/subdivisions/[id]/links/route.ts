@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import {
   createSubdivisionAccessLink,
@@ -11,7 +12,7 @@ type Params = { params: Promise<{ id: string }> }
 
 export async function POST(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const subdivisionId = Number((await params).id)
     const sub = await prisma.subdivision.findUnique({ where: { id: subdivisionId } })
     if (!sub) throw new Error("NOT_FOUND")
@@ -25,7 +26,7 @@ export async function POST(_request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.orgsWrite)
     const subdivisionId = Number((await params).id)
     const sub = await prisma.subdivision.findUnique({ where: { id: subdivisionId } })
     if (!sub) throw new Error("NOT_FOUND")

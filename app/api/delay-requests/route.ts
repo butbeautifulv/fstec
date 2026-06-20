@@ -1,13 +1,14 @@
 import { revalidatePath } from "next/cache"
 import { DelayRequestStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { countPendingDelayRequests, listDelayRequests } from "@/lib/delays"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 
 export async function GET(request: Request) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.delaysRead)
     const { searchParams } = new URL(request.url)
 
     if (searchParams.get("count") === "pending") {
@@ -30,7 +31,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireAdminSession()
+    const session = await requirePermission(Permission.delaysWrite)
     const body = await request.json()
     const id = Number(body.id)
     const action = body.action as "approve" | "reject"

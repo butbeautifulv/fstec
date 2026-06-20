@@ -32,7 +32,7 @@ export function DataTableColumnToggle<TData>({ table }: { table: Table<TData> })
             >
               {typeof column.columnDef.header === "string"
                 ? column.columnDef.header
-                : column.id}
+                : (column.columnDef.meta?.title ?? column.id)}
             </DropdownMenuCheckboxItem>
           ))}
       </DropdownMenuContent>

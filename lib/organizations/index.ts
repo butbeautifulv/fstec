@@ -15,6 +15,12 @@ export function getOrganization(id: number) {
   })
 }
 
+export function getSubdivision(id: number) {
+  return prisma.subdivision.findUnique({
+    where: { id },
+  })
+}
+
 export function createOrganization(data: OrganizationInput) {
   return prisma.organization.create({
     data: {

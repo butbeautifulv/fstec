@@ -1,5 +1,4 @@
-import { prisma } from "@/lib/db"
-import { verifyPassword } from "@/lib/auth/password"
+import { getAuthProvider } from "@/lib/auth/providers"
 import { getSession } from "@/lib/auth/session"
 import { loginSchema } from "@/lib/validations/auth"
 import { handleApiError, jsonError, jsonOk } from "@/lib/api/errors"
@@ -12,21 +11,25 @@ export async function POST(request: Request) {
       return jsonError(parsed.error.issues[0]?.message ?? "Invalid input")
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: parsed.data.email },
-    })
-
-    if (!user || !(await verifyPassword(parsed.data.password, user.passwordHash))) {
-      return jsonError("Invalid email or password", 401)
+    const result = await getAuthProvider().authenticate(parsed.data)
+    if (!result.ok) {
+      return jsonError(result.error, result.status ?? 401)
     }
 
     const session = await getSession()
-    session.userId = user.id
-    session.email = user.email
+    session.userId = result.user.id
+    session.email = result.user.email
+    session.role = result.user.role
     session.isLoggedIn = true
+    session.mustChangePassword = result.user.mustChangePassword
     await session.save()
 
-    return jsonOk({ email: user.email, name: user.name })
+    return jsonOk({
+      email: result.user.email,
+      name: result.user.name,
+      role: result.user.role,
+      mustChangePassword: result.user.mustChangePassword,
+    })
   } catch (error) {
     return handleApiError(error)
   }

@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { TimezoneProvider } from "@/components/timezone-provider"
+import { LocaleProvider } from "@/components/locale-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { APP_NAME } from "@/lib/ui/branding"
@@ -32,10 +34,14 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster closeButton position="bottom-right" toastOptions={{ duration: 4000 }} />
-          </TooltipProvider>
+          <TimezoneProvider>
+            <LocaleProvider>
+              <TooltipProvider>
+                {children}
+                <Toaster closeButton position="bottom-right" toastOptions={{ duration: 4000 }} />
+              </TooltipProvider>
+            </LocaleProvider>
+          </TimezoneProvider>
         </ThemeProvider>
       </body>
     </html>

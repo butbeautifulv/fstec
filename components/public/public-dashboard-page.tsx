@@ -1,6 +1,5 @@
 import Link from "next/link"
-import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
-import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
+import { PublicDashboardInteractive } from "@/components/public/public-dashboard-interactive"
 import { PageHeader } from "@/components/admin/page-header"
 import {
   type PublicItem,
@@ -52,27 +51,22 @@ export function PublicDashboardPage({
         }
       />
 
-      <DashboardStatCards stats={stats} />
-
       {items.length === 0 && (
         <Alert>
           <AlertDescription>Нет мер для отображения.</AlertDescription>
         </Alert>
       )}
 
-      {items.length > 0 && (
-        <ScopedDashboardView
-          key={overdueOnly ? "overdue" : "all"}
-          variant="public"
-          scope={scope}
-          stats={stats}
-          token={token}
-          items={items}
-          statuses={statuses}
-          showSubdivisionColumn={showSubdivisionColumn}
-          overdueOnly={overdueOnly}
-        />
-      )}
+      <PublicDashboardInteractive
+        key={overdueOnly ? "overdue" : "all"}
+        scope={scope}
+        stats={stats}
+        token={token}
+        items={items}
+        statuses={statuses}
+        showSubdivisionColumn={showSubdivisionColumn}
+        overdueOnly={overdueOnly}
+      />
     </div>
   )
 }

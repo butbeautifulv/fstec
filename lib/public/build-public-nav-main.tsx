@@ -1,18 +1,8 @@
 import { ClipboardListIcon, LayoutDashboardIcon } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
 import type { ShellNavMainItem } from "@/components/shell/shell-nav-main"
-import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
-
-type NavItem = {
-  id: number
-  dueAt: Date
-  measure: { name: string }
-  status: { name: string; isTerminal: boolean }
-}
 
 type NavOrder = {
-  title: string
-  items: NavItem[]
+  items: { id: number }[]
 }
 
 export function buildPublicNavMainItems(
@@ -20,7 +10,6 @@ export function buildPublicNavMainItems(
   orders: NavOrder[],
   pathname: string
 ): ShellNavMainItem[] {
-  const now = new Date()
   const dashboardHref = `/p/${token}`
   const items: ShellNavMainItem[] = [
     {
@@ -31,29 +20,14 @@ export function buildPublicNavMainItems(
     },
   ]
 
-  for (const order of orders) {
-    if (order.items.length === 0) continue
+  const hasOrders = orders.some((order) => order.items.length > 0)
+  if (hasOrders) {
+    const ordersHref = `/p/${token}/orders`
     items.push({
-      title: order.title,
+      title: "Поручения",
+      href: ordersHref,
       icon: ClipboardListIcon,
-      defaultOpen: order.items.some((item) => pathname === `/p/${token}/items/${item.id}`),
-      children: order.items.map((item) => {
-        const row = { status: item.status, dueAt: item.dueAt }
-        const href = `/p/${token}/items/${item.id}`
-        return {
-          title: item.measure.name,
-          href,
-          isActive: pathname === href,
-          badge: (
-            <Badge
-              variant={isOrderItemOverdue(row, now) ? "destructive" : "secondary"}
-              className="ml-auto shrink-0 text-[10px]"
-            >
-              {getDisplayStatusName(row, now)}
-            </Badge>
-          ),
-        }
-      }),
+      isActive: pathname.startsWith(ordersHref),
     })
   }
 

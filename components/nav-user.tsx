@@ -20,7 +20,8 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, LogOutIcon } from "lucide-react"
+import { ChevronsUpDownIcon, LogOutIcon, UserCircleIcon } from "lucide-react"
+import Link from "next/link"
 
 export function NavUser({
   user,
@@ -85,6 +86,12 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/admin/settings/account">
+                <UserCircleIcon />
+                Учётная запись
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => void logout()}>
               <LogOutIcon />
               Выйти

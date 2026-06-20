@@ -1,5 +1,6 @@
 import { revalidatePath } from "next/cache"
-import { requireAdminSession } from "@/lib/auth/session"
+import { Permission } from "@/lib/auth/permissions"
+import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { deleteOrderItem, updateOrderItem } from "@/lib/orders"
 import { orderItemUpdateSchema } from "@/lib/validations/orders"
@@ -8,7 +9,7 @@ type Params = { params: Promise<{ id: string; itemId: string }> }
 
 export async function PATCH(request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersWrite)
     const { id, itemId } = await params
     const orderId = Number(id)
     const parsed = orderItemUpdateSchema.safeParse(await request.json())
@@ -27,7 +28,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
 export async function DELETE(_request: Request, { params }: Params) {
   try {
-    await requireAdminSession()
+    await requirePermission(Permission.ordersWrite)
     const { id, itemId } = await params
     const orderId = Number(id)
     await deleteOrderItem(orderId, Number(itemId))

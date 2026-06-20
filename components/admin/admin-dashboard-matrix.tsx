@@ -6,7 +6,8 @@ import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { EmptyTableState } from "@/components/admin/crud/empty-table-state"
 import { Badge } from "@/components/ui/badge"
-import { facetedFilter, FACETED_COLUMN_META } from "@/lib/data-table/faceted-column"
+import { colMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { labels } from "@/lib/ui/branding"
 import { getDisplayStatusName } from "@/lib/statuses/workflow"
@@ -18,7 +19,7 @@ type MatrixItem = {
   dueAt: string
   isOverdue: boolean
   measure: { id: number; name: string }
-  order: { title: string; organization: { name: string } }
+  order: { title: string; organization: { id: number; name: string } }
   status: { name: string; isTerminal: boolean }
 }
 
@@ -39,10 +40,17 @@ export function AdminDashboardMatrix({
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title={labels.org} />
         ),
-        cell: ({ row }) => row.original.order.organization.name,
+        cell: ({ row }) => (
+          <Link
+            href={`/admin/organizations/${row.original.order.organization.id}`}
+            className="hover:underline"
+          >
+            {row.original.order.organization.name}
+          </Link>
+        ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: labels.org },
+        meta: colMeta(labels.org),
       },
       {
         id: "order",
@@ -60,7 +68,7 @@ export function AdminDashboardMatrix({
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Поручение" },
+        meta: colMeta("Поручение"),
       },
       {
         id: "measure",
@@ -76,6 +84,7 @@ export function AdminDashboardMatrix({
             {row.original.measure.name}
           </Link>
         ),
+        meta: colMeta("Мера"),
       },
       {
         id: "status",
@@ -90,7 +99,7 @@ export function AdminDashboardMatrix({
         ),
         enableColumnFilter: true,
         filterFn: facetedFilter,
-        meta: { ...FACETED_COLUMN_META, title: "Статус" },
+        meta: colMeta("Статус"),
       },
       {
         accessorKey: "dueAt",
@@ -99,6 +108,7 @@ export function AdminDashboardMatrix({
         ),
         sortingFn: dateSortFn,
         cell: ({ row }) => format(new Date(row.original.dueAt), "dd.MM.yyyy"),
+        meta: colMeta("Срок", { valueType: "date" }),
       },
     ],
     []

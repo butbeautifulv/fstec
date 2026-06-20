@@ -46,6 +46,27 @@ export async function listDelayRequests(status?: DelayRequestStatus) {
   })
 }
 
+export async function getDelayRequest(id: number) {
+  return prisma.delayRequest.findUnique({
+    where: { id },
+    include: {
+      reviewedBy: { select: { id: true, name: true } },
+      orderItem: {
+        include: {
+          measure: { select: { id: true, name: true } },
+          order: {
+            select: {
+              id: true,
+              title: true,
+              organization: { select: { id: true, name: true } },
+            },
+          },
+        },
+      },
+    },
+  })
+}
+
 export const DELAY_STATUS_LABELS: Record<DelayRequestStatus, string> = {
   PENDING: "Ожидает",
   APPROVED: "Одобрен",
