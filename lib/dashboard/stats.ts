@@ -6,7 +6,7 @@ import {
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
 import type { ScopedDashboardItem } from "@/lib/dashboard/fetch-scoped-items"
-import { fetchScopedStats } from "@/lib/dashboard/fetch-scoped-stats"
+import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 
 export type StatusDistribution = { status: string; count: number; fill: string }
 
@@ -198,7 +198,8 @@ function buildSubdivisionStats(items: ItemRow[], now: Date): ScopedDashboardStat
 export async function getScopedDashboardStats(
   scope: DashboardScope
 ): Promise<ScopedDashboardStats> {
-  return fetchScopedStats(scope)
+  const { stats } = await getScopedDashboard(scope)
+  return stats
 }
 
 /** @deprecated Use getScopedDashboardStats({ type: "global" }) */

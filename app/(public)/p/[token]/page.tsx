@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { PublicReportsRevisionBanner } from "@/components/public/public-reports-revision-banner"
-import { parseDashboardSearchParams } from "@/lib/dashboard/dashboard-query"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { countPublicReportsNeedingRevision } from "@/lib/public/reports"
 import { serializePublicStatuses } from "@/lib/public/serialize-public"
@@ -15,10 +14,11 @@ export default async function PublicLinkPage({
   searchParams,
 }: {
   params: Params["params"]
-  searchParams: Promise<{ overdue?: string; status?: string; label?: string }>
+  searchParams: Promise<{ overdue?: string }>
 }) {
   const { token } = await params
-  const matrixQuery = parseDashboardSearchParams(await searchParams)
+  const { overdue: overdueParam } = await searchParams
+  const overdueOnly = overdueParam === "1"
 
   const [linkCtx, statuses, needsRevisionCount] = await Promise.all([
     validateAccessLink(token),
@@ -38,7 +38,6 @@ export default async function PublicLinkPage({
       <ScopedDashboardPageShell
         variant="public"
         scope={scope}
-        matrixQuery={matrixQuery}
         title={linkCtx.organization.name}
         description={
           linkCtx.subdivision?.name
@@ -46,6 +45,7 @@ export default async function PublicLinkPage({
             : "Все меры организации"
         }
         baseHref={`/p/${token}`}
+        overdueOnly={overdueOnly}
         statuses={serializePublicStatuses(statuses)}
         token={token}
         publicScope={scope.type === "subdivision" ? "subdivision" : "organization"}

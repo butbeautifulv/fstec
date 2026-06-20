@@ -48,12 +48,6 @@ export function serializeDashboardDto(
   }
 }
 
-export function serializeMatrixItems(
-  items: DashboardMatrixItem[]
-): SerializedMatrixItem[] {
-  return items.map(serializeMatrixItem)
-}
-
 function serializeMatrixItem(item: DashboardMatrixItem): SerializedMatrixItem {
   return {
     id: item.id,

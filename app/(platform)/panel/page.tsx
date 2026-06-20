@@ -2,17 +2,16 @@ import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-
 import { ReportShareButton } from "@/components/report/report-share-button"
 import { Permission, hasPermission } from "@/lib/auth/permissions"
 import { requirePageSession } from "@/lib/auth/page-guard"
-import { parseDashboardSearchParams } from "@/lib/dashboard/dashboard-query"
 import { labels } from "@/lib/ui/branding"
 import { getActiveReportLink } from "@/lib/report-links"
 
 export default async function PlatformDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ overdue?: string; status?: string; label?: string }>
+  searchParams: Promise<{ overdue?: string }>
 }) {
   const params = await searchParams
-  const matrixQuery = parseDashboardSearchParams(params)
+  const overdueOnly = params.overdue === "1"
   const session = await requirePageSession()
   const canManageReportLinks = hasPermission(session.role, Permission.settingsWrite)
 
@@ -24,10 +23,10 @@ export default async function PlatformDashboardPage({
     <ScopedDashboardPageShell
       variant="platform"
       scope={{ type: "global" }}
-      matrixQuery={matrixQuery}
       title={`Сводка по ${labels.orgPluralGenitive}`}
       description="Статусы исполнения мер по поручениям"
       baseHref="/panel"
+      overdueOnly={overdueOnly}
       emptyMessage={
         <>Нет данных. Создайте поручение для {labels.orgGenitive} в разделе «Поручения».</>
       }

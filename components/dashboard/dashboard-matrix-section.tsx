@@ -2,14 +2,7 @@ import { Suspense } from "react"
 import { DashboardInteractive } from "@/components/dashboard/dashboard-interactive"
 import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts-skeleton"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import {
-  getCachedScopedDashboardStats,
-  getScopedDashboardItems,
-} from "@/lib/dashboard/cache"
-import {
-  statsItemTotal,
-  type DashboardMatrixQuery,
-} from "@/lib/dashboard/dashboard-query"
+import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import {
   dashboardShowsEmptyInteractive,
   toDashboardInteractiveProps,
@@ -21,37 +14,36 @@ import type { ScopedDashboardPageShellProps } from "@/components/dashboard/dashb
 
 type DashboardMatrixSectionProps = ScopedDashboardPageShellProps & {
   scope: DashboardScope
-  matrixQuery: DashboardMatrixQuery
+  itemLimit?: number
   publicStatuses?: PublicStatus[]
 }
 
 export async function DashboardMatrixSection({
   scope,
-  matrixQuery,
+  itemLimit,
   publicStatuses,
-  baseHref,
+  overdueOnly,
   emptyMessage,
   suspenseCharts,
   ...shellProps
 }: DashboardMatrixSectionProps) {
-  const [stats, items] = await Promise.all([
-    getCachedScopedDashboardStats(scope),
-    getScopedDashboardItems(scope, matrixQuery),
-  ])
+  const dashboard = await getCachedScopedDashboard(
+    scope,
+    itemLimit != null ? { limit: itemLimit } : undefined
+  )
 
   const variant = shellProps.variant
-  const statsTotal = statsItemTotal(stats)
   const itemCount =
     variant === "public"
-      ? mapSerializedMatrixToPublicItems(items).length
-      : items.length
+      ? mapSerializedMatrixToPublicItems(dashboard.items).length
+      : dashboard.items.length
 
   const interactiveShellProps =
     variant === "public"
       ? {
           variant: "public" as const,
           token: shellProps.token,
-          items: mapSerializedMatrixToPublicItems(items),
+          items: mapSerializedMatrixToPublicItems(dashboard.items),
           statuses: publicStatuses ?? shellProps.statuses,
           scope: shellProps.publicScope,
           showSubdivisionColumn: shellProps.showSubdivisionColumn,
@@ -60,45 +52,38 @@ export async function DashboardMatrixSection({
         ? {
             variant: "report" as const,
             token: shellProps.token,
-            items,
+            items: dashboard.items,
           }
         : {
             variant: "platform" as const,
             scope: shellProps.chartScope,
-            items,
+            items: dashboard.items,
           }
-
-  const filterKey = [
-    matrixQuery.overdueOnly ? "overdue" : "all",
-    matrixQuery.breakdownLabel ?? "",
-    matrixQuery.displayStatuses?.join(",") ?? "",
-  ].join(":")
 
   const interactive = (
     <DashboardInteractive
-      key={filterKey}
-      {...toDashboardInteractiveProps(interactiveShellProps, stats, {
-        baseHref,
-        matrixQuery,
-      })}
+      key={overdueOnly ? "overdue" : "all"}
+      {...toDashboardInteractiveProps(
+        interactiveShellProps,
+        dashboard.stats,
+        overdueOnly
+      )}
     />
   )
 
-  if (!dashboardShowsEmptyInteractive(variant, itemCount, statsTotal)) {
+  if (!dashboardShowsEmptyInteractive(variant, itemCount)) {
     return null
   }
 
-  const scopeEmpty = statsTotal === 0 && itemCount === 0
-
   return (
     <>
-      {scopeEmpty ? (
+      {itemCount === 0 ? (
         <Alert>
           <AlertDescription>{emptyMessage}</AlertDescription>
         </Alert>
       ) : null}
 
-      {!scopeEmpty &&
+      {itemCount > 0 &&
         (suspenseCharts ? (
           <Suspense fallback={<DashboardChartsSkeleton />}>{interactive}</Suspense>
         ) : (

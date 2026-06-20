@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db"
 import { getDefaultStatusId } from "@/lib/statuses"
-import { getScopedDashboardItems } from "@/lib/dashboard/get-scoped-dashboard"
+import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { CreateOrderInput } from "@/lib/validations/orders"
 
@@ -169,7 +169,8 @@ export async function deleteOrderItem(orderId: number, itemId: number) {
 }
 
 export async function getScopedDashboardMatrix(scope: DashboardScope = { type: "global" }) {
-  return getScopedDashboardItems(scope, { overdueOnly: false })
+  const { items } = await getScopedDashboard(scope)
+  return items
 }
 
 export async function getDashboardMatrix() {

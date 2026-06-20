@@ -1,42 +1,38 @@
 "use client"
 
-import { useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useMemo, useState } from "react"
+import type { ColumnFiltersState } from "@tanstack/react-table"
 import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
 import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
 import {
-  buildDashboardHref,
-  matrixQueryToColumnFilters,
-  toggleMatrixStatusFilter,
-} from "@/lib/dashboard/dashboard-query"
+  overdueInitialFilters,
+  toggleStatusFilter,
+} from "@/lib/dashboard/chart-filters"
 import type { DashboardInteractiveProps } from "@/lib/dashboard/interactive-props"
 
 export type { DashboardInteractiveProps } from "@/lib/dashboard/interactive-props"
 export type { DashboardVariant } from "@/lib/dashboard/variant-config"
 
-function activeStatusFromQuery(
-  matrixQuery: DashboardInteractiveProps["matrixQuery"]
-): string | undefined {
-  if (matrixQuery.displayStatuses?.length === 1) {
-    return matrixQuery.displayStatuses[0]
-  }
-  return undefined
+function activeStatusFromFilters(filters: ColumnFiltersState): string | undefined {
+  const statusFilter = filters.find((f) => f.id === "status")
+  const values = statusFilter?.value
+  if (!Array.isArray(values) || values.length !== 1) return undefined
+  return values[0]
 }
 
 export function DashboardInteractive({
   showStatCards = true,
   ...props
 }: DashboardInteractiveProps & { showStatCards?: boolean }) {
-  const router = useRouter()
-  const { stats, baseHref, matrixQuery } = props
-  const chartScope = props.scope
-
-  const columnFilters = useMemo(
-    () => matrixQueryToColumnFilters(chartScope, matrixQuery),
-    [chartScope, matrixQuery]
+  const { stats, overdueOnly } = props
+  const initialFilters = useMemo(
+    () => (overdueOnly ? overdueInitialFilters() : []),
+    [overdueOnly]
   )
+  const [columnFilters, setColumnFilters] =
+    useState<ColumnFiltersState>(initialFilters)
 
-  const activeStatus = activeStatusFromQuery(matrixQuery)
+  const activeStatus = activeStatusFromFilters(columnFilters)
 
   return (
     <>
@@ -45,16 +41,15 @@ export function DashboardInteractive({
           stats={stats}
           activeStatus={activeStatus}
           onStatusClick={(status) =>
-            router.push(
-              buildDashboardHref(
-                baseHref,
-                toggleMatrixStatusFilter(matrixQuery, status)
-              )
-            )
+            setColumnFilters((prev) => toggleStatusFilter(prev, status))
           }
         />
       ) : null}
-      <ScopedDashboardView {...props} columnFilters={columnFilters} />
+      <ScopedDashboardView
+        {...props}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={setColumnFilters}
+      />
     </>
   )
 }

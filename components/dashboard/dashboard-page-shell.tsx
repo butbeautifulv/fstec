@@ -3,7 +3,6 @@ import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts
 import { DashboardMatrixSection } from "@/components/dashboard/dashboard-matrix-section"
 import { OverdueFilterActions } from "@/components/dashboard/overdue-filter-actions"
 import { PageHeader } from "@/components/shared/page-header"
-import type { DashboardMatrixQuery } from "@/lib/dashboard/dashboard-query"
 import type { PublicStatus } from "@/lib/public/types"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
@@ -15,11 +14,12 @@ type BaseShellProps = {
   title: string
   description: string
   baseHref: string
-  matrixQuery: DashboardMatrixQuery
+  overdueOnly: boolean
   emptyMessage: ReactNode
   headerActions?: ReactNode
   extraActions?: ReactNode
   suspenseCharts?: boolean
+  itemLimit?: number
 }
 
 type PlatformShellProps = BaseShellProps & {
@@ -50,11 +50,12 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
     title,
     description,
     baseHref,
-    matrixQuery,
+    overdueOnly,
     emptyMessage,
     headerActions,
     extraActions,
     scope,
+    itemLimit,
   } = props
 
   const config = getDashboardVariantConfig(props.variant)
@@ -69,10 +70,7 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
           <div className="flex flex-wrap items-center justify-end gap-2">
             {headerActions}
             {extraActions}
-            <OverdueFilterActions
-              baseHref={baseHref}
-              overdueOnly={matrixQuery.overdueOnly}
-            />
+            <OverdueFilterActions baseHref={baseHref} overdueOnly={overdueOnly} />
           </div>
         }
       />
@@ -81,7 +79,8 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
         <DashboardMatrixSection
           {...props}
           scope={scope}
-          matrixQuery={matrixQuery}
+          itemLimit={itemLimit}
+          overdueOnly={overdueOnly}
           emptyMessage={emptyMessage}
           suspenseCharts={suspenseCharts}
         />

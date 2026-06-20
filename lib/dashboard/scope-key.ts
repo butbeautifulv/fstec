@@ -11,18 +11,13 @@ export function serializeDashboardScope(scope: DashboardScope): string {
   }
 }
 
-/** @deprecated Use dashboardStatsCacheKey */
 export function dashboardCacheKey(scope: DashboardScope): string {
-  return dashboardStatsCacheKey(scope)
-}
-
-export function dashboardStatsCacheKey(scope: DashboardScope): string {
   switch (scope.type) {
     case "global":
-      return "dashboard:stats:global"
+      return "dashboard:global"
     case "organization":
-      return `dashboard:stats:org:${scope.organizationId}`
+      return `dashboard:org:${scope.organizationId}`
     case "subdivision":
-      return `dashboard:stats:sub:${scope.organizationId}:${scope.subdivisionId}`
+      return `dashboard:sub:${scope.organizationId}:${scope.subdivisionId}`
   }
 }
