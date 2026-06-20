@@ -1,11 +1,9 @@
-import { revalidatePath } from "next/cache"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
 import { assertOrderItemExists } from "@/lib/attachments"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
-import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
-import { submitOrderItemResponse } from "@/lib/responses/submit-response"
-import { responseSchema } from "@/lib/validations/public"
+import { handleSubmitOrderItemResponse } from "@/lib/responses/handle-submit-response"
 
 type Params = { params: Promise<{ id: string; itemId: string }> }
 
@@ -18,20 +16,12 @@ export async function POST(request: Request, { params }: Params) {
 
     await assertOrderItemExists(orderId, orderItemId)
 
-    const parsed = responseSchema.safeParse(await request.json())
-    if (!parsed.success) {
-      return handleApiError(new Error(parsed.error.issues[0]?.message))
-    }
+    const result = await handleSubmitOrderItemResponse(request, orderItemId)
+    if ("error" in result) return result.error
 
-    const result = await submitOrderItemResponse(orderItemId, parsed.data)
+    await revalidatePanelOrderMutation(orderId, { responses: true })
 
-    await invalidateDashboardOnMutation()
-    revalidatePath("/panel/orders")
-    revalidatePath(`/panel/orders/${orderId}`)
-    revalidatePath("/panel")
-    revalidatePath("/panel/responses")
-
-    return jsonOk(result, { status: 201 })
+    return jsonOk(result.data, { status: 201 })
   } catch (error) {
     return handleApiError(error)
   }

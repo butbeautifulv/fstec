@@ -24,6 +24,10 @@ import {
   type ChartSize,
 } from "@/components/dashboard/chart-category-viewport"
 import { OverflowText } from "@/components/shared/overflow-text"
+import {
+  DASHBOARD_CARD_CHART_HEIGHT_CLASS,
+  DASHBOARD_CARD_LEGEND_HEIGHT_CLASS,
+} from "@/components/dashboard/chart-card-layout"
 import { cn } from "@/lib/utils"
 import type {
   BreakdownRow,
@@ -46,6 +50,40 @@ const TICK_LINE_HEIGHT = 11
 const MIN_SEGMENT_LABEL_PX = 18
 const MIN_PIE_INSIDE_PERCENT = 0.08
 
+function formatChartLegendLabel(label: string, count: number, total: number) {
+  const pct = total > 0 ? Math.round((count / total) * 100) : 0
+  return `${label} (${count}) ${pct}%`
+}
+
+const CARD_CHART_HEIGHT = DASHBOARD_CARD_CHART_HEIGHT_CLASS
+const CARD_LEGEND_HEIGHT = DASHBOARD_CARD_LEGEND_HEIGHT_CLASS
+
+function DashboardChartLayout({
+  size,
+  chart,
+  legend,
+}: {
+  size: ChartSize
+  chart: React.ReactNode
+  legend: React.ReactNode
+}) {
+  if (size === "expanded") {
+    return (
+      <div className="w-full min-w-0">
+        {chart}
+        {legend}
+      </div>
+    )
+  }
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className={cn("shrink-0 overflow-hidden", CARD_CHART_HEIGHT)}>{chart}</div>
+      <div className={cn("shrink-0", CARD_LEGEND_HEIGHT)}>{legend}</div>
+    </div>
+  )
+}
+
 function chartMetrics(size: ChartSize) {
   if (size === "expanded") {
     return {
@@ -64,23 +102,29 @@ function chartMetrics(size: ChartSize) {
     pieOuterRadius: "68%",
     pieCenterClass: "text-2xl",
     overdueHeight: "h-64",
-    overdueInitial: { width: 640, height: 256 },
+    overdueInitial: { width: 640, height: 288 },
     completionHeight: "h-64",
-    completionInitial: { width: 640, height: 256 },
+    completionInitial: { width: 640, height: 288 },
   }
 }
 
-function barChartContainerClassName(layout: { overdueHeight?: string; completionHeight?: string }) {
-  const heightClass = layout.overdueHeight ?? layout.completionHeight ?? "h-64"
+function barChartContainerClassName(
+  layout: { overdueHeight?: string; completionHeight?: string },
+  size: ChartSize
+) {
+  const heightClass =
+    size === "card"
+      ? DASHBOARD_CARD_CHART_HEIGHT_CLASS
+      : layout.overdueHeight ?? layout.completionHeight ?? "h-64"
   return cn(
-    "w-full min-w-0 !block !aspect-auto max-h-none [&_.recharts-responsive-container]:!w-full",
+    "w-full min-w-0 !block !aspect-auto max-h-none [&_.recharts-responsive-container]:!h-full [&_.recharts-responsive-container]:!w-full",
     heightClass
   )
 }
 
 function ChartEmptyState() {
   return (
-    <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+    <div className={cn("flex items-center justify-center text-sm text-muted-foreground", CARD_CHART_HEIGHT)}>
       Нет данных
     </div>
   )
@@ -237,27 +281,29 @@ function DashboardChartLegend({
   onItemClick?: (key: string) => void
 }) {
   return (
-    <div className="flex w-full flex-wrap items-start justify-center gap-x-3 gap-y-2 px-1 pt-3">
-      {items.map((item) => (
-        <button
-          key={item.key}
-          type="button"
-          className={cn(
-            "inline-flex max-w-[calc(50%-0.375rem)] min-w-0 items-start gap-1.5 text-left text-xs sm:max-w-none",
-            onItemClick && "cursor-pointer hover:opacity-80",
-            item.active ? "font-medium text-foreground" : "text-muted-foreground"
-          )}
-          onClick={() => onItemClick?.(item.key)}
-        >
-          <span
-            className="mt-1 h-2 w-2 shrink-0 rounded-[2px]"
-            style={{ backgroundColor: item.color }}
-          />
-          <OverflowText className="min-w-0 flex-1">
-            {item.label}
-          </OverflowText>
-        </button>
-      ))}
+    <div className="flex h-full flex-col overflow-hidden border-t pt-2">
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-3">
+          {items.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              className={cn(
+                "inline-flex min-w-0 items-start gap-1.5 text-left text-[11px] leading-tight",
+                onItemClick && "cursor-pointer hover:opacity-80",
+                item.active ? "font-medium text-foreground" : "text-muted-foreground"
+              )}
+              onClick={() => onItemClick?.(item.key)}
+            >
+              <span
+                className="mt-0.5 h-2 w-2 shrink-0 rounded-[2px]"
+                style={{ backgroundColor: item.color }}
+              />
+              <OverflowText className="min-w-0 flex-1">{item.label}</OverflowText>
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
@@ -400,7 +446,7 @@ export function ScopedDashboardCharts({
 
   const statusLegendItems = statusDistribution.map((entry) => ({
     key: entry.status,
-    label: `${entry.status} (${entry.count})`,
+    label: formatChartLegendLabel(entry.status, entry.count, statusTotal),
     color: entry.fill,
   }))
 
@@ -411,9 +457,18 @@ export function ScopedDashboardCharts({
     ])
   ) as Record<(typeof STATUS_DISPLAY_ORDER)[number], number>
 
+  const completionGrandTotal = STATUS_DISPLAY_ORDER.reduce(
+    (sum, status) => sum + completionStatusTotals[status],
+    0
+  )
+
   const completionLegendItems = STATUS_DISPLAY_ORDER.map((status) => ({
     key: status,
-    label: `${status} (${completionStatusTotals[status]})`,
+    label: formatChartLegendLabel(
+      status,
+      completionStatusTotals[status],
+      completionGrandTotal
+    ),
     color: statusColorMap[status] ?? "var(--chart-1)",
   }))
 
@@ -423,16 +478,18 @@ export function ScopedDashboardCharts({
     0
   )
 
+  const overdueLegendTotal = overdueTotal + nonOverdueTotal
+
   const overdueLegendItems = [
     {
       key: "overdue",
-      label: `Просрочено (${overdueTotal})`,
+      label: formatChartLegendLabel("Просрочено", overdueTotal, overdueLegendTotal),
       color: overdueColor,
       active: isOverdueLegendActive(columnFilters, "overdue"),
     },
     {
       key: "nonOverdue",
-      label: `Не просрочено (${nonOverdueTotal})`,
+      label: formatChartLegendLabel("Не просрочено", nonOverdueTotal, overdueLegendTotal),
       color: "var(--muted)",
       active: isOverdueLegendActive(columnFilters, "nonOverdue"),
     },
@@ -443,18 +500,31 @@ export function ScopedDashboardCharts({
 
   const renderStatusChart = (size: ChartSize) => {
     const metrics = chartMetrics(size)
+    const isCard = size === "card"
 
-    return (
-      <div className="w-full">
+    const chart = (
+      <div
+        className={cn(
+          "relative mx-auto",
+          isCard
+            ? "flex h-full w-full items-center justify-center"
+            : "w-full"
+        )}
+      >
         <div
           className={cn(
-            "relative mx-auto aspect-square w-full",
-            metrics.pieMaxH
+            "relative",
+            isCard
+              ? "aspect-square h-full max-h-full"
+              : cn("mx-auto aspect-square w-full", metrics.pieMaxH)
           )}
         >
           <ChartContainer
             config={statusChartConfig}
-            className={cn("aspect-square h-full w-full", metrics.pieMaxH)}
+            className={cn(
+              "aspect-square h-full w-full",
+              !isCard && metrics.pieMaxH
+            )}
             initialDimension={
               size === "expanded" ? { width: 480, height: 480 } : undefined
             }
@@ -505,30 +575,41 @@ export function ScopedDashboardCharts({
             </span>
           </div>
         </div>
-        <DashboardChartLegend items={statusLegendItems} onItemClick={onStatusClick} />
       </div>
+    )
+
+    return (
+      <DashboardChartLayout
+        size={size}
+        chart={chart}
+        legend={
+          <DashboardChartLegend
+            items={statusLegendItems}
+            onItemClick={onStatusClick}
+          />
+        }
+      />
     )
   }
 
   const renderOverdueChart = (size: ChartSize) => {
     const categoryCount = overdueChartData.length
 
-    return (
-      <div className="w-full min-w-0">
-        <ChartCategoryViewport categoryCount={categoryCount} size={size}>
-          {(layout, chartWidth) => (
-            <ChartContainer
-              config={overdueChartConfig}
-              className={barChartContainerClassName(layout)}
-              initialDimension={
-                chartWidth
-                  ? {
-                      width: chartWidth,
-                      height: layout.overdueInitial.height,
-                    }
-                  : layout.overdueInitial
-              }
-            >
+    const chart = (
+      <ChartCategoryViewport categoryCount={categoryCount} size={size}>
+        {(layout, chartWidth) => (
+          <ChartContainer
+            config={overdueChartConfig}
+            className={barChartContainerClassName(layout, size)}
+            initialDimension={
+              chartWidth
+                ? {
+                    width: chartWidth,
+                    height: layout.overdueInitial.height,
+                  }
+                : layout.overdueInitial
+            }
+          >
               <BarChart
                 data={overdueChartData}
                 barCategoryGap={layout.barCategoryGap}
@@ -654,19 +735,26 @@ export function ScopedDashboardCharts({
             </ChartContainer>
           )}
         </ChartCategoryViewport>
-        <DashboardChartLegend
-          items={overdueLegendItems}
-          onItemClick={(key) => onOverdueLegendClick?.(key as OverdueChartSegment)}
-        />
-      </div>
+    )
+
+    return (
+      <DashboardChartLayout
+        size={size}
+        chart={chart}
+        legend={
+          <DashboardChartLegend
+            items={overdueLegendItems}
+            onItemClick={(key) => onOverdueLegendClick?.(key as OverdueChartSegment)}
+          />
+        }
+      />
     )
   }
 
   const renderCompletionChart = (size: ChartSize) => {
     const categoryCount = statusBreakdown.length
 
-    return (
-      <div className="w-full min-w-0">
+    const chart = (
         <ChartCategoryViewport
           categoryCount={categoryCount}
           size={size}
@@ -676,7 +764,7 @@ export function ScopedDashboardCharts({
           {(layout, chartWidth) => (
             <ChartContainer
               config={statusBreakdownConfig}
-              className={barChartContainerClassName(layout)}
+            className={barChartContainerClassName(layout, size)}
               initialDimension={
                 chartWidth
                   ? {
@@ -780,17 +868,26 @@ export function ScopedDashboardCharts({
             </ChartContainer>
           )}
         </ChartCategoryViewport>
-        <DashboardChartLegend
-          items={completionLegendItems}
-          onItemClick={onCompletionLegendClick}
-        />
-      </div>
+    )
+
+    return (
+      <DashboardChartLayout
+        size={size}
+        chart={chart}
+        legend={
+          <DashboardChartLegend
+            items={completionLegendItems}
+            onItemClick={onCompletionLegendClick}
+          />
+        }
+      />
     )
   }
 
   return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 @2xl/main:grid-cols-2 @5xl/main:grid-cols-3">
+    <div className="grid min-w-0 grid-cols-1 items-stretch gap-4 @2xl/main:grid-cols-2 @5xl/main:grid-cols-3">
       <DashboardChartCard
+        className="h-full"
         title="Распределение по статусам"
         expandable={statusDistribution.length > 0}
         renderExpanded={() => renderStatusChart("expanded")}
@@ -803,12 +900,13 @@ export function ScopedDashboardCharts({
       </DashboardChartCard>
 
       <DashboardChartCard
+        className="h-full"
         title={overdueTitle}
         expandable={overdueBreakdown.length > 0}
         renderExpanded={() => renderOverdueChart("expanded")}
       >
         {overdueBreakdown.length === 0 ? (
-          <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
+          <div className={cn("flex items-center justify-center text-sm text-muted-foreground", CARD_CHART_HEIGHT)}>
             Нет просроченных
           </div>
         ) : (
@@ -817,8 +915,8 @@ export function ScopedDashboardCharts({
       </DashboardChartCard>
 
       <DashboardChartCard
+        className="h-full min-w-0 @2xl/main:col-span-2 @5xl/main:col-span-1"
         title={completionTitle}
-        className="min-w-0 @2xl/main:col-span-2 @5xl/main:col-span-1"
         expandable={statusBreakdown.length > 0}
         renderExpanded={() => renderCompletionChart("expanded")}
       >

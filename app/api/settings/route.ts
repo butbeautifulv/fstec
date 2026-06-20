@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
-import { handleApiError, jsonError, jsonOk } from "@/lib/api/errors"
+import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { parseJsonBody } from "@/lib/api/parse-body"
+import { revalidatePanelSettings } from "@/lib/api/revalidate-panel"
 import { getPublicSettings, updateAppSettings } from "@/lib/settings"
 import { updateSettingsSchema } from "@/lib/validations/settings"
 
@@ -16,14 +17,11 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     await requirePermission(Permission.settingsWrite)
-    const body = await request.json()
-    const parsed = updateSettingsSchema.safeParse(body)
-    if (!parsed.success) {
-      return jsonError(parsed.error.issues[0]?.message ?? "Invalid input")
-    }
-    const settings = await updateAppSettings(parsed.data)
-    revalidatePath("/panel/settings")
-    revalidatePath("/panel/settings/general")
+    const body = await parseJsonBody(request, updateSettingsSchema)
+    if ("error" in body) return body.error
+
+    const settings = await updateAppSettings(body.data)
+    revalidatePanelSettings()
     return jsonOk({
       timezone: settings.timezone,
       locale: settings.locale,

@@ -1,6 +1,6 @@
 import type { DashboardMatrixItem } from "@/lib/dashboard/build-matrix"
 import type { SerializedMatrixItem } from "@/lib/dashboard/serialize-dashboard"
-import type { PublicItem } from "@/components/public/public-measures-table"
+import type { PublicItem } from "@/lib/public/types"
 
 type OrderItemInput = {
   id: number

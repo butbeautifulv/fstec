@@ -4,6 +4,8 @@ import dynamic from "next/dynamic"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts-skeleton"
+import type { DashboardMatrixLinkTargets } from "@/components/dashboard/dashboard-matrix-table"
+import { dashboardMatrixLinkTargets } from "@/lib/dashboard/link-targets"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import {
   overdueInitialFilters,
@@ -15,7 +17,11 @@ import {
   toggleStatusFilterPreserveBreakdown,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
-import type { PublicItem, PublicStatus } from "@/components/public/public-measures-table"
+import type { PublicItem, PublicStatus } from "@/lib/public/types"
+import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
+import {
+  getDashboardVariantConfig,
+} from "@/lib/dashboard/variant-config"
 
 const ScopedDashboardCharts = dynamic(
   () =>
@@ -28,39 +34,29 @@ const ScopedDashboardCharts = dynamic(
   }
 )
 
-const PlatformDashboardMatrix = dynamic(
+const DashboardMatrixTable = dynamic(
   () =>
-    import("@/components/platform/platform-dashboard-matrix").then(
-      (mod) => mod.PlatformDashboardMatrix
+    import("@/components/dashboard/dashboard-matrix-table").then(
+      (mod) => mod.DashboardMatrixTable
     ),
   { loading: () => null }
 )
 
-const ReportDashboardMatrix = dynamic(
+const MeasuresDataTable = dynamic(
   () =>
-    import("@/components/report/report-dashboard-matrix").then(
-      (mod) => mod.ReportDashboardMatrix
+    import("@/components/shared/measures-data-table").then(
+      (mod) => mod.MeasuresDataTable
     ),
   { loading: () => null }
 )
-
-const PublicMeasuresTable = dynamic(
-  () =>
-    import("@/components/public/public-measures-table").then(
-      (mod) => mod.PublicMeasuresTable
-    ),
-  { loading: () => null }
-)
-
-import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 
 type FilterControl = {
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: Dispatch<SetStateAction<ColumnFiltersState>>
 }
 
-type AdminProps = {
-  variant: "admin"
+type PlatformProps = {
+  variant: "platform"
   scope: ChartFilterScope
   stats: ScopedDashboardStats
   items: DashboardMatrixRow[]
@@ -87,7 +83,7 @@ type ReportProps = {
   overdueOnly?: boolean
 } & FilterControl
 
-export function ScopedDashboardView(props: AdminProps | PublicProps | ReportProps) {
+export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportProps) {
   const initialFilters = useMemo(
     () => (props.overdueOnly ? overdueInitialFilters() : []),
     [props.overdueOnly]
@@ -99,6 +95,15 @@ export function ScopedDashboardView(props: AdminProps | PublicProps | ReportProp
   const setColumnFilters = props.onColumnFiltersChange ?? setInternalFilters
 
   const scope = props.scope
+  const variantConfig = getDashboardVariantConfig(props.variant)
+
+  const matrixLinkTargets: DashboardMatrixLinkTargets | null = useMemo(() => {
+    if (variantConfig.tableKind !== "matrix") return null
+    return dashboardMatrixLinkTargets(
+      props.variant === "platform" ? "platform" : "report",
+      props.variant === "report" ? props.token : undefined
+    )
+  }, [props, variantConfig.tableKind])
 
   return (
     <>
@@ -136,29 +141,24 @@ export function ScopedDashboardView(props: AdminProps | PublicProps | ReportProp
         }
       />
 
-      {props.variant === "admin" ? (
-        <PlatformDashboardMatrix
-          items={props.items}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      ) : props.variant === "report" ? (
-        <ReportDashboardMatrix
-          token={props.token}
-          items={props.items}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      ) : (
-        <PublicMeasuresTable
-          token={props.token}
+      {props.variant === "public" ? (
+        <MeasuresDataTable
+          basePath={`/p/${props.token}`}
           items={props.items}
           statuses={props.statuses}
           showSubdivisionColumn={props.showSubdivisionColumn}
+          actionLabel="Заполнить"
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
         />
-      )}
+      ) : matrixLinkTargets ? (
+        <DashboardMatrixTable
+          items={props.items}
+          linkTargets={matrixLinkTargets}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={setColumnFilters}
+        />
+      ) : null}
     </>
   )
 }

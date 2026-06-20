@@ -4,10 +4,14 @@ import { DashboardInteractive } from "@/components/dashboard/dashboard-interacti
 import { OverdueFilterActions } from "@/components/dashboard/overdue-filter-actions"
 import { PageHeader } from "@/components/shared/page-header"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { PublicItem, PublicStatus } from "@/components/public/public-measures-table"
+import type { PublicItem, PublicStatus } from "@/lib/public/types"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
+import {
+  getDashboardVariantConfig,
+  type DashboardVariant,
+} from "@/lib/dashboard/variant-config"
 
 type BaseShellProps = {
   title: string
@@ -21,8 +25,8 @@ type BaseShellProps = {
   suspenseCharts?: boolean
 }
 
-type AdminShellProps = BaseShellProps & {
-  variant: "admin"
+type PlatformShellProps = BaseShellProps & {
+  variant: "platform"
   scope?: ChartFilterScope
   items: DashboardMatrixRow[]
 }
@@ -42,9 +46,12 @@ type PublicShellProps = BaseShellProps & {
   showSubdivisionColumn: boolean
 }
 
-export function ScopedDashboardPageShell(
-  props: AdminShellProps | ReportShellProps | PublicShellProps
-) {
+export type ScopedDashboardPageShellProps =
+  | PlatformShellProps
+  | ReportShellProps
+  | PublicShellProps
+
+export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
   const {
     title,
     description,
@@ -54,22 +61,25 @@ export function ScopedDashboardPageShell(
     emptyMessage,
     headerActions,
     extraActions,
-    suspenseCharts = props.variant !== "public",
   } = props
 
+  const config = getDashboardVariantConfig(props.variant)
+  const suspenseCharts = props.suspenseCharts ?? config.suspenseChartsDefault
+
+  const interactiveKey = overdueOnly ? "overdue" : "all"
   const interactive =
-    props.variant === "admin" ? (
+    props.variant === "platform" ? (
       <DashboardInteractive
-        key={overdueOnly ? "overdue" : "all"}
-        variant="admin"
-        scope={props.scope ?? "global"}
+        key={interactiveKey}
+        variant="platform"
+        scope={props.scope ?? config.defaultScope}
         stats={stats}
         items={props.items}
         overdueOnly={overdueOnly}
       />
     ) : props.variant === "report" ? (
       <DashboardInteractive
-        key={overdueOnly ? "overdue" : "all"}
+        key={interactiveKey}
         variant="report"
         scope="global"
         stats={stats}
@@ -79,7 +89,7 @@ export function ScopedDashboardPageShell(
       />
     ) : (
       <DashboardInteractive
-        key={overdueOnly ? "overdue" : "all"}
+        key={interactiveKey}
         variant="public"
         scope={props.scope}
         stats={stats}
@@ -124,5 +134,4 @@ export function ScopedDashboardPageShell(
   )
 }
 
-export type { DashboardMatrixRow, ChartFilterScope }
-
+export type { DashboardMatrixRow, ChartFilterScope, DashboardVariant }

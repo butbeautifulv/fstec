@@ -1,4 +1,5 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { DashboardChartsGridSkeleton } from "@/components/dashboard/dashboard-chart-card-skeleton"
+import { Card, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 
@@ -41,26 +42,9 @@ export function StatCardsGridSkeleton() {
   )
 }
 
+
 export function ChartsGridSkeleton() {
-  return (
-    <div className="grid min-w-0 grid-cols-1 gap-4 @2xl/main:grid-cols-2 @5xl/main:grid-cols-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Card
-          key={i}
-          className={cn(
-            i === 2 && "min-w-0 @2xl/main:col-span-2 @5xl/main:col-span-1"
-          )}
-        >
-          <CardHeader className="pb-2">
-            <Skeleton className="h-4 w-32 max-w-full" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full rounded-md" />
-          </CardContent>
-        </Card>
-      ))}
-    </div>
-  )
+  return <DashboardChartsGridSkeleton />
 }
 
 export function FormActionsSkeleton() {

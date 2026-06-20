@@ -1,11 +1,17 @@
-import { revalidatePath } from "next/cache"
+import { z } from "zod"
 import { DelayRequestStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { countPendingDelayRequests, listDelayRequests } from "@/lib/delays"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
-import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
+import { parseJsonBody } from "@/lib/api/parse-body"
+import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
+
+const delayReviewSchema = z.object({
+  id: z.number().int().positive(),
+  action: z.enum(["approve", "reject"]),
+})
 
 export async function GET(request: Request) {
   try {
@@ -33,10 +39,10 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = await requirePermission(Permission.delaysWrite)
-    const body = await request.json()
-    const id = Number(body.id)
-    const action = body.action as "approve" | "reject"
-    if (!id || !action) return handleApiError(new Error("id and action required"))
+    const body = await parseJsonBody(request, delayReviewSchema)
+    if ("error" in body) return body.error
+
+    const { id, action } = body.data
 
     const delay = await prisma.delayRequest.findUnique({
       where: { id },
@@ -70,10 +76,7 @@ export async function POST(request: Request) {
       })
     }
 
-    await invalidateDashboardOnMutation()
-    revalidatePath("/panel")
-    revalidatePath("/panel/delay-requests")
-    revalidatePath(`/panel/orders/${delay.orderItem.orderId}`)
+    await revalidatePanelOrderMutation(delay.orderItem.orderId, { delays: true })
 
     return jsonOk({ ok: true })
   } catch (error) {

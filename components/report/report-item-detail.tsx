@@ -1,29 +1,17 @@
 "use client"
 
 import { ResponseReviewStatus } from "@prisma/client"
-import { AttachmentGallery } from "@/components/shared/attachment-gallery"
 import { ItemDetailHeaderActions } from "@/components/shared/item-detail/item-detail-header-actions"
 import { ItemDueStatusCard } from "@/components/shared/item-detail/item-due-status-card"
 import { ItemMeasureInfoCard } from "@/components/shared/item-detail/item-measure-info-card"
+import { ItemResponseCard } from "@/components/shared/item-detail/item-response-card"
 import { PageHeader } from "@/components/shared/page-header"
-import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import {
   getDisplayStatusName,
   isCompleted,
   isOrderItemOverdue,
 } from "@/lib/statuses/workflow"
-import {
-  RESPONSE_REVIEW_STATUS_LABELS,
-  RESPONSE_REVIEW_STATUS_VARIANT,
-} from "@/lib/ui/response-review-status"
-import { format } from "date-fns"
+import { getItemDetailStatusVariant } from "@/lib/ui/item-detail-status"
 
 type ReportItem = {
   id: number
@@ -86,57 +74,26 @@ export function ReportItemDetail({
           dueAt={item.dueAt}
           displayStatus={displayStatus}
           isOverdue={isOverdue}
-          statusVariant={
-            isOverdue
-              ? "destructive"
-              : isPendingReview
-                ? "destructive"
-                : completed
-                  ? "default"
-                  : "secondary"
-          }
+          statusVariant={getItemDetailStatusVariant({
+            isOverdue,
+            isPendingReview,
+            completed,
+          })}
         />
       </div>
 
       {item.latestResponse && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="text-base">Отчёт о выполнении</CardTitle>
-            <CardDescription className="flex flex-wrap items-center gap-2">
-              <span>
-                {format(new Date(item.latestResponse.submittedAt), "dd.MM.yyyy HH:mm")}
-                {item.latestResponse.submittedByLabel
-                  ? ` · ${item.latestResponse.submittedByLabel}`
-                  : ""}
-              </span>
-              <Badge variant={RESPONSE_REVIEW_STATUS_VARIANT[item.latestResponse.reviewStatus]}>
-                {RESPONSE_REVIEW_STATUS_LABELS[item.latestResponse.reviewStatus]}
-              </Badge>
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {item.latestResponse.result}
-            </p>
-            {item.latestResponse.commentary && (
-              <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">Комментарий</p>
-                <p className="text-sm leading-relaxed whitespace-pre-wrap text-muted-foreground">
-                  {item.latestResponse.commentary}
-                </p>
-              </div>
-            )}
-            {item.latestResponse.attachments.length > 0 && (
-              <AttachmentGallery
-                attachments={item.latestResponse.attachments.map((a) => ({
-                  id: a.id,
-                  originalName: a.originalName,
-                  viewUrl: `/api/report/${token}/attachments/${a.id}`,
-                }))}
-              />
-            )}
-          </CardContent>
-        </Card>
+        <ItemResponseCard
+          result={item.latestResponse.result}
+          commentary={item.latestResponse.commentary}
+          submittedAt={item.latestResponse.submittedAt}
+          submittedByLabel={item.latestResponse.submittedByLabel}
+          reviewStatus={item.latestResponse.reviewStatus}
+          attachments={item.latestResponse.attachments}
+          attachmentViewUrl={(attachmentId) =>
+            `/api/report/${token}/attachments/${attachmentId}`
+          }
+        />
       )}
     </div>
   )

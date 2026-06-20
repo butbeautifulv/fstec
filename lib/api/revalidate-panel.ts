@@ -14,6 +14,28 @@ export async function revalidatePanelOrder(orderId?: number) {
   }
 }
 
+export type RevalidatePanelOrderMutationOptions = {
+  responses?: boolean
+  delays?: boolean
+  responseId?: number
+}
+
+export async function revalidatePanelOrderMutation(
+  orderId?: number,
+  options?: RevalidatePanelOrderMutationOptions
+) {
+  await revalidatePanelOrder(orderId)
+  if (options?.responses) {
+    revalidatePanelResponses()
+    if (options.responseId != null) {
+      revalidatePath(`/panel/responses/${options.responseId}`)
+    }
+  }
+  if (options?.delays) {
+    revalidatePanelDelayRequests()
+  }
+}
+
 export async function revalidatePanelUsers(userId?: number) {
   revalidatePath("/panel/settings/users")
   if (userId != null) {
@@ -32,4 +54,18 @@ export function revalidatePanelResponses() {
 
 export function revalidatePanelDelayRequests() {
   revalidatePath("/panel/delay-requests")
+}
+
+export function revalidatePanelMeasures(measureId?: number) {
+  revalidatePath("/panel/measures")
+  if (measureId != null) {
+    revalidatePath(`/panel/measures/${measureId}/edit`)
+  }
+}
+
+export function revalidatePanelOrganizations(organizationId?: number) {
+  revalidatePath("/panel/organizations")
+  if (organizationId != null) {
+    revalidatePath(`/panel/organizations/${organizationId}`)
+  }
 }

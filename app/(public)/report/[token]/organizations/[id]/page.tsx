@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { ReportOrdersListPage } from "@/components/report/report-orders-list-page"
+import { ReportOrdersListClient } from "@/components/report/report-page-clients"
 import { getOrganizationOrdersForReportToken } from "@/lib/report-links/validate-token"
 
 type Params = { params: Promise<{ token: string; id: string }> }
@@ -20,7 +20,7 @@ export default async function ReportOrganizationOrdersPage({ params }: Params) {
   }))
 
   return (
-    <ReportOrdersListPage
+    <ReportOrdersListClient
       token={token}
       organizationName={ctx.organization.name}
       orders={JSON.parse(JSON.stringify(orders))}

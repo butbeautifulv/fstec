@@ -8,7 +8,7 @@ import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
-import { createMeasureColumn } from "@/lib/data-table/columns"
+import { createCodeColumn, createMeasureColumn } from "@/lib/data-table/columns"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { format } from "date-fns"
 import { Pencil, Trash2 } from "lucide-react"
@@ -37,16 +37,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         (m) => `/panel/measures/${m.id}/edit`,
         { width: "w-[40%]", title: "Название", linkClassName: undefined }
       ),
-      {
-        accessorKey: "code",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Код" />
-        ),
-        cell: ({ row }) => (
-          <span className="font-mono">{row.original.code ?? "—"}</span>
-        ),
-        meta: colMeta("Код", { cellClassName: "w-28" }),
-      },
+      createCodeColumn((row) => row.code, { cellClassName: "w-28", mono: true }),
       {
         accessorKey: "createdAt",
         header: ({ column }) => (

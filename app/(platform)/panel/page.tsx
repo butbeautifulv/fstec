@@ -23,7 +23,7 @@ export default async function PlatformDashboardPage({
 
   return (
     <ScopedDashboardPageShell
-      variant="admin"
+      variant="platform"
       title={`Сводка по ${labels.orgPluralGenitive}`}
       description="Статусы исполнения мер по поручениям"
       baseHref="/panel"

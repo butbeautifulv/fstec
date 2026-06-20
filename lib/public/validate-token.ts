@@ -99,59 +99,6 @@ export const fetchPublicOrderSummaries = cache(async (token: string) => {
   }
 })
 
-/** @deprecated Prefer validateAccessLink + targeted fetch helpers */
-export const validateAccessToken = cache(async (token: string) => {
-  const ctx = await fetchPublicOrderSummaries(token)
-  if (!ctx) return null
-
-  const items = await prisma.orderItem.findMany({
-    where: itemScopeWhere(ctx.link),
-    include: {
-      measure: true,
-      status: true,
-      subdivision: true,
-      order: { select: { id: true, title: true, issuedAt: true } },
-      responses: { orderBy: { submittedAt: "desc" }, take: 1 },
-    },
-    orderBy: [{ order: { issuedAt: "desc" } }, { id: "asc" }],
-  })
-
-  const ordersMap = new Map<
-    number,
-    {
-      id: number
-      title: string
-      issuedAt: Date
-      items: typeof items
-    }
-  >()
-
-  for (const item of items) {
-    const existing = ordersMap.get(item.order.id)
-    if (existing) {
-      existing.items.push(item)
-    } else {
-      ordersMap.set(item.order.id, {
-        id: item.order.id,
-        title: item.order.title,
-        issuedAt: item.order.issuedAt,
-        items: [item],
-      })
-    }
-  }
-
-  const orders = [...ordersMap.values()].sort(
-    (a, b) => b.issuedAt.getTime() - a.issuedAt.getTime()
-  )
-
-  return {
-    link: ctx.link,
-    organization: ctx.organization,
-    subdivision: ctx.subdivision,
-    orders,
-  }
-})
-
 export async function getOrderForToken(token: string, orderId: number) {
   const ctx = await validateAccessLink(token)
   if (!ctx) return null

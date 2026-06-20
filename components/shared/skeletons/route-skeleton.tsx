@@ -3,7 +3,7 @@ import { DetailCardsSkeleton } from "@/components/shared/skeletons/detail-cards-
 import { DetailTableSkeleton } from "@/components/shared/skeletons/detail-table-skeleton"
 import { FormPageSkeleton } from "@/components/shared/skeletons/form-page-skeleton"
 import { PublicDetailSkeleton } from "@/components/shared/skeletons/public-detail-skeleton"
-import { PublicTablePageSkeleton } from "@/components/shared/skeletons/public-table-page-skeleton"
+import { PublicTablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 import { SettingsHubSkeleton } from "@/components/shared/skeletons/settings-hub-skeleton"
 import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 

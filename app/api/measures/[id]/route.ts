@@ -1,7 +1,8 @@
-import { revalidatePath } from "next/cache"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { parseJsonBody } from "@/lib/api/parse-body"
+import { revalidatePanelMeasures } from "@/lib/api/revalidate-panel"
 import { deleteMeasure, getMeasure, updateMeasure } from "@/lib/measures"
 import { measureSchema } from "@/lib/validations/measures"
 
@@ -23,13 +24,11 @@ export async function PUT(request: Request, { params }: Params) {
   try {
     await requirePermission(Permission.measuresWrite)
     const id = Number((await params).id)
-    const parsed = measureSchema.safeParse(await request.json())
-    if (!parsed.success) {
-      return handleApiError(new Error(parsed.error.issues[0]?.message))
-    }
-    const measure = await updateMeasure(id, parsed.data)
-    revalidatePath("/panel/measures")
-    revalidatePath(`/panel/measures/${id}/edit`)
+    const body = await parseJsonBody(request, measureSchema)
+    if ("error" in body) return body.error
+
+    const measure = await updateMeasure(id, body.data)
+    revalidatePanelMeasures(id)
     return jsonOk(measure)
   } catch (error) {
     return handleApiError(error)
@@ -41,7 +40,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     await requirePermission(Permission.measuresWrite)
     const id = Number((await params).id)
     await deleteMeasure(id)
-    revalidatePath("/panel/measures")
+    revalidatePanelMeasures()
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

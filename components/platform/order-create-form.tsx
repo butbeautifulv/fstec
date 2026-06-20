@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
 import { FormCardAction, FormCardGrid } from "@/components/shared/form-card-grid"
 import { FormPageSkeleton } from "@/components/shared/skeletons/form-page-skeleton"
+import { SelectedMeasuresTable } from "@/components/platform/selected-measures-table"
 import { useOrderCreateDraft } from "@/components/platform/order-create-draft"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,8 +33,6 @@ import { ListChecks } from "lucide-react"
 
 type Org = { id: number; name: string; subdivisions: { id: number; name: string }[] }
 
-const PREVIEW_LIMIT = 5
-
 type OrderCreateFormProps = {
   initialOrganizations?: Org[]
   initialHeadOrganizationId?: number | null
@@ -50,6 +49,7 @@ export function OrderCreateForm({
     updateDraft,
     clearDraft,
     setMeasuresCache,
+    setSelectedMeasureIds,
     selectedIds,
   } = useOrderCreateDraft()
   const [orgs, setOrgs] = useState<Org[]>(initialOrganizations ?? [])
@@ -165,10 +165,11 @@ export function OrderCreateForm({
     }
   }
 
-  if (!hydrated || dataLoading) return <FormPageSkeleton fields={5} showBack={false} />
+  function handleRemoveMeasure(id: number) {
+    setSelectedMeasureIds(draft.selectedMeasureIds.filter((measureId) => measureId !== id))
+  }
 
-  const previewItems = selectedPreview.slice(0, PREVIEW_LIMIT)
-  const previewRest = selectedPreview.length - previewItems.length
+  if (!hydrated || dataLoading) return <FormPageSkeleton fields={5} showBack={false} />
 
   return (
     <form onSubmit={onSubmit} className="flex flex-col gap-4">
@@ -255,22 +256,11 @@ export function OrderCreateForm({
               : "Выберите меры из каталога ФСТЭК"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="gap-4">
-          {selectedPreview.length > 0 && (
-            <ul className="space-y-1 text-sm">
-              {previewItems.map((m) => (
-                <li key={m.id} className="text-muted-foreground">
-                  {m.name}
-                  {m.code ? (
-                    <span className="ml-2 font-mono text-xs">{m.code}</span>
-                  ) : null}
-                </li>
-              ))}
-              {previewRest > 0 && (
-                <li className="text-muted-foreground">и ещё {previewRest}</li>
-              )}
-            </ul>
-          )}
+        <CardContent className="flex flex-col gap-4">
+          <SelectedMeasuresTable
+            measures={selectedPreview}
+            onRemove={handleRemoveMeasure}
+          />
           <FormCardAction>
             <Button type="button" variant="outline" asChild>
               <Link href="/panel/orders/new/measures">

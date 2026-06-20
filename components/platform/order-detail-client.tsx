@@ -12,7 +12,7 @@ import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader, DataTableRowLink } from "@/components/data-table"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
-import { createDueAtColumn } from "@/lib/data-table/columns"
+import { createDueAtColumn, createMatrixWorkflowStatusColumn } from "@/lib/data-table/columns"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { TruncatedCell } from "@/lib/data-table/truncated-cell"
@@ -161,24 +161,10 @@ export function OrderDetailClient({
         filterFn: facetedFilter,
         meta: colMeta("Подразделение", { cellClassName: "max-w-0 w-[14%]" }),
       },
-      {
-        id: "status",
-        accessorFn: (row) => getDisplayStatusName(row),
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Статус" />
-        ),
-        cell: ({ row }) => {
-          const isOverdue = isOrderItemOverdue(row.original)
-          return (
-            <Badge variant={isOverdue ? "destructive" : "secondary"}>
-              {getDisplayStatusName(row.original)}
-            </Badge>
-          )
-        },
-        enableColumnFilter: true,
-        filterFn: facetedFilter,
-        meta: colMeta("Статус", { cellClassName: "w-32" }),
-      },
+      createMatrixWorkflowStatusColumn(
+        (row) => getDisplayStatusName(row),
+        (row) => isOrderItemOverdue(row)
+      ),
       createDueAtColumn<OrderItem>("dueAt"),
       {
         id: "reports",

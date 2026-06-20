@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { ReportDashboardPage } from "@/components/report/report-dashboard-page"
+import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { labels } from "@/lib/ui/branding"
 import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import { validateReportToken } from "@/lib/report-links/validate-token"
@@ -23,13 +23,15 @@ export default async function ReportPage({
   const dashboard = await getCachedScopedDashboard({ type: "global" })
 
   return (
-    <ReportDashboardPage
-      token={token}
+    <ScopedDashboardPageShell
+      variant="report"
       title={`Сводка по ${labels.orgPluralGenitive}`}
       description="Статусы исполнения мер по поручениям"
+      baseHref={`/report/${token}`}
       overdueOnly={overdueOnly}
       stats={dashboard.stats}
       items={dashboard.items}
+      token={token}
       emptyMessage={<>Нет данных для отображения.</>}
     />
   )

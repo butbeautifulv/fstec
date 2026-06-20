@@ -13,6 +13,7 @@ import {
   type ColumnDef,
   type ColumnFiltersState,
   type SortingState,
+  type Table as TanstackTable,
   type VisibilityState,
 } from "@tanstack/react-table"
 import { DataTableActiveFilters } from "@/components/data-table/data-table-active-filters"
@@ -52,6 +53,7 @@ export function DataTable<TData>({
   searchPlaceholder,
   globalFilterFn,
   filters,
+  renderFilters,
   pageSize = 20,
   empty,
   showColumnToggle = true,
@@ -60,12 +62,16 @@ export function DataTable<TData>({
   columnFilters: controlledColumnFilters,
   onColumnFiltersChange,
   hideOnMobileColumnIds,
+  initialSorting,
+  onRowClick,
+  getRowClassName,
 }: {
   columns: ColumnDef<TData, unknown>[]
   data: TData[]
   searchPlaceholder?: string
   globalFilterFn?: (row: TData, _columnId: string, filterValue: string) => boolean
   filters?: React.ReactNode
+  renderFilters?: (table: TanstackTable<TData>) => React.ReactNode
   pageSize?: number
   empty?: React.ReactNode
   showColumnToggle?: boolean
@@ -75,8 +81,11 @@ export function DataTable<TData>({
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
   /** Column ids hidden below the `sm` breakpoint (filters still apply). */
   hideOnMobileColumnIds?: string[]
+  initialSorting?: SortingState
+  onRowClick?: (row: TData) => void
+  getRowClassName?: (row: TData) => string | undefined
 }) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? [])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [globalFilter, setGlobalFilter] = useState("")
   const [internalColumnFilters, setInternalColumnFilters] = useState<ColumnFiltersState>([])
@@ -132,7 +141,8 @@ export function DataTable<TData>({
   const hasActiveFilters = columnFilters.length > 0
   const isEmpty = table.getRowModel().rows.length === 0
   const hasToolbar =
-    searchPlaceholder || filters || showColumnToggle || hasActiveFilters
+    searchPlaceholder || filters || renderFilters || showColumnToggle || hasActiveFilters
+  const toolbarFilters = renderFilters ? renderFilters(table) : filters
 
   const columnWidths = useMemo(() => {
     const headers =
@@ -171,7 +181,7 @@ export function DataTable<TData>({
           <DataTableToolbar
             table={table}
             searchPlaceholder={searchPlaceholder}
-            filters={filters}
+            filters={toolbarFilters}
             showColumnToggle={showColumnToggle}
           />
           <DataTableActiveFilters table={table} />
@@ -224,7 +234,16 @@ export function DataTable<TData>({
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  className={cn(
+                    onRowClick && "cursor-pointer",
+                    getRowClassName?.(row.original)
+                  )}
+                  onClick={
+                    onRowClick ? () => onRowClick(row.original) : undefined
+                  }
+                >
                   {row.getVisibleCells().map((cell) => {
                     const meta = cell.column.columnDef.meta
                     const actions = isActionsColumn(cell.column.id, meta)

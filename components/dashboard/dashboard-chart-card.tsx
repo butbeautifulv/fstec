@@ -29,7 +29,7 @@ export function DashboardChartCard({
 
   return (
     <>
-      <Card className={className}>
+      <Card className={cn("flex h-full flex-col", className)}>
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
           <CardTitle className="text-base">{title}</CardTitle>
           {expandable ? (
@@ -44,7 +44,7 @@ export function DashboardChartCard({
             </Button>
           ) : null}
         </CardHeader>
-        <CardContent className="min-h-[280px]">{children}</CardContent>
+        <CardContent className="flex flex-1 flex-col pt-0">{children}</CardContent>
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>

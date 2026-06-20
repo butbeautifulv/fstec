@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { PublicOrderPage } from "@/components/public/public-order-page"
+import { PublicOrderDetailClient } from "@/components/public/public-page-clients"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { mapOrderItemsToPublicItems } from "@/lib/public/map-public-items"
 import {
@@ -26,7 +26,7 @@ export default async function PublicOrderDetailPage({ params }: Params) {
   const items = mapOrderItemsToPublicItems(ctx.order, ctx.order.items)
 
   return (
-    <PublicOrderPage
+    <PublicOrderDetailClient
       token={token}
       order={serializePublicOrderDetail(ctx.order)}
       items={items}

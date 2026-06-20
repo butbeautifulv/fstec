@@ -4,13 +4,14 @@ import { useMemo, useState } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
 import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
-import type { PublicItem, PublicStatus } from "@/components/public/public-measures-table"
+import type { PublicItem, PublicStatus } from "@/lib/public/types"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
+import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
+import type { DashboardVariant } from "@/lib/dashboard/variant-config"
 import {
   overdueInitialFilters,
   toggleStatusFilter,
-  type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
 
 function activeStatusFromFilters(filters: ColumnFiltersState): string | undefined {
@@ -20,8 +21,8 @@ function activeStatusFromFilters(filters: ColumnFiltersState): string | undefine
   return values[0]
 }
 
-type AdminDashboardInteractiveProps = {
-  variant: "admin"
+type PlatformDashboardInteractiveProps = {
+  variant: "platform"
   scope: ChartFilterScope
   stats: ScopedDashboardStats
   items: DashboardMatrixRow[]
@@ -48,9 +49,12 @@ type ReportDashboardInteractiveProps = {
   overdueOnly: boolean
 }
 
-export function DashboardInteractive(
-  props: AdminDashboardInteractiveProps | PublicDashboardInteractiveProps | ReportDashboardInteractiveProps
-) {
+export type DashboardInteractiveProps =
+  | PlatformDashboardInteractiveProps
+  | PublicDashboardInteractiveProps
+  | ReportDashboardInteractiveProps
+
+export function DashboardInteractive(props: DashboardInteractiveProps) {
   const { stats, overdueOnly } = props
   const initialFilters = useMemo(
     () => (overdueOnly ? overdueInitialFilters() : []),
@@ -61,6 +65,41 @@ export function DashboardInteractive(
 
   const activeStatus = activeStatusFromFilters(columnFilters)
 
+  const viewProps = {
+    stats,
+    overdueOnly,
+    columnFilters,
+    onColumnFiltersChange: setColumnFilters,
+  } as const
+
+  const view =
+    props.variant === "platform" ? (
+      <ScopedDashboardView
+        {...viewProps}
+        variant="platform"
+        scope={props.scope}
+        items={props.items}
+      />
+    ) : props.variant === "report" ? (
+      <ScopedDashboardView
+        {...viewProps}
+        variant="report"
+        scope={props.scope}
+        token={props.token}
+        items={props.items}
+      />
+    ) : (
+      <ScopedDashboardView
+        {...viewProps}
+        variant="public"
+        scope={props.scope}
+        token={props.token}
+        items={props.items}
+        statuses={props.statuses}
+        showSubdivisionColumn={props.showSubdivisionColumn}
+      />
+    )
+
   return (
     <>
       <DashboardStatCards
@@ -70,45 +109,9 @@ export function DashboardInteractive(
           setColumnFilters((prev) => toggleStatusFilter(prev, status))
         }
       />
-
-      {props.variant === "admin" ? (
-        <ScopedDashboardView
-          key={overdueOnly ? "overdue" : "all"}
-          variant="admin"
-          scope={props.scope}
-          stats={stats}
-          items={props.items}
-          overdueOnly={overdueOnly}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      ) : props.variant === "report" ? (
-        <ScopedDashboardView
-          key={overdueOnly ? "overdue" : "all"}
-          variant="report"
-          scope={props.scope}
-          stats={stats}
-          token={props.token}
-          items={props.items}
-          overdueOnly={overdueOnly}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      ) : (
-        <ScopedDashboardView
-          key={overdueOnly ? "overdue" : "all"}
-          variant="public"
-          scope={props.scope}
-          stats={stats}
-          token={props.token}
-          items={props.items}
-          statuses={props.statuses}
-          showSubdivisionColumn={props.showSubdivisionColumn}
-          overdueOnly={overdueOnly}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-        />
-      )}
+      {view}
     </>
   )
 }
+
+export type { DashboardVariant }

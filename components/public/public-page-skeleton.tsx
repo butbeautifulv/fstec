@@ -1,1 +1,1 @@
-export { PublicTablePageSkeleton as PublicPageSkeleton } from "@/components/shared/skeletons/public-table-page-skeleton"
+export { PublicTablePageSkeleton as PublicPageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"

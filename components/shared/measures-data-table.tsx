@@ -7,13 +7,17 @@ import {
   DataTableColumnHeader,
   DataTableRowLink,
 } from "@/components/data-table"
-import { Badge } from "@/components/ui/badge"
-import { actionsColumnMeta, colMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import { actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import {
+  createCodeColumn,
+  createDueAtColumn,
+  createMeasureColumn,
+  createOrderColumn,
+  createWorkflowStatusColumn,
+} from "@/lib/data-table/columns"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
-import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { TextCell } from "@/lib/data-table/text-cell"
 import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
-import { format } from "date-fns"
 
 export type MeasuresTableStatus = { id: number; name: string; isTerminal: boolean }
 
@@ -77,22 +81,13 @@ export function MeasuresDataTable({
     const base: ColumnDef<MeasuresRow>[] = []
 
     if (showOrderColumn && items.some((item) => item.orderTitle)) {
-      base.push({
-        id: "orderTitle",
-        accessorKey: "orderTitle",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Поручение" />
-        ),
-        cell: ({ row }) => (
-          <TextCell
-            text={row.original.orderTitle ?? "—"}
-            href={`${basePath}/orders/${row.original.orderId}`}
-          />
-        ),
-        enableColumnFilter: true,
-        filterFn: facetedFilter,
-        meta: textColumnMeta("Поручение", "w-[18%]"),
-      })
+      base.push(
+        createOrderColumn(
+          (row) => ({ id: row.orderId ?? 0, title: row.orderTitle ?? "—" }),
+          (order) => `${basePath}/orders/${order.id}`,
+          "w-[18%]"
+        )
+      )
     }
 
     if (showSubdivisionColumn) {
@@ -112,55 +107,18 @@ export function MeasuresDataTable({
     }
 
     base.push(
-      {
-        id: "measure",
-        header: "Мера",
-        accessorFn: (row) => row.measure.name,
-        cell: ({ row }) => (
-          <TextCell
-            text={row.original.measure.name}
-            href={`${basePath}/items/${row.original.id}`}
-          />
-        ),
-        enableColumnFilter: false,
-        meta: textColumnMeta("Мера", "min-w-[10rem] w-[28%]", { faceted: false }),
-      },
-      {
-        id: "code",
-        header: "Код",
-        accessorFn: (row) => row.measure.code ?? "—",
-        cell: ({ row }) => (
-          <span className="font-mono text-muted-foreground">
-            {row.original.measure.code ?? "—"}
-          </span>
-        ),
-        enableColumnFilter: false,
-        meta: colMeta("Код", { faceted: false, cellClassName: "w-24" }),
-      },
-      {
-        accessorKey: "dueAt",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Срок" />
-        ),
-        sortingFn: dateSortFn,
-        cell: ({ row }) => format(new Date(row.original.dueAt), "dd.MM.yyyy"),
-        meta: colMeta("Срок", { valueType: "date", cellClassName: "w-28" }),
-      },
-      {
-        id: "status",
-        accessorFn: (row) => row.displayStatus,
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Статус" />
-        ),
-        cell: ({ row }) => (
-          <Badge variant={row.original.isOverdue ? "destructive" : "secondary"}>
-            {row.original.displayStatus}
-          </Badge>
-        ),
-        enableColumnFilter: true,
-        filterFn: facetedFilter,
-        meta: colMeta("Статус", { cellClassName: "w-32" }),
-      },
+      createMeasureColumn(
+        (row) => ({ id: row.id, name: row.measure.name }),
+        () => "#",
+        {
+          width: "min-w-[10rem] w-[28%]",
+          linkClassName: undefined,
+          hrefFromRow: (row) => `${basePath}/items/${row.id}`,
+        }
+      ),
+      createCodeColumn((row) => row.measure.code),
+      createDueAtColumn<MeasuresRow>("dueAt"),
+      createWorkflowStatusColumn(),
       {
         id: "actions",
         header: "",

@@ -1,4 +1,4 @@
-import type { PublicStatus } from "@/components/public/public-measures-table"
+import type { PublicStatus } from "@/lib/public/types"
 
 export function serializePublicStatuses(
   statuses: { id: number; name: string; isTerminal: boolean }[]

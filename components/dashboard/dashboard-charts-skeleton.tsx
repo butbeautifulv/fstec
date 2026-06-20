@@ -1,5 +1,5 @@
-import { ChartsGridSkeleton } from "@/components/shared/skeletons/primitives"
+import { DashboardChartsGridSkeleton } from "@/components/dashboard/dashboard-chart-card-skeleton"
 
 export function DashboardChartsSkeleton() {
-  return <ChartsGridSkeleton />
+  return <DashboardChartsGridSkeleton />
 }

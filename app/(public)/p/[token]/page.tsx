@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { PublicDashboardPage } from "@/components/public/public-dashboard-page"
+import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { mapSerializedMatrixToPublicItems } from "@/lib/public/map-public-items"
@@ -32,16 +32,24 @@ export default async function PublicLinkPage({
   const flatItems = mapSerializedMatrixToPublicItems(dashboard.items)
 
   return (
-    <PublicDashboardPage
-      token={token}
-      organizationName={linkCtx.organization.name}
-      subdivisionName={linkCtx.subdivision?.name ?? null}
+    <ScopedDashboardPageShell
+      variant="public"
+      title={linkCtx.organization.name}
+      description={
+        linkCtx.subdivision?.name
+          ? `Подразделение: ${linkCtx.subdivision.name}`
+          : "Все меры организации"
+      }
+      baseHref={`/p/${token}`}
+      overdueOnly={overdueOnly}
       stats={dashboard.stats}
       items={flatItems}
       statuses={serializePublicStatuses(statuses)}
-      overdueOnly={overdueOnly}
+      token={token}
       scope={scope.type === "subdivision" ? "subdivision" : "organization"}
       showSubdivisionColumn={scope.type === "organization"}
+      emptyMessage="Нет мер для отображения."
+      suspenseCharts={false}
     />
   )
 }

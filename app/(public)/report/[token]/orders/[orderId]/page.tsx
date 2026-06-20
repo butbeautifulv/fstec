@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { ReportOrderPage } from "@/components/report/report-order-page"
+import { ReportOrderDetailClient } from "@/components/report/report-page-clients"
 import { mapOrderItemsToPublicItems } from "@/lib/public/map-public-items"
 import { getOrderForReportToken } from "@/lib/report-links/validate-token"
 import { getWorkflowStatuses } from "@/lib/statuses"
@@ -27,7 +27,7 @@ export default async function ReportOrderDetailPage({ params }: Params) {
   }))
 
   return (
-    <ReportOrderPage
+    <ReportOrderDetailClient
       token={token}
       order={JSON.parse(
         JSON.stringify({

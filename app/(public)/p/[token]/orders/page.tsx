@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { PublicOrdersListPage } from "@/components/public/public-orders-list-page"
+import { PublicOrdersListClient } from "@/components/public/public-page-clients"
 import { serializePublicOrderSummary } from "@/lib/public/serialize-public"
 import { fetchPublicOrderSummaries } from "@/lib/public/validate-token"
 
@@ -12,5 +12,5 @@ export default async function PublicOrdersPage({ params }: Params) {
 
   const orders = ctx.orders.map(serializePublicOrderSummary)
 
-  return <PublicOrdersListPage token={token} orders={orders} />
+  return <PublicOrdersListClient token={token} orders={orders} />
 }

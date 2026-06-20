@@ -101,8 +101,8 @@ export async function getAttachmentReadUrl(
 }
 
 export async function getAttachmentForPublicToken(token: string, attachmentId: number) {
-  const { validateAccessToken } = await import("@/lib/public/validate-token")
-  const accessCtx = await validateAccessToken(token)
+  const { validateAccessLink } = await import("@/lib/public/validate-token")
+  const accessCtx = await validateAccessLink(token)
   if (!accessCtx) return null
 
   const attachment = await prisma.responseAttachment.findUnique({

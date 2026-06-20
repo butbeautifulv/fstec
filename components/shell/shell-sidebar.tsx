@@ -72,11 +72,17 @@ export function ShellSidebar({
             <SidebarMenuItem>
               <SidebarMenuButton
                 asChild
-                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground"
+                tooltip={primaryAction.label}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground justify-center text-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
               >
-                <Link href={primaryAction.href}>
-                  <PrimaryIcon />
-                  <OverflowText className="min-w-0 flex-1">{primaryAction.label}</OverflowText>
+                <Link
+                  href={primaryAction.href}
+                  className="justify-center group-data-[collapsible=icon]:justify-center"
+                >
+                  <PrimaryIcon className="shrink-0" />
+                  <span className="truncate group-data-[collapsible=icon]:hidden">
+                    {primaryAction.label}
+                  </span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -16,7 +16,6 @@ import {
   usePublicBreadcrumbMiddle,
 } from "@/components/public/public-breadcrumb"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -38,6 +37,8 @@ import {
   isOrderItemOverdue,
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
+import { getItemDetailStatusVariant } from "@/lib/ui/item-detail-status"
+import { CalendarClockIcon } from "lucide-react"
 
 type PublicStatus = { id: number; name: string; isTerminal: boolean }
 
@@ -196,15 +197,11 @@ export function PublicItemDetail({
           dueAt={item.dueAt}
           displayStatus={displayStatus}
           isOverdue={isOverdue}
-          statusVariant={
-            isOverdue
-              ? "destructive"
-              : isPendingReview
-                ? "destructive"
-                : completed
-                  ? "default"
-                  : "secondary"
-          }
+          statusVariant={getItemDetailStatusVariant({
+            isOverdue,
+            isPendingReview,
+            completed,
+          })}
           footer={
             !completed ? (
               <Button variant="outline" size="sm" onClick={() => setDelayOpen(true)}>
