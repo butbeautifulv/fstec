@@ -1,38 +1,42 @@
 "use client"
 
-import { useMemo, useState } from "react"
-import type { ColumnFiltersState } from "@tanstack/react-table"
+import { useMemo } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardStatCards } from "@/components/dashboard/dashboard-stat-cards"
 import { ScopedDashboardView } from "@/components/dashboard/scoped-dashboard-view"
 import {
-  overdueInitialFilters,
-  toggleStatusFilter,
-} from "@/lib/dashboard/chart-filters"
+  buildDashboardHref,
+  matrixQueryToColumnFilters,
+  toggleMatrixStatusFilter,
+} from "@/lib/dashboard/dashboard-query"
 import type { DashboardInteractiveProps } from "@/lib/dashboard/interactive-props"
 
 export type { DashboardInteractiveProps } from "@/lib/dashboard/interactive-props"
 export type { DashboardVariant } from "@/lib/dashboard/variant-config"
 
-function activeStatusFromFilters(filters: ColumnFiltersState): string | undefined {
-  const statusFilter = filters.find((f) => f.id === "status")
-  const values = statusFilter?.value
-  if (!Array.isArray(values) || values.length !== 1) return undefined
-  return values[0]
+function activeStatusFromQuery(
+  matrixQuery: DashboardInteractiveProps["matrixQuery"]
+): string | undefined {
+  if (matrixQuery.displayStatuses?.length === 1) {
+    return matrixQuery.displayStatuses[0]
+  }
+  return undefined
 }
 
 export function DashboardInteractive({
   showStatCards = true,
   ...props
 }: DashboardInteractiveProps & { showStatCards?: boolean }) {
-  const { stats, overdueOnly } = props
-  const initialFilters = useMemo(
-    () => (overdueOnly ? overdueInitialFilters() : []),
-    [overdueOnly]
-  )
-  const [columnFilters, setColumnFilters] =
-    useState<ColumnFiltersState>(initialFilters)
+  const router = useRouter()
+  const { stats, baseHref, matrixQuery } = props
+  const chartScope = props.scope
 
-  const activeStatus = activeStatusFromFilters(columnFilters)
+  const columnFilters = useMemo(
+    () => matrixQueryToColumnFilters(chartScope, matrixQuery),
+    [chartScope, matrixQuery]
+  )
+
+  const activeStatus = activeStatusFromQuery(matrixQuery)
 
   return (
     <>
@@ -41,15 +45,16 @@ export function DashboardInteractive({
           stats={stats}
           activeStatus={activeStatus}
           onStatusClick={(status) =>
-            setColumnFilters((prev) => toggleStatusFilter(prev, status))
+            router.push(
+              buildDashboardHref(
+                baseHref,
+                toggleMatrixStatusFilter(matrixQuery, status)
+              )
+            )
           }
         />
       ) : null}
-      <ScopedDashboardView
-        {...props}
-        columnFilters={columnFilters}
-        onColumnFiltersChange={setColumnFilters}
-      />
+      <ScopedDashboardView {...props} columnFilters={columnFilters} />
     </>
   )
 }

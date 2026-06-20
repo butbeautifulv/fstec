@@ -1,4 +1,5 @@
-import { ClipboardListIcon, LayoutDashboardIcon } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { ClipboardListIcon, FileTextIcon, LayoutDashboardIcon } from "lucide-react"
 import type { ShellNavMainItem } from "@/components/shell/shell-nav-main"
 
 type NavOrder = {
@@ -8,7 +9,8 @@ type NavOrder = {
 export function buildPublicNavMainItems(
   token: string,
   orders: NavOrder[],
-  pathname: string
+  pathname: string,
+  revisionCount = 0
 ): ShellNavMainItem[] {
   const dashboardHref = `/p/${token}`
   const items: ShellNavMainItem[] = [
@@ -28,6 +30,20 @@ export function buildPublicNavMainItems(
       href: ordersHref,
       icon: ClipboardListIcon,
       isActive: pathname.startsWith(ordersHref),
+    })
+
+    const reportsHref = `/p/${token}/reports`
+    items.push({
+      title: "Отчёты",
+      href: reportsHref,
+      icon: FileTextIcon,
+      isActive: pathname.startsWith(reportsHref),
+      badge:
+        revisionCount > 0 ? (
+          <Badge variant="destructive" className="ml-auto shrink-0">
+            {revisionCount}
+          </Badge>
+        ) : undefined,
     })
   }
 

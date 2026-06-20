@@ -1,4 +1,5 @@
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
+import type { DashboardMatrixQuery } from "@/lib/dashboard/dashboard-query"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
@@ -7,15 +8,21 @@ import {
   type DashboardVariant,
 } from "@/lib/dashboard/variant-config"
 
-type PlatformInteractiveProps = {
+type DashboardInteractiveBase = {
+  baseHref: string
+  matrixQuery: DashboardMatrixQuery
+  itemsTruncated?: boolean
+  matrixLimit?: number
+}
+
+type PlatformInteractiveProps = DashboardInteractiveBase & {
   variant: "platform"
   scope: ChartFilterScope
   stats: ScopedDashboardStats
   items: DashboardMatrixRow[]
-  overdueOnly: boolean
 }
 
-type PublicInteractiveProps = {
+type PublicInteractiveProps = DashboardInteractiveBase & {
   variant: "public"
   scope: "organization" | "subdivision"
   stats: ScopedDashboardStats
@@ -23,16 +30,14 @@ type PublicInteractiveProps = {
   items: PublicItem[]
   statuses: PublicStatus[]
   showSubdivisionColumn: boolean
-  overdueOnly: boolean
 }
 
-type ReportInteractiveProps = {
+type ReportInteractiveProps = DashboardInteractiveBase & {
   variant: "report"
   scope: "global"
   stats: ScopedDashboardStats
   token: string
   items: DashboardMatrixRow[]
-  overdueOnly: boolean
 }
 
 export type DashboardInteractiveProps =
@@ -63,9 +68,20 @@ type ShellVariantProps =
 export function toDashboardInteractiveProps(
   props: ShellVariantProps,
   stats: ScopedDashboardStats,
-  overdueOnly: boolean
+  context: {
+    baseHref: string
+    matrixQuery: DashboardMatrixQuery
+    itemsTruncated?: boolean
+    matrixLimit?: number
+  }
 ): DashboardInteractiveProps {
   const config = getDashboardVariantConfig(props.variant)
+  const shared = {
+    baseHref: context.baseHref,
+    matrixQuery: context.matrixQuery,
+    itemsTruncated: context.itemsTruncated,
+    matrixLimit: context.matrixLimit,
+  }
 
   if (props.variant === "platform") {
     return {
@@ -73,7 +89,7 @@ export function toDashboardInteractiveProps(
       scope: props.scope ?? config.defaultScope,
       stats,
       items: props.items,
-      overdueOnly,
+      ...shared,
     }
   }
 
@@ -84,7 +100,7 @@ export function toDashboardInteractiveProps(
       stats,
       token: props.token,
       items: props.items,
-      overdueOnly,
+      ...shared,
     }
   }
 
@@ -96,15 +112,17 @@ export function toDashboardInteractiveProps(
     items: props.items,
     statuses: props.statuses,
     showSubdivisionColumn: props.showSubdivisionColumn,
-    overdueOnly,
+    ...shared,
   }
 }
 
 export function dashboardShowsEmptyInteractive(
   variant: DashboardVariant,
-  itemCount: number
+  itemCount: number,
+  statsTotal: number
 ): boolean {
-  return variant === "public" || itemCount > 0
+  if (variant === "public") return true
+  return itemCount > 0 || statsTotal > 0
 }
 
 export type { DashboardVariant }

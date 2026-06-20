@@ -12,14 +12,16 @@ type PublicNavOrder = {
 export function PublicNavMain({
   token,
   navOrders,
+  revisionCount = 0,
 }: {
   token: string
   navOrders: PublicNavOrder[]
+  revisionCount?: number
 }) {
   const pathname = usePathname()
   const navItems = useMemo(
-    () => buildPublicNavMainItems(token, navOrders, pathname),
-    [token, navOrders, pathname]
+    () => buildPublicNavMainItems(token, navOrders, pathname, revisionCount),
+    [token, navOrders, pathname, revisionCount]
   )
 
   return <ShellNavMain groupLabel="Навигация" items={navItems} />

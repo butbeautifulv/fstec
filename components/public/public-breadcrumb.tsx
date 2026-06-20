@@ -31,6 +31,7 @@ export function buildPublicCrumbs(
   const token = extractToken(pathname)
   const baseHref = token ? `/p/${token}` : undefined
   const ordersListHref = token ? `/p/${token}/orders` : undefined
+  const reportsHref = token ? `/p/${token}/reports` : undefined
   const crumbs: ShellCrumb[] = [{ label: organizationName, href: baseHref }]
 
   if (pathname === baseHref || pathname === `${baseHref}/`) {
@@ -44,6 +45,15 @@ export function buildPublicCrumbs(
   ) {
     crumbs.push({ label: "Сводка", href: baseHref })
     crumbs.push({ label: "Поручения" })
+    return crumbs
+  }
+
+  if (
+    reportsHref &&
+    (pathname === reportsHref || pathname === `${reportsHref}/`)
+  ) {
+    crumbs.push({ label: "Сводка", href: baseHref })
+    crumbs.push({ label: "Отчёты" })
     return crumbs
   }
 

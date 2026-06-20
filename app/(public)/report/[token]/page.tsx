@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
+import { parseDashboardSearchParams } from "@/lib/dashboard/dashboard-query"
 import { labels } from "@/lib/ui/branding"
 import { validateReportToken } from "@/lib/report-links/validate-token"
 
@@ -10,11 +11,10 @@ export default async function ReportPage({
   searchParams,
 }: {
   params: Params["params"]
-  searchParams: Promise<{ overdue?: string }>
+  searchParams: Promise<{ overdue?: string; status?: string; label?: string }>
 }) {
   const { token } = await params
-  const { overdue: overdueParam } = await searchParams
-  const overdueOnly = overdueParam === "1"
+  const matrixQuery = parseDashboardSearchParams(await searchParams)
 
   const ctx = await validateReportToken(token)
   if (!ctx) notFound()
@@ -23,11 +23,10 @@ export default async function ReportPage({
     <ScopedDashboardPageShell
       variant="report"
       scope={{ type: "global" }}
-      itemLimit={overdueOnly ? undefined : 50}
+      matrixQuery={matrixQuery}
       title={`Сводка по ${labels.orgPluralGenitive}`}
       description="Статусы исполнения мер по поручениям"
       baseHref={`/report/${token}`}
-      overdueOnly={overdueOnly}
       token={token}
       emptyMessage={<>Нет данных для отображения.</>}
     />

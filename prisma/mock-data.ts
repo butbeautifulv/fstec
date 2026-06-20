@@ -1,6 +1,7 @@
 import {
   DelayRequestStatus,
   PrismaClient,
+  ResponseReviewStatus,
 } from "@prisma/client"
 import {
   generateMeasures,
@@ -12,6 +13,7 @@ import {
   shuffleWithSeed,
   subdivisionAccessToken,
 } from "./generators.js"
+import { seedReportLink, seedWorkflowShowcaseOrder, SHOWCASE_SCENARIO_COUNT } from "./mock-workflow-showcase.js"
 import { WORKFLOW_STATUS } from "../lib/statuses/workflow"
 
 const MOCK_ORG_PREFIX = "DEV-"
@@ -194,6 +196,18 @@ async function seedOrganization(
   const subNames = subdivisionNames
   const shuffledMeasures = shuffleWithSeed(measureIds, orgIndex + 1)
 
+  if (orgIndex === 0) {
+    await seedWorkflowShowcaseOrder(prisma, {
+      adminId,
+      organizationId: organization.id,
+      orgShortCode: org.shortCode,
+      statusIds,
+      measureIds: shuffledMeasures.slice(0, SHOWCASE_SCENARIO_COUNT + 2),
+      subdivisionNames: subNames,
+      subdivisions,
+    })
+  }
+
   for (let chunk = 0; chunk < ORDERS_PER_ORG; chunk += 10) {
     await prisma.$transaction(async (tx) => {
       for (let orderIndex = chunk; orderIndex < Math.min(chunk + 10, ORDERS_PER_ORG); orderIndex++) {
@@ -244,6 +258,9 @@ async function seedOrganization(
                 commentary: "Подтверждающие документы направлены в центральный аппарат.",
                 submittedByLabel: `Ответственный ${subdivisionName}`,
                 submittedAt: daysAgo(2),
+                reviewStatus: ResponseReviewStatus.ACCEPTED,
+                reviewedById: adminId,
+                reviewedAt: daysAgo(1),
               },
             })
           }
@@ -257,28 +274,82 @@ async function seedOrganization(
                 status: DelayRequestStatus.PENDING,
               },
             })
+
+            if (itemIndex % 3 === 0) {
+              await tx.response.create({
+                data: {
+                  orderItemId: item.id,
+                  result: "Работы выполнены с опозданием, отчёт на доработке.",
+                  submittedByLabel: `Ответственный ${subdivisionName}`,
+                  submittedAt: daysAgo(3),
+                  reviewStatus: ResponseReviewStatus.REJECTED,
+                  reviewNote:
+                    "Сроки нарушены без обоснования. Дополните отчёт актом о причинах задержки.",
+                  reviewedById: adminId,
+                  reviewedAt: daysAgo(1),
+                },
+              })
+            }
           }
 
-          if (status === "inProgress" && itemIndex === 1) {
-            await tx.delayRequest.create({
-              data: {
-                orderItemId: item.id,
-                requestedDueAt: daysFromNow(40),
-                justification: "Перенос согласован ранее из-за миграции инфраструктуры.",
-                status: DelayRequestStatus.APPROVED,
-                reviewedById: adminId,
-                reviewedAt: daysAgo(1),
-              },
-            })
-            await tx.response.create({
-              data: {
-                orderItemId: item.id,
-                result: "Частично выполнено",
-                commentary: "Внедрено на 70% рабочих мест, остальное — до конца квартала.",
-                submittedByLabel: `Ответственный ${subdivisionName}`,
-                submittedAt: daysAgo(4),
-              },
-            })
+          if (status === "inProgress") {
+            if (itemIndex === 1) {
+              await tx.delayRequest.create({
+                data: {
+                  orderItemId: item.id,
+                  requestedDueAt: daysFromNow(40),
+                  justification: "Перенос согласован ранее из-за миграции инфраструктуры.",
+                  status: DelayRequestStatus.APPROVED,
+                  reviewedById: adminId,
+                  reviewedAt: daysAgo(1),
+                },
+              })
+              await tx.response.create({
+                data: {
+                  orderItemId: item.id,
+                  result: "Частично выполнено",
+                  commentary: "Внедрено на 70% рабочих мест, остальное — до конца квартала.",
+                  submittedByLabel: `Ответственный ${subdivisionName}`,
+                  submittedAt: daysAgo(4),
+                  reviewStatus: ResponseReviewStatus.PENDING,
+                },
+              })
+            } else if (itemIndex % 4 === 2) {
+              await tx.response.create({
+                data: {
+                  orderItemId: item.id,
+                  result: "Отчёт возвращён на доработку в массовой выборке.",
+                  submittedByLabel: `Ответственный ${subdivisionName}`,
+                  submittedAt: daysAgo(5),
+                  reviewStatus: ResponseReviewStatus.REJECTED,
+                  reviewNote: "Уточните состав выполненных работ и приложите подтверждающие материалы.",
+                  reviewedById: adminId,
+                  reviewedAt: daysAgo(2),
+                },
+              })
+            } else if (itemIndex % 5 === 3) {
+              await tx.response.create({
+                data: {
+                  orderItemId: item.id,
+                  result: "Первый отчёт отклонён.",
+                  submittedByLabel: `Ответственный ${subdivisionName}`,
+                  submittedAt: daysAgo(6),
+                  reviewStatus: ResponseReviewStatus.REJECTED,
+                  reviewNote: "Неполный состав документов.",
+                  reviewedById: adminId,
+                  reviewedAt: daysAgo(5),
+                },
+              })
+              await tx.response.create({
+                data: {
+                  orderItemId: item.id,
+                  result: "Повторный отчёт после доработки.",
+                  submittedByLabel: `Ответственный ${subdivisionName}`,
+                  submittedAt: daysAgo(2),
+                  reviewStatus: ResponseReviewStatus.PENDING,
+                },
+              })
+            }
           }
         }
       }
@@ -326,6 +397,8 @@ export async function seedMockData(
     allLinks.push(...links)
   }
 
+  const reportToken = await seedReportLink(prisma)
+
   const orderCount = await prisma.order.count({
     where: { title: { startsWith: "[DEV]" } },
   })
@@ -336,6 +409,8 @@ export async function seedMockData(
   console.log(`  • ${measures.length} measures in catalog`)
   console.log(`  • ${orderCount} orders (${ORDERS_PER_ORG} per org)`)
   console.log(`  • ${allLinks.length} access links`)
+  console.log(`  • report link: /report/${reportToken}`)
+  console.log(`  • workflow showcase order in ${MOCK_ORGS[0].name} (public: /p/${orgAccessToken(MOCK_ORGS[0].shortCode)}/reports)`)
   console.log("")
   console.log("Public dev links:")
   console.table(

@@ -1,5 +1,6 @@
 import type { OrderListRow } from "@/lib/data-table/columns/order-list-columns"
 import type { MeasuresTableItem } from "@/lib/measures/table-types"
+import type { PublicReportRow } from "@/lib/public/reports"
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
 
 export function serializePublicStatuses(
@@ -73,4 +74,8 @@ export function serializeOrderListRows(
 
 export function serializeMeasuresTableItems(items: PublicItem[]): MeasuresTableItem[] {
   return items
+}
+
+export function serializePublicReportRows(rows: PublicReportRow[]): PublicReportRow[] {
+  return rows
 }

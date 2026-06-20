@@ -65,7 +65,7 @@ function deserializeAccessLinkContext(
   }
 }
 
-function itemScopeWhere(link: {
+export function publicItemScopeWhere(link: {
   organizationId: number
   subdivisionId: number | null
 }) {
@@ -122,7 +122,7 @@ export const fetchPublicNavOrders = cache(async (token: string) => {
   if (!ctx) return null
 
   const rows = await prismaRead.orderItem.findMany({
-    where: itemScopeWhere(ctx.link),
+    where: publicItemScopeWhere(ctx.link),
     select: { id: true, orderId: true },
     orderBy: [{ order: { issuedAt: "desc" } }, { id: "asc" }],
   })
@@ -150,7 +150,7 @@ export const fetchPublicOrderSummaries = cache(async (token: string) => {
     where: {
       organizationId: ctx.link.organizationId,
       items: {
-        some: itemScopeWhere(ctx.link),
+        some: publicItemScopeWhere(ctx.link),
       },
     },
     select: {
@@ -160,7 +160,7 @@ export const fetchPublicOrderSummaries = cache(async (token: string) => {
       _count: {
         select: {
           items: {
-            where: itemScopeWhere(ctx.link),
+            where: publicItemScopeWhere(ctx.link),
           },
         },
       },
@@ -189,11 +189,11 @@ export async function getOrderForToken(token: string, orderId: number) {
     where: {
       id: orderId,
       organizationId: ctx.link.organizationId,
-      items: { some: itemScopeWhere(ctx.link) },
+      items: { some: publicItemScopeWhere(ctx.link) },
     },
     include: {
       items: {
-        where: itemScopeWhere(ctx.link),
+        where: publicItemScopeWhere(ctx.link),
         include: {
           measure: true,
           status: true,
@@ -220,7 +220,7 @@ export async function getPublicOrderItem(token: string, orderItemId: number) {
 
   const item = await fetchOrderItemDetail({
     id: orderItemId,
-    ...itemScopeWhere(ctx.link),
+    ...publicItemScopeWhere(ctx.link),
   })
 
   if (!item) throw new Error("NOT_FOUND")

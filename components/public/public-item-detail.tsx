@@ -12,7 +12,6 @@ import {
   usePublicBreadcrumbLabel,
   usePublicBreadcrumbMiddle,
 } from "@/components/public/public-breadcrumb"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/ui/feedback"
 import { WORKFLOW_STATUS } from "@/lib/statuses/workflow"
@@ -184,15 +183,6 @@ export function PublicItemDetail({
           ) : undefined
         }
       >
-        {isRejected && latestResponse?.reviewNote && (
-          <Alert variant="destructive">
-            <AlertTitle>Отчёт не принят</AlertTitle>
-            <AlertDescription className="whitespace-pre-wrap">
-              {latestResponse.reviewNote}
-            </AlertDescription>
-          </Alert>
-        )}
-
         <ItemReportWorkflowCard
           completed={completed}
           isPendingReview={isPendingReview}

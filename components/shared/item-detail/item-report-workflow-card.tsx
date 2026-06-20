@@ -6,6 +6,7 @@ import {
   type CommentaryAttachmentsValue,
 } from "@/components/shared/commentary-attachments-field"
 import { ItemResponseCard } from "@/components/shared/item-detail/item-response-card"
+import { ResponseRevisionAlert } from "@/components/shared/response-revision-alert"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils"
 
 type ReadonlyResponse = {
   reviewStatus: ResponseReviewStatus
+  reviewNote?: string | null
   result: string
   commentary: string | null
   submittedAt: string
@@ -81,7 +83,12 @@ export function ItemReportWorkflowCard({
       className={cn(
         completed && "border-primary/30 bg-primary/5",
         isPendingReview && "border-destructive/30 bg-destructive/5",
-        canSubmitReport && !completed && !isPendingReview && "border-primary/30"
+        isRejected && "border-destructive/30 bg-destructive/5",
+        canSubmitReport &&
+          !completed &&
+          !isPendingReview &&
+          !isRejected &&
+          "border-primary/30"
       )}
     >
       <CardHeader>
@@ -98,7 +105,10 @@ export function ItemReportWorkflowCard({
                   : "Сначала возьмите меру в работу."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4">
+        {isRejected && latestResponse?.reviewNote && (
+          <ResponseRevisionAlert reviewNote={latestResponse.reviewNote} />
+        )}
         {completed ? (
           <p className="text-sm text-muted-foreground">
             Дополнительных действий не требуется.
