@@ -1,10 +1,11 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
-import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts-skeleton"
+import { DashboardMatrixTable } from "@/components/dashboard/dashboard-matrix-table"
 import type { DashboardMatrixLinkTargets } from "@/components/dashboard/dashboard-matrix-table"
+import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
+import { MeasuresDataTable } from "@/components/shared/measures-data-table"
 import { dashboardMatrixLinkTargets } from "@/lib/dashboard/link-targets"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import {
@@ -19,36 +20,7 @@ import {
 } from "@/lib/dashboard/chart-filters"
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
-import {
-  getDashboardVariantConfig,
-} from "@/lib/dashboard/variant-config"
-
-const ScopedDashboardCharts = dynamic(
-  () =>
-    import("@/components/dashboard/scoped-dashboard-charts").then(
-      (mod) => mod.ScopedDashboardCharts
-    ),
-  {
-    ssr: false,
-    loading: () => <DashboardChartsSkeleton />,
-  }
-)
-
-const DashboardMatrixTable = dynamic(
-  () =>
-    import("@/components/dashboard/dashboard-matrix-table").then(
-      (mod) => mod.DashboardMatrixTable
-    ),
-  { loading: () => null }
-)
-
-const MeasuresDataTable = dynamic(
-  () =>
-    import("@/components/shared/measures-data-table").then(
-      (mod) => mod.MeasuresDataTable
-    ),
-  { loading: () => null }
-)
+import { getDashboardVariantConfig } from "@/lib/dashboard/variant-config"
 
 type FilterControl = {
   columnFilters?: ColumnFiltersState
