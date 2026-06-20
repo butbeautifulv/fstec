@@ -9,7 +9,7 @@ import { APP_NAME } from "@/lib/ui/branding"
 export default async function LoginPage() {
   const session = await hydrateSessionRole(await getSession())
   if (session.isLoggedIn) {
-    redirect(session.mustChangePassword ? "/admin/change-password" : "/admin")
+    redirect(session.mustChangePassword ? "/panel/change-password" : "/panel")
   }
 
   return (

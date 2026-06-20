@@ -57,6 +57,17 @@ export function toggleStatusFilter(
   return setFilter(withoutBreakdown, "status", [status])
 }
 
+export function toggleStatusFilterPreserveBreakdown(
+  filters: ColumnFiltersState,
+  status: string
+): ColumnFiltersState {
+  const current = filterValues(filters, "status")
+  if (current.length === 1 && current[0] === status) {
+    return setFilter(filters, "status", undefined)
+  }
+  return setFilter(filters, "status", [status])
+}
+
 export function toggleBreakdownFilter(
   filters: ColumnFiltersState,
   scope: ChartFilterScope,
@@ -71,6 +82,34 @@ export function toggleBreakdownFilter(
   return setFilter(withoutStatus, columnId, [label])
 }
 
+export function toggleStatusBreakdownFilter(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  status: string
+): ColumnFiltersState {
+  const columnId = breakdownColumnId(scope)
+  const breakdownCurrent = filterValues(filters, columnId)
+  const statusCurrent = filterValues(filters, "status")
+
+  if (
+    breakdownCurrent.length === 1 &&
+    breakdownCurrent[0] === label &&
+    statusCurrent.length === 1 &&
+    statusCurrent[0] === status
+  ) {
+    return filters.filter((f) => f.id !== columnId && f.id !== "status")
+  }
+
+  const rest = filters.filter((f) => f.id !== columnId && f.id !== "status")
+  return [
+    ...rest,
+    { id: columnId, value: [label] },
+    { id: "status", value: [status] },
+  ]
+}
+
+/** @deprecated Use toggleStatusBreakdownFilter */
 export function toggleCompletionSegmentFilter(
   filters: ColumnFiltersState,
   scope: ChartFilterScope,
@@ -119,6 +158,37 @@ export function isBreakdownFilterActive(
   return values.length === 1 && values[0] === label
 }
 
+export function isStatusBreakdownActive(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  status: string
+): boolean {
+  return (
+    isBreakdownFilterActive(filters, scope, label) &&
+    filterValues(filters, "status").length === 1 &&
+    filterValues(filters, "status")[0] === status
+  )
+}
+
+export function isStatusSegmentHighlighted(
+  filters: ColumnFiltersState,
+  scope: ChartFilterScope,
+  label: string,
+  status: string
+): boolean {
+  const breakdownMatch = isBreakdownFilterActive(filters, scope, label)
+  const statusMatch = isStatusFilterActive(filters, status)
+  const hasBreakdown = filters.some((f) => f.id === breakdownColumnId(scope))
+  const hasStatus = filters.some((f) => f.id === "status")
+
+  if (hasBreakdown && hasStatus) return breakdownMatch && statusMatch
+  if (hasBreakdown) return breakdownMatch
+  if (hasStatus) return statusMatch
+  return false
+}
+
+/** @deprecated Use isStatusBreakdownActive */
 export function isCompletionSegmentActive(
   filters: ColumnFiltersState,
   scope: ChartFilterScope,

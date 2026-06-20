@@ -28,8 +28,8 @@ export async function PUT(request: Request, { params }: Params) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const measure = await updateMeasure(id, parsed.data)
-    revalidatePath("/admin/measures")
-    revalidatePath(`/admin/measures/${id}/edit`)
+    revalidatePath("/panel/measures")
+    revalidatePath(`/panel/measures/${id}/edit`)
     return jsonOk(measure)
   } catch (error) {
     return handleApiError(error)
@@ -41,7 +41,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     await requirePermission(Permission.measuresWrite)
     const id = Number((await params).id)
     await deleteMeasure(id)
-    revalidatePath("/admin/measures")
+    revalidatePath("/panel/measures")
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

@@ -1,6 +1,6 @@
 ---
 name: RBAC users auth stubs
-overview: Вынести управление админами в `/admin/settings/users`, внедрить permission-based RBAC с проверкой на API, добавить stub-провайдеры Active Directory и Keycloak за env-переключателем.
+overview: Вынести управление админами в `/panel/settings/users`, внедрить permission-based RBAC с проверкой на API, добавить stub-провайдеры Active Directory и Keycloak за env-переключателем.
 todos:
   - id: rbac-core
     content: Prisma UserRole SUPER_ADMIN/OPERATOR/VIEWER + migration; lib/auth/permissions.ts + requirePermission
@@ -29,7 +29,7 @@ isProject: false
 - Создание админов встроено в [`settings-client.tsx`](components/admin/settings-client.tsx)
 - Логин — локальный пароль в [`app/api/auth/login/route.ts`](app/api/auth/login/route.ts)
 
-**Выбор пользователя:** granular permissions + роли как наборы permission; пользователи под `/admin/settings/users`.
+**Выбор пользователя:** granular permissions + роли как наборы permission; пользователи под `/panel/settings/users`.
 
 ---
 
@@ -98,8 +98,8 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 
 **UI gating:**
 - `GET /api/auth/me` → `{ email, name, role, permissions[] }`
-- [`app-sidebar.tsx`](components/app-sidebar.tsx): «Настройки» видны при `settings:read`; подсветка active для `/admin/settings/*`
-- Страницы `/admin/settings/users*` — server check `users:manage`, иначе `notFound()` / redirect
+- [`app-sidebar.tsx`](components/app-sidebar.tsx): «Настройки» видны при `settings:read`; подсветка active для `/panel/settings/*`
+- Страницы `/panel/settings/users*` — server check `users:manage`, иначе `notFound()` / redirect
 
 ---
 
@@ -107,17 +107,17 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
 
 ```mermaid
 flowchart LR
-  settings["/admin/settings"] --> general["head org + timezone"]
-  settings --> usersList["/admin/settings/users"]
-  usersList --> usersNew["/admin/settings/users/new"]
+  settings["/panel/settings"] --> general["head org + timezone"]
+  settings --> usersList["/panel/settings/users"]
+  usersList --> usersNew["/panel/settings/users/new"]
   settings --> authStub["Card: провайдер auth"]
 ```
 
 | Маршрут | Компонент | Доступ |
 |---------|-----------|--------|
-| [`/admin/settings`](app/(admin)/admin/(panel)/settings/page.tsx) | упрощённый `SettingsClient` — только общие + card auth | `settings:read` / write |
-| [`/admin/settings/users`](app/(admin)/admin/(panel)/settings/users/page.tsx) | `UsersListClient` — DataTable (email, имя, роль, дата) | `users:manage` |
-| [`/admin/settings/users/new`](app/(admin)/admin/(panel)/settings/users/new/page.tsx) | `UserForm` — email, имя, пароль, Select роли | `users:manage` |
+| [`/panel/settings`](app/(admin)/admin/(panel)/settings/page.tsx) | упрощённый `SettingsClient` — только общие + card auth | `settings:read` / write |
+| [`/panel/settings/users`](app/(admin)/admin/(panel)/settings/users/page.tsx) | `UsersListClient` — DataTable (email, имя, роль, дата) | `users:manage` |
+| [`/panel/settings/users/new`](app/(admin)/admin/(panel)/settings/users/new/page.tsx) | `UserForm` — email, имя, пароль, Select роли | `users:manage` |
 
 **Рефакторинг:**
 - Убрать блок «Администраторы» из [`settings-client.tsx`](components/admin/settings-client.tsx)
@@ -127,9 +127,9 @@ flowchart LR
 **Lib/users:** `listUsers()` возвращает `role`; `createUser()` принимает `role` из [`createUserSchema`](lib/validations/users.ts).
 
 **Breadcrumbs** [`admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx):
-- `/admin/settings` → «Настройки»
-- `/admin/settings/users` → «Настройки» → «Пользователи»
-- `/admin/settings/users/new` → «…» → «Новый пользователь»
+- `/panel/settings` → «Настройки»
+- `/panel/settings/users` → «Настройки» → «Пользователи»
+- `/panel/settings/users/new` → «…» → «Новый пользователь»
 
 ---
 
@@ -160,7 +160,7 @@ KEYCLOAK_CLIENT_SECRET=
 
 **Login route** — делегировать `getAuthProvider().authenticate(credentials)` вместо inline Prisma.
 
-**UI** — Card «Аутентификация» на `/admin/settings`:
+**UI** — Card «Аутентификация» на `/panel/settings`:
 - Текущий провайдер (Локальная / Active Directory / Keycloak)
 - Статус stub («Интеграция не настроена» + какие env нужны)
 - Кнопки AD/Keycloak disabled с tooltip «Будет доступно в следующей версии»
@@ -176,8 +176,8 @@ npm run typecheck && npm run lint && npm run build
 
 **Smoke:**
 1. Seed admin → `SUPER_ADMIN`, login работает, `session.role` установлен
-2. `/admin/settings` — без таблицы пользователей; ссылка «Пользователи»
-3. `/admin/settings/users/new` — создать OPERATOR; login под ним — нет доступа к users API (403)
+2. `/panel/settings` — без таблицы пользователей; ссылка «Пользователи»
+3. `/panel/settings/users/new` — создать OPERATOR; login под ним — нет доступа к users API (403)
 4. OPERATOR может CRUD поручения; VIEWER — только GET
 5. Card auth показывает `local`; при `AUTH_PROVIDER=keycloak` — stub status
 

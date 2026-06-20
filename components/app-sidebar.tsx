@@ -3,22 +3,19 @@
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 import { usePathname } from "next/navigation"
-import {
-  Building2Icon,
-  CalendarClockIcon,
-  ClipboardListIcon,
-  LayoutDashboardIcon,
-  PlusIcon,
-  SettingsIcon,
-  ShieldIcon,
-} from "lucide-react"
+import { PlusIcon, SettingsIcon, ShieldIcon } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { NavUser } from "@/components/nav-user"
-import { useAdminMe } from "@/components/admin/use-admin-me"
+import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { ShellSidebar } from "@/components/shell/shell-sidebar"
-import type { ShellNavMainItem } from "@/components/shell/shell-nav-main"
-import { buildAdminOrdersNavItem } from "@/lib/admin/build-nav-orders"
-import { APP_SIDEBAR_NAME, APP_TAGLINE, labels } from "@/lib/ui/branding"
+import {
+  buildPlatformNavItems,
+  filterNavByPermission,
+  PLATFORM_BRAND_HREF,
+  PLATFORM_PRIMARY_ACTION,
+} from "@/lib/nav/platform-nav"
+import { ROLE_LABELS } from "@/lib/auth/permissions"
+import { APP_SIDEBAR_NAME, APP_TAGLINE } from "@/lib/ui/branding"
 import {
   SidebarMenu,
   SidebarMenuButton,
@@ -27,7 +24,7 @@ import {
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const { me } = useAdminMe()
+  const { me, can } = usePlatformUser()
   const [pendingDelays, setPendingDelays] = useState(0)
 
   useEffect(() => {
@@ -37,66 +34,54 @@ export function AppSidebar() {
       .catch(() => setPendingDelays(0))
   }, [pathname])
 
-  const navItems = useMemo<ShellNavMainItem[]>(
-    () => [
-      {
-        title: "Сводка",
-        href: "/admin",
-        icon: LayoutDashboardIcon,
-        isActive: pathname === "/admin",
-      },
-      {
-        title: "Меры",
-        href: "/admin/measures",
-        icon: ShieldIcon,
-        isActive: pathname === "/admin/measures" || pathname.startsWith("/admin/measures/"),
-      },
-      buildAdminOrdersNavItem(pathname, ClipboardListIcon),
-      {
-        title: labels.orgs,
-        href: "/admin/organizations",
-        icon: Building2Icon,
-        isActive:
-          pathname === "/admin/organizations" ||
-          pathname.startsWith("/admin/organizations/"),
-      },
-      {
-        title: "Переносы",
-        href: "/admin/delay-requests",
-        icon: CalendarClockIcon,
-        isActive: pathname.startsWith("/admin/delay-requests"),
-        badge:
-          pendingDelays > 0 ? (
-            <Badge variant="destructive" className="ml-auto shrink-0">
-              {pendingDelays}
-            </Badge>
-          ) : undefined,
-      },
-    ],
-    [pathname, pendingDelays]
-  )
+  const navItems = useMemo(() => {
+    const items = filterNavByPermission(buildPlatformNavItems(pathname), can)
+    return items.map((item) =>
+      item.href === "/panel/delay-requests" && pendingDelays > 0
+        ? {
+            ...item,
+            badge: (
+              <Badge variant="destructive" className="ml-auto shrink-0">
+                {pendingDelays}
+              </Badge>
+            ),
+          }
+        : item
+    )
+  }, [pathname, pendingDelays, can])
 
-  const settingsActive = pathname.startsWith("/admin/settings")
+  const settingsActive = pathname.startsWith("/panel/settings")
   const showSettings = me != null
+  const showPrimaryAction = can(PLATFORM_PRIMARY_ACTION.permission)
+  const userLabel = me?.name ?? (me?.role ? ROLE_LABELS[me.role] : "Пользователь")
 
   return (
     <ShellSidebar
       variant="inset"
       groupLabel="Платформа"
-      brand={{ href: "/admin", title: APP_SIDEBAR_NAME, subtitle: APP_TAGLINE, icon: ShieldIcon }}
-      navItems={navItems}
-      primaryAction={{
-        href: "/admin/orders/new",
-        label: "Создать поручение",
-        icon: PlusIcon,
+      brand={{
+        href: PLATFORM_BRAND_HREF,
+        title: APP_SIDEBAR_NAME,
+        subtitle: APP_TAGLINE,
+        icon: ShieldIcon,
       }}
+      navItems={navItems}
+      primaryAction={
+        showPrimaryAction
+          ? {
+              href: PLATFORM_PRIMARY_ACTION.href,
+              label: PLATFORM_PRIMARY_ACTION.label,
+              icon: PlusIcon,
+            }
+          : undefined
+      }
       footer={
         <>
           {showSettings && (
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={settingsActive} tooltip="Настройки">
-                  <Link href="/admin/settings">
+                  <Link href="/panel/settings">
                     <SettingsIcon />
                     <span>Настройки</span>
                   </Link>
@@ -106,7 +91,7 @@ export function AppSidebar() {
           )}
           <NavUser
             user={{
-              name: me?.name ?? "Администратор",
+              name: userLabel,
               email: me?.email ?? "",
             }}
           />

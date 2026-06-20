@@ -31,7 +31,7 @@ export async function POST(_request: Request, { params }: Params) {
     const org = await getOrganization(organizationId)
     if (!org) throw new Error("NOT_FOUND")
     const link = await createOrganizationAccessLink(organizationId)
-    revalidatePath(`/admin/organizations/${organizationId}`)
+    revalidatePath(`/panel/organizations/${organizationId}`)
     return jsonOk(link, { status: 201 })
   } catch (error) {
     return handleApiError(error)
@@ -45,7 +45,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const linkId = Number(new URL(request.url).searchParams.get("linkId"))
     if (!linkId) return handleApiError(new Error("linkId required"))
     await revokeAccessLink(linkId)
-    revalidatePath(`/admin/organizations/${organizationId}`)
+    revalidatePath(`/panel/organizations/${organizationId}`)
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

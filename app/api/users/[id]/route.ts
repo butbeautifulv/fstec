@@ -32,8 +32,8 @@ export async function PUT(request: Request, { params }: Params) {
     }
 
     const user = await updateUser(id, parsed.data, { actorId: session.userId })
-    revalidatePath("/admin/settings/users")
-    revalidatePath(`/admin/settings/users/${id}/edit`)
+    revalidatePath("/panel/settings/users")
+    revalidatePath(`/panel/settings/users/${id}/edit`)
     return jsonOk(user)
   } catch (error) {
     if (error instanceof Error) {
@@ -63,7 +63,7 @@ export async function DELETE(request: Request, { params }: Params) {
     }
 
     await deleteUser(id, session.userId)
-    revalidatePath("/admin/settings/users")
+    revalidatePath("/panel/settings/users")
     return jsonOk({ ok: true })
   } catch (error) {
     if (error instanceof Error) {

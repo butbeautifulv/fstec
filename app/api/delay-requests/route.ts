@@ -69,9 +69,9 @@ export async function POST(request: Request) {
       })
     }
 
-    revalidatePath("/admin")
-    revalidatePath("/admin/delay-requests")
-    revalidatePath(`/admin/orders/${delay.orderItem.orderId}`)
+    revalidatePath("/panel")
+    revalidatePath("/panel/delay-requests")
+    revalidatePath(`/panel/orders/${delay.orderItem.orderId}`)
 
     return jsonOk({ ok: true })
   } catch (error) {

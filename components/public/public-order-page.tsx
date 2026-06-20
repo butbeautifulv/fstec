@@ -8,7 +8,7 @@ import {
   type PublicItem,
   type PublicStatus,
 } from "@/components/public/public-measures-table"
-import { PageHeader } from "@/components/admin/page-header"
+import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 
 export function PublicOrderPage({

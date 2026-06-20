@@ -1,6 +1,6 @@
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
-import { listSidebarOrders } from "@/lib/admin/sidebar-orders"
+import { listSidebarOrders } from "@/lib/nav/sidebar-orders"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 
 export async function GET() {

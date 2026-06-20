@@ -32,7 +32,7 @@ isProject: false
 | Текущий срок | `dd.MM.yyyy`, фикс. ширина |
 | Новый срок | `dd.MM.yyyy`, фикс. ширина |
 | Статус | компактный `Badge` (как сейчас) |
-| Действие | одна кнопка «Открыть» + `ChevronRightIcon` → `/admin/delay-requests/{id}` |
+| Действие | одна кнопка «Открыть» + `ChevronRightIcon` → `/panel/delay-requests/{id}` |
 
 **Убрать из таблицы:**
 - колонку «Запрошено» (`createdAt`)
@@ -67,7 +67,7 @@ function TruncatedCell({ text, className }: { text: string; className?: string }
 
 ```tsx
 <Button variant="ghost" size="sm" asChild>
-  <Link href={`/admin/delay-requests/${row.original.id}`}>
+  <Link href={`/panel/delay-requests/${row.original.id}`}>
     Открыть
     <ChevronRightIcon data-icon="inline-end" />
   </Link>

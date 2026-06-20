@@ -24,7 +24,7 @@ isProject: false
 
 ## Контекст
 
-**Статусы:** workflow уже зафиксирован в [`lib/statuses/workflow.ts`](lib/statuses/workflow.ts) и seed (3 статуса). Admin CRUD ([`/admin/settings/statuses`](app/(admin)/admin/(panel)/settings/statuses/page.tsx)) не нужен.
+**Статусы:** workflow уже зафиксирован в [`lib/statuses/workflow.ts`](lib/statuses/workflow.ts) и seed (3 статуса). Admin CRUD ([`/panel/settings/statuses`](app/(admin)/admin/(panel)/settings/statuses/page.tsx)) не нужен.
 
 **Публичная панель:** сейчас [`public-order-page.tsx`](components/public/public-order-page.tsx) — голая страница с `PageHeader` + таблица, без sidebar/breadcrumbs/charts. Админка использует [`admin-shell.tsx`](components/admin/admin-shell.tsx) + [`dashboard-charts.tsx`](components/admin/dashboard-charts.tsx) + matrix.
 
@@ -65,7 +65,7 @@ flowchart TB
 
 ### Обновить навигацию
 - [`components/app-sidebar.tsx`](components/app-sidebar.tsx) — убрать пункт «Статусы»
-- [`components/admin/admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx) — убрать ветку `/admin/settings/statuses`
+- [`components/admin/admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx) — убрать ветку `/panel/settings/statuses`
 
 ### Упростить [`lib/statuses/index.ts`](lib/statuses/index.ts)
 - Удалить `createStatus`, `updateStatus`, `deleteStatus`

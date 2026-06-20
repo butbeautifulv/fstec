@@ -29,7 +29,7 @@ export async function POST(request: Request) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const org = await createOrganization(parsed.data)
-    revalidatePath("/admin/organizations")
+    revalidatePath("/panel/organizations")
     return jsonOk(org, { status: 201 })
   } catch (error) {
     return handleApiError(error)
@@ -47,8 +47,8 @@ export async function PUT(request: Request) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const org = await updateOrganization(id, parsed.data)
-    revalidatePath("/admin/organizations")
-    revalidatePath(`/admin/organizations/${id}`)
+    revalidatePath("/panel/organizations")
+    revalidatePath(`/panel/organizations/${id}`)
     return jsonOk(org)
   } catch (error) {
     return handleApiError(error)
@@ -62,7 +62,7 @@ export async function DELETE(request: Request) {
     const id = Number(searchParams.get("id"))
     if (!id) return handleApiError(new Error("id required"))
     await deleteOrganization(id)
-    revalidatePath("/admin/organizations")
+    revalidatePath("/panel/organizations")
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

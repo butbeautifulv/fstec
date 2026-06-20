@@ -14,7 +14,7 @@ export async function PUT(request: Request) {
     }
 
     const user = await updateAccount(session.userId, parsed.data)
-    revalidatePath("/admin/settings/account")
+    revalidatePath("/panel/settings/account")
     return jsonOk(user)
   } catch (error) {
     if (error instanceof Error) {

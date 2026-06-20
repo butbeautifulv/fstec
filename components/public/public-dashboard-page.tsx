@@ -1,6 +1,6 @@
 import Link from "next/link"
-import { PublicDashboardInteractive } from "@/components/public/public-dashboard-interactive"
-import { PageHeader } from "@/components/admin/page-header"
+import { DashboardInteractive } from "@/components/dashboard/dashboard-interactive"
+import { PageHeader } from "@/components/shared/page-header"
 import {
   type PublicItem,
   type PublicStatus,
@@ -57,8 +57,9 @@ export function PublicDashboardPage({
         </Alert>
       )}
 
-      <PublicDashboardInteractive
+      <DashboardInteractive
         key={overdueOnly ? "overdue" : "all"}
+        variant="public"
         scope={scope}
         stats={stats}
         token={token}

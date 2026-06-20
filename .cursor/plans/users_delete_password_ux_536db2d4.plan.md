@@ -54,13 +54,13 @@ flowchart LR
 
 - `requirePermission(usersManage)`
 - `deleteUser(id, session.userId)`
-- revalidate `/admin/settings/users`
+- revalidate `/panel/settings/users`
 - маппинг ошибок → 404 / 409 с понятными сообщениями
 
 **UI [`components/admin/users-list-client.tsx`](components/admin/users-list-client.tsx)**:
 
 - Колонка `actions` с [`TableRowActions`](components/admin/crud/table-row-actions.tsx):
-  - **Изменить** → `/admin/settings/users/[id]/edit`
+  - **Изменить** → `/panel/settings/users/[id]/edit`
   - **Удалить** (destructive) → [`ConfirmDeleteAlert`](components/admin/crud/confirm-delete-alert.tsx)
 - `DELETE /api/users/${id}` + `router.refresh()` + toast
 - Скрыть «Удалить» для текущего пользователя (`useAdminMe().me.id`)

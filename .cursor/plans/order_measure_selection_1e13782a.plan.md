@@ -73,7 +73,7 @@ flowchart LR
 - Card «Меры»:
   - счётчик «Выбрано: N»
   - превью первых 3–5 названий + «и ещё N» (имена из кэша мер в draft или lazy fetch)
-  - кнопка **«Выбрать меры»** → `/admin/orders/new/measures`
+  - кнопка **«Выбрать меры»** → `/panel/orders/new/measures`
 - Submit читает `selectedMeasureIds` из draft context
 - `disabled` на submit если `selectedMeasureIds.length === 0`
 
@@ -81,9 +81,9 @@ flowchart LR
 
 **Новый route:** [`app/(admin)/admin/(panel)/orders/new/measures/page.tsx`](app/(admin)/admin/(panel)/orders/new/measures/page.tsx)
 
-- `PageHeader`: title «Выбор мер», back → `/admin/orders/new`, backLabel «Новое поручение»
+- `PageHeader`: title «Выбор мер», back → `/panel/orders/new`, backLabel «Новое поручение»
 - Рендерит `MeasureSelectTable`
-- Sticky footer (или `FormActionsBar`): «Выбрано: N» + кнопка **«Готово»** → `router.push("/admin/orders/new")`
+- Sticky footer (или `FormActionsBar`): «Выбрано: N» + кнопка **«Готово»** → `router.push("/panel/orders/new")`
 
 ### 4. MeasureSelectTable — DataTable с чекбоксами
 
@@ -134,8 +134,8 @@ Fetch мер: один раз на странице выбора (`GET /api/meas
 
 ## UX-поток (smoke)
 
-1. `/admin/orders/new` — заполнить параметры, нажать «Выбрать меры»
-2. `/admin/orders/new/measures` — поиск «М-», сортировка по «Создана», выбрать несколько мер с разных страниц
+1. `/panel/orders/new` — заполнить параметры, нажать «Выбрать меры»
+2. `/panel/orders/new/measures` — поиск «М-», сортировка по «Создана», выбрать несколько мер с разных страниц
 3. «Готово» → вернуться на форму, увидеть счётчик и превью
 4. F5 на любой из двух страниц — черновик и выбор сохранены
 5. «Создать поручение» → redirect на detail, storage очищен

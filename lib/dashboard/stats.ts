@@ -2,17 +2,19 @@ import { prisma } from "@/lib/db"
 import {
   getDisplayStatusName,
   isOrderItemOverdue,
+  OVERDUE_LABEL,
   STATUS_DISPLAY_ORDER,
+  WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
 
 export type StatusDistribution = { status: string; count: number; fill: string }
 
-export type BreakdownRow = { label: string; count: number }
+export type BreakdownRow = { label: string; count: number; total: number }
 
-export type CompletionRow = {
+export type StatusBreakdownRow = {
   label: string
-  completed: number
-  active: number
+} & {
+  [K in (typeof STATUS_DISPLAY_ORDER)[number]]: number
 }
 
 export type DashboardScope =
@@ -24,7 +26,7 @@ export type ScopedDashboardStats = {
   scope: DashboardScope["type"]
   statusDistribution: StatusDistribution[]
   overdueBreakdown: BreakdownRow[]
-  completionBreakdown: CompletionRow[]
+  statusBreakdown: StatusBreakdownRow[]
   chartLabels: {
     overdueTitle: string
     completionTitle: string
@@ -87,29 +89,47 @@ function buildStatusDistribution(items: ItemRow[], now: Date): StatusDistributio
   return [...ordered, ...extras]
 }
 
+function emptyStatusBreakdown(): Omit<StatusBreakdownRow, "label"> {
+  return {
+    [WORKFLOW_STATUS.NOT_STARTED]: 0,
+    [WORKFLOW_STATUS.IN_PROGRESS]: 0,
+    [WORKFLOW_STATUS.COMPLETED]: 0,
+    [OVERDUE_LABEL]: 0,
+  }
+}
+
+function incrementStatusBreakdown(
+  row: Omit<StatusBreakdownRow, "label">,
+  item: ItemRow,
+  now: Date
+) {
+  const status = getDisplayStatusName(item, now) as keyof typeof row
+  if (status in row) row[status] += 1
+}
+
 function buildGlobalStats(items: ItemRow[], now: Date): ScopedDashboardStats {
-  const overdueByOrg = new Map<string, number>()
-  const completionByOrg = new Map<string, { completed: number; active: number }>()
+  const overdueByOrg = new Map<string, { count: number; total: number }>()
+  const statusByOrg = new Map<string, Omit<StatusBreakdownRow, "label">>()
 
   for (const item of items) {
     const orgName = item.order.organization.name
-    const entry = completionByOrg.get(orgName) ?? { completed: 0, active: 0 }
-    if (item.status.isTerminal) entry.completed += 1
-    else entry.active += 1
-    completionByOrg.set(orgName, entry)
+    const statusEntry = statusByOrg.get(orgName) ?? emptyStatusBreakdown()
+    incrementStatusBreakdown(statusEntry, item, now)
+    statusByOrg.set(orgName, statusEntry)
 
-    if (isOrderItemOverdue(item, now)) {
-      overdueByOrg.set(orgName, (overdueByOrg.get(orgName) ?? 0) + 1)
-    }
+    const overdueEntry = overdueByOrg.get(orgName) ?? { count: 0, total: 0 }
+    overdueEntry.total += 1
+    if (isOrderItemOverdue(item, now)) overdueEntry.count += 1
+    overdueByOrg.set(orgName, overdueEntry)
   }
 
   return {
     scope: "global",
     statusDistribution: buildStatusDistribution(items, now),
     overdueBreakdown: [...overdueByOrg.entries()]
-      .map(([label, count]) => ({ label, count }))
+      .map(([label, v]) => ({ label, ...v }))
       .sort((a, b) => b.count - a.count),
-    completionBreakdown: [...completionByOrg.entries()]
+    statusBreakdown: [...statusByOrg.entries()]
       .map(([label, v]) => ({ label, ...v }))
       .sort((a, b) => a.label.localeCompare(b.label)),
     chartLabels: {
@@ -120,28 +140,28 @@ function buildGlobalStats(items: ItemRow[], now: Date): ScopedDashboardStats {
 }
 
 function buildOrganizationStats(items: ItemRow[], now: Date): ScopedDashboardStats {
-  const overdueBySub = new Map<string, number>()
-  const completionBySub = new Map<string, { completed: number; active: number }>()
+  const overdueBySub = new Map<string, { count: number; total: number }>()
+  const statusBySub = new Map<string, Omit<StatusBreakdownRow, "label">>()
 
   for (const item of items) {
     const label = item.subdivision?.name ?? "Без подразделения"
-    const entry = completionBySub.get(label) ?? { completed: 0, active: 0 }
-    if (item.status.isTerminal) entry.completed += 1
-    else entry.active += 1
-    completionBySub.set(label, entry)
+    const statusEntry = statusBySub.get(label) ?? emptyStatusBreakdown()
+    incrementStatusBreakdown(statusEntry, item, now)
+    statusBySub.set(label, statusEntry)
 
-    if (isOrderItemOverdue(item, now)) {
-      overdueBySub.set(label, (overdueBySub.get(label) ?? 0) + 1)
-    }
+    const overdueEntry = overdueBySub.get(label) ?? { count: 0, total: 0 }
+    overdueEntry.total += 1
+    if (isOrderItemOverdue(item, now)) overdueEntry.count += 1
+    overdueBySub.set(label, overdueEntry)
   }
 
   return {
     scope: "organization",
     statusDistribution: buildStatusDistribution(items, now),
     overdueBreakdown: [...overdueBySub.entries()]
-      .map(([label, count]) => ({ label, count }))
+      .map(([label, v]) => ({ label, ...v }))
       .sort((a, b) => b.count - a.count),
-    completionBreakdown: [...completionBySub.entries()]
+    statusBreakdown: [...statusBySub.entries()]
       .map(([label, v]) => ({ label, ...v }))
       .sort((a, b) => a.label.localeCompare(b.label)),
     chartLabels: {
@@ -152,31 +172,33 @@ function buildOrganizationStats(items: ItemRow[], now: Date): ScopedDashboardSta
 }
 
 function buildSubdivisionStats(items: ItemRow[], now: Date): ScopedDashboardStats {
-  const overdueByOrder = new Map<string, number>()
-  let completed = 0
-  let active = 0
+  const overdueByOrder = new Map<string, { count: number; total: number }>()
+  const statusByOrder = new Map<string, Omit<StatusBreakdownRow, "label">>()
 
   for (const item of items) {
-    if (item.status.isTerminal) completed += 1
-    else active += 1
+    const label = item.order.title
+    const statusEntry = statusByOrder.get(label) ?? emptyStatusBreakdown()
+    incrementStatusBreakdown(statusEntry, item, now)
+    statusByOrder.set(label, statusEntry)
 
-    if (isOrderItemOverdue(item, now)) {
-      overdueByOrder.set(item.order.title, (overdueByOrder.get(item.order.title) ?? 0) + 1)
-    }
+    const overdueEntry = overdueByOrder.get(label) ?? { count: 0, total: 0 }
+    overdueEntry.total += 1
+    if (isOrderItemOverdue(item, now)) overdueEntry.count += 1
+    overdueByOrder.set(label, overdueEntry)
   }
-
-  const scopeLabel = items[0]?.subdivision?.name ?? "Подразделение"
 
   return {
     scope: "subdivision",
     statusDistribution: buildStatusDistribution(items, now),
     overdueBreakdown: [...overdueByOrder.entries()]
-      .map(([label, count]) => ({ label, count }))
+      .map(([label, v]) => ({ label, ...v }))
       .sort((a, b) => b.count - a.count),
-    completionBreakdown: [{ label: scopeLabel, completed, active }],
+    statusBreakdown: [...statusByOrder.entries()]
+      .map(([label, v]) => ({ label, ...v }))
+      .sort((a, b) => a.label.localeCompare(b.label)),
     chartLabels: {
       overdueTitle: "Просроченные по поручениям",
-      completionTitle: "Выполнение",
+      completionTitle: "Выполнение по поручениям",
     },
   }
 }
@@ -201,10 +223,13 @@ export async function getDashboardStats() {
       org: r.label,
       count: r.count,
     })),
-    completionByOrganization: stats.completionBreakdown.map((r) => ({
+    completionByOrganization: stats.statusBreakdown.map((r) => ({
       org: r.label,
-      completed: r.completed,
-      active: r.active,
+      completed: r[WORKFLOW_STATUS.COMPLETED],
+      active:
+        r[WORKFLOW_STATUS.NOT_STARTED] +
+        r[WORKFLOW_STATUS.IN_PROGRESS] +
+        r[OVERDUE_LABEL],
     })),
   }
 }

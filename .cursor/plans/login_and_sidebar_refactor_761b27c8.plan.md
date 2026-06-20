@@ -26,7 +26,7 @@ isProject: false
 | [`app/page.tsx`](app/page.tsx) | Лендинг с кнопкой «Вход» |
 | [`app/login/page.tsx`](app/login/page.tsx) | Demo login-03 (Acme, OAuth, без auth) |
 | [`app/(admin)/admin/login/page-client.tsx`](app/(admin)/admin/login/page-client.tsx) | Рабочий login → `/api/auth/login` |
-| [`middleware.ts`](middleware.ts) | Редирект на `/admin/login` |
+| [`middleware.ts`](middleware.ts) | Редирект на `/panel/login` |
 | [`components/admin/admin-sidebar.tsx`](components/admin/admin-sidebar.tsx) | Простой FSTEC sidebar (используется) |
 | [`components/app-sidebar.tsx`](components/app-sidebar.tsx) | Demo sidebar-07 (Acme, не используется) |
 | [`app/dashboard/page.tsx`](app/dashboard/page.tsx) | Demo sidebar-07 (лишний маршрут) |
@@ -41,8 +41,8 @@ isProject: false
 flowchart LR
   root["/"] -->|redirect| login["/login"]
   login -->|POST /api/auth/login| admin["/admin"]
-  adminLogin["/admin/login"] -->|redirect| login
-  unauth["/admin/* без сессии"] -->|middleware| loginNext["/login?next=..."]
+  adminLogin["/panel/login"] -->|redirect| login
+  unauth["/panel/* без сессии"] -->|middleware| loginNext["/login?next=..."]
 ```
 
 ---
@@ -54,8 +54,8 @@ flowchart LR
 - [`app/page.tsx`](app/page.tsx): `redirect("/login")` (server component, без лендинга).
 - [`app/(admin)/admin/login/page.tsx`](app/(admin)/admin/login/page.tsx): заменить на redirect в `/login`, сохраняя `?next=`.
 - [`middleware.ts`](middleware.ts):
-  - unauthenticated `/admin/*` → `/login?next=...` (вместо `/admin/login`);
-  - `/admin/login` → `/login` (preserve query);
+  - unauthenticated `/panel/*` → `/login?next=...` (вместо `/panel/login`);
+  - `/panel/login` → `/login` (preserve query);
   - опционально: если сессия есть и pathname === `/login` → `/admin` (не показывать login залогиненному).
 
 ### 1b. Адаптировать login-03
@@ -128,7 +128,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 
 Обновить все ссылки на login:
 
-- Было: `/admin/login` → Стало: `/login`
+- Было: `/panel/login` → Стало: `/login`
 - Проверить grep по репо после изменений.
 
 ---
@@ -138,6 +138,6 @@ import { AppSidebar } from "@/components/app-sidebar"
 - `npm run typecheck && lint && build`
 - `/` → `/login` без промежуточного лендинга
 - Login работает (auth API, redirect на `/admin` или `?next=`)
-- `/admin/login` → `/login`
+- `/panel/login` → `/login`
 - Admin shell использует sidebar-07 (collapsible icon + user footer)
 - Нет demo `/dashboard`, нет дублирующего `AppSidebar`

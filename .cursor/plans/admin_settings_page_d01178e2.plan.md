@@ -1,6 +1,6 @@
 ---
 name: Admin settings page
-overview: "Добавить `/admin/settings` с глобальными настройками в БД: головная организация, часовой пояс (UTC/IANA), управление администраторами. Перенести выбор timezone из шапки на страницу настроек."
+overview: "Добавить `/panel/settings` с глобальными настройками в БД: головная организация, часовой пояс (UTC/IANA), управление администраторами. Перенести выбор timezone из шапки на страницу настроек."
 todos:
   - id: settings-data-layer
     content: Prisma AppSettings + migration + seed; lib/settings + validations
@@ -28,7 +28,7 @@ isProject: false
 - Часовой пояс — **localStorage** ([`timezone-provider.tsx`](components/timezone-provider.tsx)), селектор в шапке ([`app-shell.tsx`](components/shell/app-shell.tsx))
 - Админы — модель [`User`](prisma/schema.prisma) с `UserRole.ADMIN`, создаются только через seed/env
 - «Головная организация» — **не хранится**; при создании поручения берётся первая org из списка ([`order-create-form.tsx`](components/admin/order-create-form.tsx): `o[0]`)
-- Маршрута `/admin/settings` нет (упоминался в master plan только для statuses)
+- Маршрута `/panel/settings` нет (упоминался в master plan только для statuses)
 
 **Решение пользователя:** timezone — **глобально в БД**, один для всех.
 
@@ -73,11 +73,11 @@ model AppSettings {
 
 - POST: `hashPassword` из [`lib/auth/password.ts`](lib/auth/password.ts), `role: ADMIN`
 - Защита: нельзя создать дубликат email (Prisma unique)
-- `revalidatePath("/admin/settings")` после изменений
+- `revalidatePath("/panel/settings")` после изменений
 
 ---
 
-## 3. UI — `/admin/settings`
+## 3. UI — `/panel/settings`
 
 **Маршрут:** [`app/(admin)/admin/(panel)/settings/page.tsx`](app/(admin)/admin/(panel)/settings/page.tsx)
 
@@ -104,7 +104,7 @@ flowchart TB
    - Форма «Добавить администратора» → `POST /api/users` → обновить список
 
 **Навигация:**
-- Пункт «Настройки» в [`app-sidebar.tsx`](components/app-sidebar.tsx) (`SettingsIcon`, `/admin/settings`)
+- Пункт «Настройки» в [`app-sidebar.tsx`](components/app-sidebar.tsx) (`SettingsIcon`, `/panel/settings`)
 - Crumb в [`admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx)
 
 **UX головной org:**
@@ -135,7 +135,7 @@ npx prisma migrate dev
 ```
 
 **UI smoke:**
-1. `/admin/settings` — сохранить головную org и timezone
+1. `/panel/settings` — сохранить головную org и timezone
 2. Шапка — нет селектора timezone; даты в таблицах/filters отображаются в выбранном поясе
 3. Создание поручения — org по умолчанию = головная
 4. Создание нового админа → login под новым email
@@ -146,5 +146,5 @@ npx prisma migrate dev
 ## Вне scope
 
 - Удаление/блокировка админов
-- `/admin/settings/statuses` (отдельная задача)
+- `/panel/settings/statuses` (отдельная задача)
 - Роли кроме `ADMIN`

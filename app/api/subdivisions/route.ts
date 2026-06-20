@@ -14,8 +14,8 @@ export async function POST(request: Request) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const sub = await createSubdivision(parsed.data.organizationId, parsed.data.name)
-    revalidatePath("/admin/organizations")
-    revalidatePath(`/admin/organizations/${parsed.data.organizationId}`)
+    revalidatePath("/panel/organizations")
+    revalidatePath(`/panel/organizations/${parsed.data.organizationId}`)
     return jsonOk(sub, { status: 201 })
   } catch (error) {
     return handleApiError(error)

@@ -17,9 +17,9 @@ export async function PATCH(request: Request, { params }: Params) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const item = await updateOrderItem(orderId, Number(itemId), parsed.data)
-    revalidatePath("/admin/orders")
-    revalidatePath(`/admin/orders/${orderId}`)
-    revalidatePath("/admin")
+    revalidatePath("/panel/orders")
+    revalidatePath(`/panel/orders/${orderId}`)
+    revalidatePath("/panel")
     return jsonOk(item)
   } catch (error) {
     return handleApiError(error)
@@ -32,9 +32,9 @@ export async function DELETE(_request: Request, { params }: Params) {
     const { id, itemId } = await params
     const orderId = Number(id)
     await deleteOrderItem(orderId, Number(itemId))
-    revalidatePath("/admin/orders")
-    revalidatePath(`/admin/orders/${orderId}`)
-    revalidatePath("/admin")
+    revalidatePath("/panel/orders")
+    revalidatePath(`/panel/orders/${orderId}`)
+    revalidatePath("/panel")
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

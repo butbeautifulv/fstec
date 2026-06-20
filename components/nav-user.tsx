@@ -87,7 +87,7 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/settings/account">
+              <Link href="/panel/settings/account">
                 <UserCircleIcon />
                 Учётная запись
               </Link>

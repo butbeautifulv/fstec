@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const measure = await createMeasure(parsed.data, session.userId)
-    revalidatePath("/admin/measures")
+    revalidatePath("/panel/measures")
     return jsonOk(measure, { status: 201 })
   } catch (error) {
     return handleApiError(error)

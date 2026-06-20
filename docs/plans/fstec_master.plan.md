@@ -36,15 +36,31 @@ Full-stack Next.js app for FSTEC security measures tracking across subsidiaries 
 | 18-public-delay | fstec/phase-18-public-delay | done |
 | 19-dashboard | fstec/phase-19-dashboard | done |
 | 20-polish | fstec/phase-20-polish | done |
+| 21-dashboard-filters | fstec/phase-21-dashboard-filters | done |
+| 22-chart-polish | fstec/phase-22-chart-polish | done |
+| 23-delays-context | fstec/phase-23-delays-context | done |
+| 24-dashboard-shell | fstec/phase-24-dashboard-shell | done |
+| 25-shared-ui | fstec/phase-25-shared-ui | done |
+| 26-crud-delete-hook | fstec/phase-26-crud-delete-hook | done |
+| 27-crud-tables | fstec/phase-27-crud-tables | done |
+| 28-nav-rbac | fstec/phase-28-nav-rbac | done |
+| 29-panel-urls | fstec/phase-29-panel-urls | done |
+| 30-platform-rename | fstec/phase-30-platform-rename | done |
+
+## RBAC
+
+Roles: `SUPER_ADMIN`, `OPERATOR`, `VIEWER` — permissions in `lib/auth/permissions.ts`. Platform nav and create actions gated by permission; API enforced via `requirePermission`.
 
 ## Routes
 
 | Route | Purpose |
 |-------|---------|
-| `/admin/login` | Admin login |
-| `/admin` | Dashboard matrix |
-| `/admin/measures` | Measure catalog |
-| `/admin/orders` | Orders + link generation |
-| `/admin/organizations` | ДЗО + subdivisions |
-| `/admin/settings/statuses` | Status dictionary |
+| `/login` | Login |
+| `/panel` | Dashboard (KPI + charts + matrix) |
+| `/panel/measures` | Measure catalog |
+| `/panel/orders` | Orders |
+| `/panel/organizations` | Organizations + subdivisions |
+| `/panel/delay-requests` | Delay requests |
+| `/panel/settings` | Settings hub (RBAC) |
+| `/panel/change-password` | Forced password change |
 | `/p/[token]` | Public assignment page |

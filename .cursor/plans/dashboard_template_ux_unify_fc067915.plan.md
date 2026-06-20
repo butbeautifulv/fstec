@@ -126,7 +126,7 @@ flowchart TB
 ### 3c. Admin sidebar enhancements
 
 Расширить [`components/shell/shell-sidebar.tsx`](components/shell/shell-sidebar.tsx):
-- optional `primaryAction` — «Создать поручение» (паттерн NavMain Quick Create → link `/admin/orders/new`)
+- optional `primaryAction` — «Создать поручение» (паттерн NavMain Quick Create → link `/panel/orders/new`)
 - optional `secondaryLinks` pinned `mt-auto` (NavSecondary pattern)
 
 [`components/app-sidebar.tsx`](components/app-sidebar.tsx): primary CTA + текущие 4 ссылки.

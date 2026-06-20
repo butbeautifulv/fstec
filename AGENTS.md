@@ -13,12 +13,12 @@ Three contexts — shared logic in `lib/` only:
 | Context | Path | Notes |
 |---------|------|-------|
 | `public` | `app/(public)/` | Token-based assignment pages (`/p/[token]`) |
-| `admin` | `app/(admin)/admin/(panel)/` | Admin panel (session required) |
+| `platform` | `app/(platform)/panel/` | Authenticated workspace for all roles (`/panel/*`) |
 | `api` | `app/api/` | Route Handlers |
-| `lib` | `lib/` | Domain: `measures`, `orders`, `organizations`, `public`, `auth`, `db` |
+| `lib` | `lib/` | Domain: `measures`, `orders`, `organizations`, `public`, `auth`, `db`, `nav` |
 
 - Public pages call `/api/public/[token]` only (scoped by token).
-- Admin pages call `/api/*` with session cookie.
+- Platform pages call `/api/*` with session cookie (SUPER_ADMIN / OPERATOR / VIEWER).
 - No secrets in git; read `.env.example`.
 
 ## UI (shadcn required)
@@ -26,7 +26,7 @@ Three contexts — shared logic in `lib/` only:
 - Use [.agents/skills/shadcn/SKILL.md](.agents/skills/shadcn/SKILL.md) for all UI work.
 - Add components via `npx shadcn@latest add <component> -y` — do not hand-roll if registry has it.
 - Forms: `FieldGroup` + `Field`; dropdowns: `Select`; notifications: `sonner`.
-- Admin layout: shadcn `Sidebar`.
+- Platform layout: shadcn `Sidebar` (`components/platform/`, group label «Платформа»).
 
 ## Verify before finishing
 
@@ -36,7 +36,7 @@ npm run lint
 npm run build
 ```
 
-Plus smokes from phase plan (curl admin API, open `/p/{token}`).
+Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
 ## Multi-phase work
 

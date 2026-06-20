@@ -27,7 +27,7 @@ isProject: false
 ```mermaid
 flowchart LR
   subgraph done [Уже есть]
-    OrgList["/admin/organizations"]
+    OrgList["/panel/organizations"]
     OrgNew["/new"]
     OrgEdit["/[id]/edit"]
     OrgDetail["/[id] detail tabs"]
@@ -46,7 +46,7 @@ flowchart LR
 - **Подразделения** — единственный org-related modal: [`SubdivisionDialog`](components/admin/crud/subdivision-dialog.tsx) в [`org-detail-client.tsx`](components/admin/org-detail-client.tsx).
 - **Клик по организации** в списке уже ведёт на detail ([`organizations-manager.tsx`](components/admin/organizations-manager.tsx)); в других таблицах — plain text.
 
-**Целевой клик:** `/admin/organizations/{id}` (detail), как поручение → detail.
+**Целевой клик:** `/panel/organizations/{id}` (detail), как поручение → detail.
 
 ---
 
@@ -79,7 +79,7 @@ flowchart LR
 | `Button onClick → setDialogSub(null)` | `Button asChild` + `Link` → `.../subdivisions/new` |
 | `TableRowActions onClick → setDialogSub(s)` | `href` → `.../subdivisions/{id}/edit` |
 | `SubdivisionDialog` + state `dialogSub` | удалить |
-| Нет кнопки редактирования org | `PageHeader.actions`: кнопка «Изменить» → `/admin/organizations/{id}/edit` |
+| Нет кнопки редактирования org | `PageHeader.actions`: кнопка «Изменить» → `/panel/organizations/{id}/edit` |
 
 Опционально: имя подразделения в ячейке — `Link` на edit (как мера в таблице мер); delete через `ConfirmDeleteAlert` оставить.
 
@@ -103,7 +103,7 @@ flowchart LR
 Единый паттерн (как поручение в [`delay-requests-table.tsx`](components/admin/delay-requests-table.tsx)):
 
 ```tsx
-<Link href={`/admin/organizations/${id}`} className="font-medium hover:underline">
+<Link href={`/panel/organizations/${id}`} className="font-medium hover:underline">
   {name}
 </Link>
 ```

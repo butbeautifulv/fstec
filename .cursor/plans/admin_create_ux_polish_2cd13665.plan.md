@@ -86,8 +86,8 @@ export const STATUS_DISPLAY_ORDER = [
 
 ```mermaid
 flowchart LR
-  OrgsList["/admin/organizations"] -->|Link| OrgsNew["/admin/organizations/new"]
-  OrgsList -->|Edit action| OrgsEdit["/admin/organizations/id/edit"]
+  OrgsList["/panel/organizations"] -->|Link| OrgsNew["/panel/organizations/new"]
+  OrgsList -->|Edit action| OrgsEdit["/panel/organizations/id/edit"]
 ```
 
 **Новые файлы:**
@@ -106,8 +106,8 @@ flowchart LR
 ```
 
 **Изменить [`organizations-manager.tsx`](components/admin/organizations-manager.tsx):**
-- Кнопка «Добавить» → `<Link href="/admin/organizations/new">`
-- Действие «Изменить» в таблице → `/admin/organizations/{id}/edit`
+- Кнопка «Добавить» → `<Link href="/panel/organizations/new">`
+- Действие «Изменить» в таблице → `/panel/organizations/{id}/edit`
 - Удалить `OrganizationDialog`, state `dialogOrg`
 - Empty state CTA — тоже Link
 

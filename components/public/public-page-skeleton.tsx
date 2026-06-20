@@ -1,4 +1,4 @@
-import { DataTableShell } from "@/components/admin/data-table-shell"
+import { DataTableShell } from "@/components/platform/data-table-shell"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TableSkeleton } from "@/components/ui/table-skeleton"
 

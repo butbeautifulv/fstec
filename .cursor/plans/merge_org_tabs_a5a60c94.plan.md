@@ -57,7 +57,7 @@ flowchart TB
 
 | Название | Ссылка | Действия |
 |----------|--------|----------|
-| `Link` → `/admin/organizations/{orgId}/subdivisions/{id}/edit` | preview token + copy, или «—» | `TableRowActions`: Изменить, Удалить; в ячейке «Ссылка» — Создать / Отозвать |
+| `Link` → `/panel/organizations/{orgId}/subdivisions/{id}/edit` | preview token + copy, или «—» | `TableRowActions`: Изменить, Удалить; в ячейке «Ссылка» — Создать / Отозвать |
 
 - Перенести логику delete subdivision из `org-detail-client` сюда (или оставить delete в client и передать callback — проще держать всё в одном client-компоненте).
 - Удалить вторую внутреннюю таблицу «Ссылки подразделений» — она сливается с основной.
@@ -94,7 +94,7 @@ npm run typecheck && npm run lint && npm run build
 ```
 
 **UI smoke:**
-1. `/admin/organizations/{id}` — нет вкладок, видны org-link card + таблица.
+1. `/panel/organizations/{id}` — нет вкладок, видны org-link card + таблица.
 2. Подразделение: edit/delete/create link/copy/revoke работают в одной строке.
 3. «Добавить подразделение» → new page → возврат, строка появилась.
 4. Кнопка «Ссылки ДЗО» на поручении открывает ту же объединённую страницу.

@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { PageHeader } from "@/components/admin/page-header"
+import { PageHeader } from "@/components/shared/page-header"
 import { DelayRequestDialog } from "@/components/public/delay-request-dialog"
 import {
   usePublicBreadcrumbLabel,

@@ -255,7 +255,7 @@ npm run typecheck && npm run lint && npm run build
 
 #### 06-auth-api-mw
 **Branch:** `fstec/phase-06-auth-api-mw`
-**Scope (~4 файла):** `app/api/auth/login/route.ts`, `logout/route.ts`, `proxy.ts` или middleware для `/admin/*`
+**Scope (~4 файла):** `app/api/auth/login/route.ts`, `logout/route.ts`, `proxy.ts` или middleware для `/panel/*`
 **Acceptance:** curl login → Set-Cookie; без cookie → 401/redirect
 
 #### 07-admin-shell
@@ -274,7 +274,7 @@ npm run typecheck && npm run lint && npm run build
 
 #### 09-statuses-api-ui
 **Branch:** `fstec/phase-09-statuses-api-ui`
-**Scope (~6 файлов):** `lib/statuses/*`, API, `/admin/settings/statuses` — table + dialog
+**Scope (~6 файлов):** `lib/statuses/*`, API, `/panel/settings/statuses` — table + dialog
 **Acceptance:** admin CRUD statuses
 
 ---
@@ -288,7 +288,7 @@ npm run typecheck && npm run lint && npm run build
 
 #### 11-measures-ui
 **Branch:** `fstec/phase-11-measures-ui`
-**Scope (~6 файлов):** `/admin/measures` table, `/admin/measures/new`, `[id]/edit` — shadcn Form, Textarea для description
+**Scope (~6 файлов):** `/panel/measures` table, `/panel/measures/new`, `[id]/edit` — shadcn Form, Textarea для description
 **Acceptance:** admin создаёт/редактирует меру через UI
 
 ---
@@ -302,12 +302,12 @@ npm run typecheck && npm run lint && npm run build
 
 #### 13-orders-ui
 **Branch:** `fstec/phase-13-orders-ui`
-**Scope (~6 файлов):** `/admin/orders` list, `/admin/orders/new` wizard: select org → pick measures (checkbox) → set due dates
+**Scope (~6 файлов):** `/panel/orders` list, `/panel/orders/new` wizard: select org → pick measures (checkbox) → set due dates
 **Acceptance:** admin создаёт поручение через UI
 
 #### 14-access-links
 **Branch:** `fstec/phase-14-access-links`
-**Scope (~5 файлов):** `lib/access-links/*`, `POST /api/orders/[id]/links`, `/admin/orders/[id]` — copy URL `/p/{token}`, revoke button
+**Scope (~5 файлов):** `lib/access-links/*`, `POST /api/orders/[id]/links`, `/panel/orders/[id]` — copy URL `/p/{token}`, revoke button
 **Acceptance:** ссылка генерируется, revoke блокирует доступ
 
 ---
@@ -322,7 +322,7 @@ npm run typecheck && npm run lint && npm run build
 #### 16-public-status
 **Branch:** `fstec/phase-16-public-status`
 **Scope (~4 файла):** `PATCH /api/public/[token]/items/[id]/status`, status Select на public page
-**Acceptance:** ДЗО меняет статус; admin видит на `/admin/orders/[id]`
+**Acceptance:** ДЗО меняет статус; admin видит на `/panel/orders/[id]`
 
 #### 17-public-response
 **Branch:** `fstec/phase-17-public-response`
@@ -376,11 +376,11 @@ flowchart LR
 
 | Route | Подфаза |
 |-------|---------|
-| `/admin/login` | 07 |
-| `/admin/organizations` | 08 |
-| `/admin/settings/statuses` | 09 |
-| `/admin/measures` | 11 |
-| `/admin/orders`, `/admin/orders/new`, `/admin/orders/[id]` | 13–14 |
+| `/panel/login` | 07 |
+| `/panel/organizations` | 08 |
+| `/panel/settings/statuses` | 09 |
+| `/panel/measures` | 11 |
+| `/panel/orders`, `/panel/orders/new`, `/panel/orders/[id]` | 13–14 |
 | `/p/[token]` | 15–18 |
 | `/admin` dashboard | 19 |
 

@@ -122,9 +122,9 @@ export function FormActionsBar({ error, children, className }: ...)
 
 | Таблица | Cell | Href |
 |---------|------|------|
-| [`measures-table.tsx`](components/admin/measures-table.tsx) | name | `/admin/measures/{id}/edit` (по выбору пользователя) |
-| [`orders-table.tsx`](components/admin/orders-table.tsx) | title | `/admin/orders/{id}` |
-| [`admin-dashboard-matrix.tsx`](components/admin/admin-dashboard-matrix.tsx) | measure.name | `/admin/measures/{measure.id}/edit` — расширить тип `measure: { id: number; name: string }` (id уже приходит из Prisma) |
+| [`measures-table.tsx`](components/admin/measures-table.tsx) | name | `/panel/measures/{id}/edit` (по выбору пользователя) |
+| [`orders-table.tsx`](components/admin/orders-table.tsx) | title | `/panel/orders/{id}` |
+| [`admin-dashboard-matrix.tsx`](components/admin/admin-dashboard-matrix.tsx) | measure.name | `/panel/measures/{measure.id}/edit` — расширить тип `measure: { id: number; name: string }` (id уже приходит из Prisma) |
 
 Меню действий (`TableRowActions`) оставить без изменений — «Изменить» / «Открыть» как сейчас.
 

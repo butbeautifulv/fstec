@@ -97,8 +97,8 @@ export const numberSortFn: SortingFn<unknown> = ...
 
 | Таблица | Cell | Href |
 |---------|------|------|
-| Measures | name | `/admin/measures/{id}/edit` |
-| Orders | title | `/admin/orders/{id}` |
+| Measures | name | `/panel/measures/{id}/edit` |
+| Orders | title | `/panel/orders/{id}` |
 
 Стиль как у org: `font-medium hover:underline`. Колонка title/name — `COLUMN_LAYOUT.title`.
 

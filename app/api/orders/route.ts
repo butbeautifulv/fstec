@@ -22,8 +22,8 @@ export async function POST(request: Request) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const order = await createOrder(parsed.data, session.userId)
-    revalidatePath("/admin/orders")
-    revalidatePath("/admin")
+    revalidatePath("/panel/orders")
+    revalidatePath("/panel")
     return jsonOk(order, { status: 201 })
   } catch (error) {
     return handleApiError(error)

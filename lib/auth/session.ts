@@ -46,6 +46,10 @@ export async function hydrateSessionRole(
 }
 
 export async function requireAdminSession(): Promise<SessionData> {
+  return requireAuthenticatedSession()
+}
+
+export async function requireAuthenticatedSession(): Promise<SessionData> {
   const session = await hydrateSessionRole(await getSession())
   if (!session.isLoggedIn || !session.userId || !normalizeRole(session.role)) {
     throw new Error("UNAUTHORIZED")
@@ -56,7 +60,7 @@ export async function requireAdminSession(): Promise<SessionData> {
 export async function requirePermission(
   ...permissions: Permission[]
 ): Promise<SessionData> {
-  const session = await requireAdminSession()
+  const session = await requireAuthenticatedSession()
   if (!permissions.length || hasAnyPermission(session.role, permissions)) {
     return session
   }

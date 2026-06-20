@@ -17,7 +17,7 @@ export async function POST(_request: Request, { params }: Params) {
     const sub = await prisma.subdivision.findUnique({ where: { id: subdivisionId } })
     if (!sub) throw new Error("NOT_FOUND")
     const link = await createSubdivisionAccessLink(subdivisionId)
-    revalidatePath(`/admin/organizations/${sub.organizationId}`)
+    revalidatePath(`/panel/organizations/${sub.organizationId}`)
     return jsonOk(link, { status: 201 })
   } catch (error) {
     return handleApiError(error)
@@ -33,7 +33,7 @@ export async function DELETE(request: Request, { params }: Params) {
     const linkId = Number(new URL(request.url).searchParams.get("linkId"))
     if (!linkId) return handleApiError(new Error("linkId required"))
     await revokeAccessLink(linkId)
-    revalidatePath(`/admin/organizations/${sub.organizationId}`)
+    revalidatePath(`/panel/organizations/${sub.organizationId}`)
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

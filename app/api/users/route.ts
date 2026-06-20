@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       return jsonError(parsed.error.issues[0]?.message ?? "Invalid input")
     }
     const user = await createUser(parsed.data)
-    revalidatePath("/admin/settings/users")
+    revalidatePath("/panel/settings/users")
     return jsonOk(user, { status: 201 })
   } catch (error) {
     if (error instanceof Error && error.message === "EMAIL_EXISTS") {

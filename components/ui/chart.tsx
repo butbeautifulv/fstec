@@ -278,9 +278,11 @@ function ChartLegendContent({
   payload,
   verticalAlign = "bottom",
   nameKey,
+  onLegendItemClick,
 }: React.ComponentProps<"div"> & {
   hideIcon?: boolean
   nameKey?: string
+  onLegendItemClick?: (key: string) => void
 } & RechartsPrimitive.DefaultLegendContentProps) {
   const { config } = useChart()
 
@@ -291,7 +293,7 @@ function ChartLegendContent({
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-4",
+        "flex flex-wrap items-center justify-center gap-x-4 gap-y-2",
         verticalAlign === "top" ? "pb-3" : "pt-3",
         className
       )}
@@ -301,13 +303,29 @@ function ChartLegendContent({
         .map((item, index) => {
           const key = `${nameKey ?? item.dataKey ?? "value"}`
           const itemConfig = getPayloadConfigFromPayload(config, item, key)
+          const labelKey =
+            typeof itemConfig?.label === "string"
+              ? itemConfig.label
+              : typeof item.value === "string"
+                ? item.value
+                : key
 
           return (
             <div
               key={index}
+              role={onLegendItemClick ? "button" : undefined}
+              tabIndex={onLegendItemClick ? 0 : undefined}
               className={cn(
-                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground"
+                "flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3 [&>svg]:text-muted-foreground",
+                onLegendItemClick && "cursor-pointer"
               )}
+              onClick={() => onLegendItemClick?.(labelKey)}
+              onKeyDown={(e) => {
+                if (onLegendItemClick && (e.key === "Enter" || e.key === " ")) {
+                  e.preventDefault()
+                  onLegendItemClick(labelKey)
+                }
+              }}
             >
               {itemConfig?.icon && !hideIcon ? (
                 <itemConfig.icon />
@@ -319,7 +337,7 @@ function ChartLegendContent({
                   }}
                 />
               )}
-              {itemConfig?.label}
+              <span className="whitespace-nowrap">{itemConfig?.label}</span>
             </div>
           )
         })}

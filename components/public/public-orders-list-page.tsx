@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useMemo } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { PageHeader } from "@/components/admin/page-header"
+import { PageHeader } from "@/components/shared/page-header"
 import { usePublicBreadcrumbLabel } from "@/components/public/public-breadcrumb"
 import {
   DataTable,

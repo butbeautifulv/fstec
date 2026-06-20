@@ -22,8 +22,8 @@ export async function PUT(request: Request) {
       return jsonError(parsed.error.issues[0]?.message ?? "Invalid input")
     }
     const settings = await updateAppSettings(parsed.data)
-    revalidatePath("/admin/settings")
-    revalidatePath("/admin/settings/general")
+    revalidatePath("/panel/settings")
+    revalidatePath("/panel/settings/general")
     return jsonOk({
       timezone: settings.timezone,
       locale: settings.locale,

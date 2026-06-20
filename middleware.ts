@@ -6,14 +6,14 @@ import { sessionOptions, type SessionData } from "@/lib/auth/session-config"
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (pathname === "/admin/login") {
+  if (pathname === "/panel/login") {
     const loginUrl = new URL("/login", request.url)
     const next = request.nextUrl.searchParams.get("next")
     if (next) loginUrl.searchParams.set("next", next)
     return NextResponse.redirect(loginUrl)
   }
 
-  if (!pathname.startsWith("/admin")) {
+  if (!pathname.startsWith("/panel")) {
     return NextResponse.next()
   }
 
@@ -28,15 +28,15 @@ export async function middleware(request: NextRequest) {
 
   if (
     session.mustChangePassword &&
-    pathname !== "/admin/change-password" &&
+    pathname !== "/panel/change-password" &&
     !pathname.startsWith("/api/auth/")
   ) {
-    return NextResponse.redirect(new URL("/admin/change-password", request.url))
+    return NextResponse.redirect(new URL("/panel/change-password", request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/panel/:path*"],
 }

@@ -37,12 +37,12 @@ isProject: false
 
 ```mermaid
 flowchart TD
-  usersList["/admin/settings/users"] -->|click row| userEdit["/admin/settings/users/id/edit"]
-  usersList --> userNew["/admin/settings/users/new"]
+  usersList["/panel/settings/users"] -->|click row| userEdit["/panel/settings/users/id/edit"]
+  usersList --> userNew["/panel/settings/users/new"]
   userNew --> userForm["UserForm create"]
   userEdit --> userFormEdit["UserForm edit"]
   userForm --> passwordFields["PasswordFieldsGroup"]
-  login["POST /api/auth/login"] -->|mustChangePassword| changePage["/admin/change-password"]
+  login["POST /api/auth/login"] -->|mustChangePassword| changePage["/panel/change-password"]
   changePage --> changeApi["POST /api/auth/change-password"]
   middleware["middleware.ts"] -->|block admin| changePage
 ```
@@ -86,7 +86,7 @@ mustChangePassword Boolean @default(false) @map("must_change_password")
 **[`app/api/users/[id]/route.ts`](app/api/users/[id]/route.ts)** (новый):
 
 - `GET` — `users:manage`, вернуть `{ id, email, name, role, createdAt }`
-- `PUT` — `users:manage`, `updateUserSchema`, revalidate `/admin/settings/users`
+- `PUT` — `users:manage`, `updateUserSchema`, revalidate `/panel/settings/users`
 
 **[`app/api/users/route.ts`](app/api/users/route.ts)** — расширить `POST` полями `passwordConfirm`, `mustChangePassword`
 
@@ -101,7 +101,7 @@ mustChangePassword Boolean @default(false) @map("must_change_password")
 
 **[`middleware.ts`](middleware.ts)**:
 
-- Если `session.isLoggedIn && session.mustChangePassword` и путь не `/admin/change-password` и не `/api/auth/*` → redirect на `/admin/change-password`
+- Если `session.isLoggedIn && session.mustChangePassword` и путь не `/panel/change-password` и не `/api/auth/*` → redirect на `/panel/change-password`
 
 ---
 
@@ -125,7 +125,7 @@ mustChangePassword Boolean @default(false) @map("must_change_password")
 
 **Список [`components/admin/users-list-client.tsx`](components/admin/users-list-client.tsx)**:
 
-- Email — ссылка на `/admin/settings/users/[id]/edit` (как org links)
+- Email — ссылка на `/panel/settings/users/[id]/edit` (как org links)
 
 **Страница edit** — [`app/(admin)/admin/(panel)/settings/users/[id]/edit/page.tsx`](app/(admin)/admin/(panel)/settings/users/[id]/edit/page.tsx):
 
@@ -138,11 +138,11 @@ mustChangePassword Boolean @default(false) @map("must_change_password")
 
 **Login [`components/login-form.tsx`](components/login-form.tsx)**:
 
-- При `mustChangePassword: true` в ответе → `router.push("/admin/change-password")`
+- При `mustChangePassword: true` в ответе → `router.push("/panel/change-password")`
 
 **Breadcrumbs** [`admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx):
 
-- `/admin/settings/users/[id]/edit` → Настройки → Пользователи → «Редактирование»
+- `/panel/settings/users/[id]/edit` → Настройки → Пользователи → «Редактирование»
 
 ---
 

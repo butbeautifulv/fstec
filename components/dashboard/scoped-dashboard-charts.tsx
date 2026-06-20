@@ -1,6 +1,16 @@
 "use client"
 
-import { Bar, BarChart, CartesianGrid, Cell, Label, Pie, PieChart, XAxis, YAxis } from "recharts"
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  LabelList,
+  Pie,
+  PieChart,
+  XAxis,
+  YAxis,
+} from "recharts"
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import {
   ChartContainer,
@@ -12,25 +22,21 @@ import {
 } from "@/components/ui/chart"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type {
-  CompletionRow,
   BreakdownRow,
+  StatusBreakdownRow,
   StatusDistribution,
 } from "@/lib/dashboard/stats"
 import {
   isBreakdownFilterActive,
-  isCompletionSegmentActive,
   isStatusFilterActive,
+  isStatusSegmentHighlighted,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
-import { cn } from "@/lib/utils"
+import { STATUS_DISPLAY_ORDER } from "@/lib/statuses/workflow"
 
 const overdueConfig = {
   count: { label: "Просрочено", color: "var(--chart-1)" },
-} satisfies ChartConfig
-
-const completionConfig = {
-  completed: { label: "Выполнено", color: "var(--chart-2)" },
-  active: { label: "В работе", color: "var(--chart-3)" },
+  remainder: { label: "Остальные", color: "var(--muted)" },
 } satisfies ChartConfig
 
 const INACTIVE_OPACITY = 0.35
@@ -49,28 +55,34 @@ function hasBreakdownFilter(filters: ColumnFiltersState, scope: ChartFilterScope
   return filters.some((f) => f.id === columnId)
 }
 
+function truncateLabel(value: string, max: number): string {
+  return value.length > max ? `${value.slice(0, max)}…` : value
+}
+
 export function ScopedDashboardCharts({
   scope,
   statusDistribution,
   overdueBreakdown,
-  completionBreakdown,
+  statusBreakdown,
   overdueTitle,
   completionTitle,
   columnFilters = [],
   onStatusClick,
   onOverdueBarClick,
-  onCompletionSegmentClick,
+  onStatusBreakdownClick,
+  onCompletionLegendClick,
 }: {
   scope: ChartFilterScope
   statusDistribution: StatusDistribution[]
   overdueBreakdown: BreakdownRow[]
-  completionBreakdown: CompletionRow[]
+  statusBreakdown: StatusBreakdownRow[]
   overdueTitle: string
   completionTitle: string
   columnFilters?: ColumnFiltersState
   onStatusClick?: (status: string) => void
   onOverdueBarClick?: (label: string) => void
-  onCompletionSegmentClick?: (label: string, segment: "completed" | "active") => void
+  onStatusBreakdownClick?: (label: string, status: string) => void
+  onCompletionLegendClick?: (status: string) => void
 }) {
   const statusChartConfig = statusDistribution.reduce<ChartConfig>((acc, row, i) => {
     acc[row.status] = {
@@ -80,8 +92,26 @@ export function ScopedDashboardCharts({
     return acc
   }, { count: { label: "Количество" } })
 
+  const statusColorMap = Object.fromEntries(
+    statusDistribution.map((d) => [d.status, d.fill])
+  )
+
+  const statusBreakdownConfig = STATUS_DISPLAY_ORDER.reduce<ChartConfig>((acc, status) => {
+    acc[status] = {
+      label: status,
+      color: statusColorMap[status] ?? "var(--chart-1)",
+    }
+    return acc
+  }, {})
+
   const statusFilterActive = hasStatusFilter(columnFilters)
   const breakdownFilterActive = hasBreakdownFilter(columnFilters, scope)
+  const statusTotal = statusDistribution.reduce((s, r) => s + r.count, 0)
+
+  const overdueChartData = overdueBreakdown.map((row) => ({
+    ...row,
+    remainder: row.total - row.count,
+  }))
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -95,69 +125,58 @@ export function ScopedDashboardCharts({
               Нет данных
             </div>
           ) : (
-            <ChartContainer config={statusChartConfig} className="mx-auto aspect-square max-h-64">
-              <PieChart>
-                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                <Pie
-                  data={statusDistribution}
-                  dataKey="count"
-                  nameKey="status"
-                  innerRadius={48}
-                  strokeWidth={2}
-                  className="cursor-pointer"
-                  onClick={(_, index) => {
-                    const entry = statusDistribution[index]
-                    if (entry && onStatusClick) onStatusClick(entry.status)
-                  }}
-                >
-                  {statusDistribution.map((entry) => {
-                    const active = isStatusFilterActive(columnFilters, entry.status)
-                    const dimmed = statusFilterActive && !active
-                    return (
-                      <Cell
-                        key={entry.status}
-                        fill={entry.fill}
-                        fillOpacity={dimmed ? INACTIVE_OPACITY : 1}
-                        stroke={active ? "var(--foreground)" : undefined}
-                        strokeWidth={active ? 2 : 0}
-                      />
-                    )
-                  })}
-                  <Label
-                    content={({ viewBox }) => {
-                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                        const total = statusDistribution.reduce((s, r) => s + r.count, 0)
-                        return (
-                          <text
-                            x={viewBox.cx}
-                            y={viewBox.cy}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                          >
-                            <tspan className="fill-foreground text-2xl font-bold">{total}</tspan>
-                            <tspan
-                              x={viewBox.cx}
-                              y={(viewBox.cy ?? 0) + 18}
-                              className="fill-muted-foreground text-xs"
-                            >
-                              мер
-                            </tspan>
-                          </text>
-                        )
-                      }
+            <div className="relative mx-auto aspect-square max-h-64 w-full">
+              <ChartContainer config={statusChartConfig} className="h-full w-full">
+                <PieChart margin={{ bottom: 36 }}>
+                  <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                  <Pie
+                    data={statusDistribution}
+                    dataKey="count"
+                    nameKey="status"
+                    innerRadius={48}
+                    strokeWidth={2}
+                    className="cursor-pointer"
+                    onClick={(_, index) => {
+                      const entry = statusDistribution[index]
+                      if (entry && onStatusClick) onStatusClick(entry.status)
                     }}
-                  />
-                </Pie>
-                <ChartLegend
-                  content={
-                    <ChartLegendContent
-                      nameKey="status"
-                      className={cn(onStatusClick && "cursor-pointer")}
+                  >
+                    {statusDistribution.map((entry) => {
+                      const active = isStatusFilterActive(columnFilters, entry.status)
+                      const dimmed = statusFilterActive && !active
+                      return (
+                        <Cell
+                          key={entry.status}
+                          fill={entry.fill}
+                          fillOpacity={dimmed ? INACTIVE_OPACITY : 1}
+                          stroke={active ? "var(--foreground)" : undefined}
+                          strokeWidth={active ? 2 : 0}
+                        />
+                      )
+                    })}
+                    <LabelList
+                      dataKey="count"
+                      position="inside"
+                      className="fill-background text-[10px] font-medium"
                     />
-                  }
-                />
-              </PieChart>
-            </ChartContainer>
+                  </Pie>
+                  <ChartLegend
+                    content={
+                      <ChartLegendContent
+                        nameKey="status"
+                        onLegendItemClick={onStatusClick}
+                      />
+                    }
+                  />
+                </PieChart>
+              </ChartContainer>
+              <div
+                className="pointer-events-none absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                style={{ top: "calc(50% - 18px)" }}
+              >
+                <span className="text-2xl font-bold tabular-nums">{statusTotal}</span>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -173,7 +192,11 @@ export function ScopedDashboardCharts({
             </div>
           ) : (
             <ChartContainer config={overdueConfig} className="aspect-video max-h-64">
-              <BarChart data={overdueBreakdown} layout="vertical" margin={{ left: 8 }}>
+              <BarChart
+                data={overdueChartData}
+                layout="vertical"
+                margin={{ left: 8, right: 48 }}
+              >
                 <CartesianGrid horizontal={false} />
                 <YAxis
                   dataKey="label"
@@ -184,11 +207,21 @@ export function ScopedDashboardCharts({
                   tickFormatter={(v) => (v.length > 14 ? `${v.slice(0, 14)}…` : v)}
                 />
                 <XAxis type="number" hide />
-                <ChartTooltip content={<ChartTooltipContent />} />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value, name) => {
+                        if (name === "remainder") return null
+                        return [value, "Просрочено"]
+                      }}
+                    />
+                  }
+                />
                 <Bar
                   dataKey="count"
+                  stackId="bullet"
                   fill="var(--color-count)"
-                  radius={4}
+                  radius={[4, 0, 0, 4]}
                   className="cursor-pointer"
                   onClick={(data) => {
                     const payload = data as { label?: string }
@@ -209,7 +242,42 @@ export function ScopedDashboardCharts({
                       />
                     )
                   })}
+                  <LabelList
+                    dataKey="count"
+                    position="right"
+                    content={(props) => {
+                      const { x, y, width, height, value, index } = props
+                      if (value == null || x == null || y == null) return null
+                      const row = overdueChartData[index ?? 0]
+                      const total = row?.total ?? 0
+                      const pct = total > 0 ? Math.round((Number(value) / total) * 100) : 0
+                      return (
+                        <text
+                          x={Number(x) + Number(width ?? 0) + 6}
+                          y={Number(y) + Number(height ?? 0) / 2}
+                          fill="currentColor"
+                          className="fill-foreground text-xs font-medium"
+                          dominantBaseline="middle"
+                        >
+                          {`${value} · ${pct}%`}
+                        </text>
+                      )
+                    }}
+                  />
                 </Bar>
+                <Bar
+                  dataKey="remainder"
+                  stackId="bullet"
+                  fill="var(--color-remainder)"
+                  radius={[0, 4, 4, 0]}
+                  className="cursor-pointer"
+                  onClick={(data) => {
+                    const payload = data as { label?: string }
+                    if (payload.label && onOverdueBarClick) {
+                      onOverdueBarClick(payload.label)
+                    }
+                  }}
+                />
               </BarChart>
             </ChartContainer>
           )}
@@ -221,87 +289,98 @@ export function ScopedDashboardCharts({
           <CardTitle className="text-base">{completionTitle}</CardTitle>
         </CardHeader>
         <CardContent className="min-h-[280px]">
-          {completionBreakdown.length === 0 ? (
+          {statusBreakdown.length === 0 ? (
             <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
               Нет данных
             </div>
           ) : (
-            <ChartContainer config={completionConfig} className="aspect-video max-h-64">
-              <BarChart data={completionBreakdown}>
+            <ChartContainer config={statusBreakdownConfig} className="aspect-video max-h-64">
+              <BarChart data={statusBreakdown} margin={{ top: 16 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis
                   dataKey="label"
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(v) => (v.length > 10 ? `${v.slice(0, 10)}…` : v)}
+                  tick={({ x, y, payload }) => {
+                    const label = String(payload.value)
+                    const active = isBreakdownFilterActive(columnFilters, scope, label)
+                    return (
+                      <text
+                        x={x}
+                        y={y}
+                        dy={16}
+                        textAnchor="middle"
+                        className={
+                          active
+                            ? "cursor-pointer fill-foreground text-xs font-medium"
+                            : "cursor-pointer fill-muted-foreground text-xs hover:fill-foreground"
+                        }
+                        onClick={() => onOverdueBarClick?.(label)}
+                      >
+                        {truncateLabel(label, 10)}
+                      </text>
+                    )
+                  }}
                 />
                 <YAxis tickLine={false} axisLine={false} />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <ChartLegend content={<ChartLegendContent />} />
-                <Bar
-                  dataKey="completed"
-                  stackId="a"
-                  fill="var(--color-completed)"
-                  radius={[0, 0, 0, 0]}
-                  className="cursor-pointer"
-                  onClick={(data) => {
-                    const payload = data as { label?: string }
-                    if (payload.label && onCompletionSegmentClick) {
-                      onCompletionSegmentClick(payload.label, "completed")
-                    }
-                  }}
-                >
-                  {completionBreakdown.map((entry) => {
-                    const active = isCompletionSegmentActive(
-                      columnFilters,
-                      scope,
-                      entry.label,
-                      "completed"
-                    )
-                    const dimmed =
-                      (breakdownFilterActive || statusFilterActive) && !active
-                    return (
-                      <Cell
-                        key={`${entry.label}-completed`}
-                        fillOpacity={dimmed ? INACTIVE_OPACITY : 1}
-                        stroke={active ? "var(--foreground)" : undefined}
-                        strokeWidth={active ? 1 : 0}
+                <ChartLegend
+                  content={
+                    <ChartLegendContent
+                      onLegendItemClick={(status) => onCompletionLegendClick?.(status)}
+                    />
+                  }
+                />
+                {STATUS_DISPLAY_ORDER.map((status, index) => {
+                  const isLast = index === STATUS_DISPLAY_ORDER.length - 1
+                  const isFirst = index === 0
+                  return (
+                    <Bar
+                      key={status}
+                      dataKey={status}
+                      stackId="status"
+                      fill={statusColorMap[status] ?? `var(--chart-${index + 1})`}
+                      radius={
+                        isLast
+                          ? [4, 4, 0, 0]
+                          : isFirst
+                            ? [0, 0, 0, 0]
+                            : [0, 0, 0, 0]
+                      }
+                      className="cursor-pointer"
+                      onClick={(data) => {
+                        const payload = data as { label?: string }
+                        if (payload.label && onStatusBreakdownClick) {
+                          onStatusBreakdownClick(payload.label, status)
+                        }
+                      }}
+                    >
+                      {statusBreakdown.map((entry) => {
+                        const highlighted = isStatusSegmentHighlighted(
+                          columnFilters,
+                          scope,
+                          entry.label,
+                          status
+                        )
+                        const dimmed =
+                          (breakdownFilterActive || statusFilterActive) && !highlighted
+                        return (
+                          <Cell
+                            key={`${entry.label}-${status}`}
+                            fillOpacity={dimmed ? INACTIVE_OPACITY : 1}
+                            stroke={highlighted ? "var(--foreground)" : undefined}
+                            strokeWidth={highlighted ? 1 : 0}
+                          />
+                        )
+                      })}
+                      <LabelList
+                        dataKey={status}
+                        position="center"
+                        className="fill-background text-[10px] font-medium"
                       />
-                    )
-                  })}
-                </Bar>
-                <Bar
-                  dataKey="active"
-                  stackId="a"
-                  fill="var(--color-active)"
-                  radius={[4, 4, 0, 0]}
-                  className="cursor-pointer"
-                  onClick={(data) => {
-                    const payload = data as { label?: string }
-                    if (payload.label && onCompletionSegmentClick) {
-                      onCompletionSegmentClick(payload.label, "active")
-                    }
-                  }}
-                >
-                  {completionBreakdown.map((entry) => {
-                    const active = isCompletionSegmentActive(
-                      columnFilters,
-                      scope,
-                      entry.label,
-                      "active"
-                    )
-                    const dimmed =
-                      (breakdownFilterActive || statusFilterActive) && !active
-                    return (
-                      <Cell
-                        key={`${entry.label}-active`}
-                        fillOpacity={dimmed ? INACTIVE_OPACITY : 1}
-                        stroke={active ? "var(--foreground)" : undefined}
-                        strokeWidth={active ? 1 : 0}
-                      />
-                    )
-                  })}
-                </Bar>
+                    </Bar>
+                  )
+                })}
               </BarChart>
             </ChartContainer>
           )}

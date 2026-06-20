@@ -29,11 +29,11 @@ isProject: false
 
 ```mermaid
 flowchart TD
-  sidebar["Sidebar: Настройки"] --> hub["/admin/settings hub"]
-  hub --> general["/admin/settings/general"]
-  hub --> account["/admin/settings/account"]
-  hub --> users["/admin/settings/users"]
-  hub --> auth["/admin/settings/auth"]
+  sidebar["Sidebar: Настройки"] --> hub["/panel/settings hub"]
+  hub --> general["/panel/settings/general"]
+  hub --> account["/panel/settings/account"]
+  hub --> users["/panel/settings/users"]
+  hub --> auth["/panel/settings/auth"]
   general -->|"settingsWrite"| adminOnly1[SUPER_ADMIN]
   account -->|"session"| allUsers[Все роли]
   users -->|"usersManage"| adminOnly2[SUPER_ADMIN]
@@ -42,11 +42,11 @@ flowchart TD
 
 | Пункт | Маршрут | Доступ | Содержание |
 |-------|---------|--------|------------|
-| Hub | `/admin/settings` | любой залогиненный | меню-карточки (только видимые пункты) |
-| Общие | `/admin/settings/general` | `settings:write` | головная org, timezone, **глобальный язык** |
-| Учётная запись | `/admin/settings/account` | session | имя, email, пароль, **личный язык** (override) |
-| Пользователи | `/admin/settings/users` | `users:manage` | без изменений |
-| Аутентификация | `/admin/settings/auth` | `settings:write` | [`AuthProviderCard`](components/admin/auth-provider-card.tsx) |
+| Hub | `/panel/settings` | любой залогиненный | меню-карточки (только видимые пункты) |
+| Общие | `/panel/settings/general` | `settings:write` | головная org, timezone, **глобальный язык** |
+| Учётная запись | `/panel/settings/account` | session | имя, email, пароль, **личный язык** (override) |
+| Пользователи | `/panel/settings/users` | `users:manage` | без изменений |
+| Аутентификация | `/panel/settings/auth` | `settings:write` | [`AuthProviderCard`](components/admin/auth-provider-card.tsx) |
 
 ---
 
@@ -60,10 +60,10 @@ flowchart TD
 
 | Страница | Guard |
 |----------|-------|
-| `/admin/settings` | `requirePageSession()` |
-| `/admin/settings/general` | `requirePagePermission(settingsWrite)` |
-| `/admin/settings/account` | `requirePageSession()` |
-| `/admin/settings/auth` | `requirePagePermission(settingsWrite)` |
+| `/panel/settings` | `requirePageSession()` |
+| `/panel/settings/general` | `requirePagePermission(settingsWrite)` |
+| `/panel/settings/account` | `requirePageSession()` |
+| `/panel/settings/auth` | `requirePagePermission(settingsWrite)` |
 | users/* | без изменений (`usersManage`) |
 
 ---
@@ -112,10 +112,10 @@ locale String?  // null = наследовать глобальный
 
 **[`components/admin/settings-nav.tsx`](components/admin/settings-nav.tsx)** (новый) — карточки-ссылки (паттерн как блок «Пользователи» в текущем [`settings-client.tsx`](components/admin/settings-client.tsx)):
 
-- Общие → `/admin/settings/general` — если `can(settingsWrite)`
-- Учётная запись → `/admin/settings/account` — всегда
-- Пользователи → `/admin/settings/users` — если `can(usersManage)`
-- Аутентификация → `/admin/settings/auth` — если `can(settingsWrite)`
+- Общие → `/panel/settings/general` — если `can(settingsWrite)`
+- Учётная запись → `/panel/settings/account` — всегда
+- Пользователи → `/panel/settings/users` — если `can(usersManage)`
+- Аутентификация → `/panel/settings/auth` — если `can(settingsWrite)`
 
 **Разделить [`settings-client.tsx`](components/admin/settings-client.tsx)**:
 
@@ -136,7 +136,7 @@ locale String?  // null = наследовать глобальный
 
 **Breadcrumbs [`admin-breadcrumb.tsx`](components/admin/admin-breadcrumb.tsx)** — ветки: Общие, Учётная запись, Аутентификация (+ существующие users).
 
-**Back links** — users pages: `backHref="/admin/settings"` (hub).
+**Back links** — users pages: `backHref="/panel/settings"` (hub).
 
 ---
 
@@ -158,7 +158,7 @@ locale String?  // null = наследовать глобальный
 ## 6. Sidebar и NavUser (мелочи)
 
 - Sidebar: Settings виден всем (`me` loaded)
-- [`components/nav-user.tsx`](components/nav-user.tsx): пункт «Учётная запись» → `/admin/settings/account` (удобный shortcut)
+- [`components/nav-user.tsx`](components/nav-user.tsx): пункт «Учётная запись» → `/panel/settings/account` (удобный shortcut)
 
 ---
 
@@ -171,10 +171,10 @@ npm run typecheck && npm run lint && npm run build
 
 **Smoke:**
 
-1. OPERATOR: sidebar «Настройки» → hub с одной карточкой «Учётная запись»; `/admin/settings/general` → 404
+1. OPERATOR: sidebar «Настройки» → hub с одной карточкой «Учётная запись»; `/panel/settings/general` → 404
 2. OPERATOR: account — смена имени/пароля/личного языка; `effectiveLocale` меняется
 3. SUPER_ADMIN: все 4 пункта; global locale в General; User с `locale=null` наследует global
-4. `/admin/settings/auth` — только AuthProviderCard, без общих полей
+4. `/panel/settings/auth` — только AuthProviderCard, без общих полей
 5. `document.documentElement.lang` = `en` при выборе English
 
 ---

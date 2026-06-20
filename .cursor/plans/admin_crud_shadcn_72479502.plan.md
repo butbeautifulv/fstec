@@ -95,7 +95,7 @@ npx shadcn@latest add alert-dialog dropdown-menu empty tooltip -y
 - [`lib/orders/index.ts`](lib/orders/index.ts): `updateOrderItem`, `deleteOrderItem`
 - `orderItemUpdateSchema` в validations
 
-Все mutations: `revalidatePath` для `/admin`, `/admin/orders`, `/admin/orders/[id]`.
+Все mutations: `revalidatePath` для `/admin`, `/panel/orders`, `/panel/orders/[id]`.
 
 ---
 

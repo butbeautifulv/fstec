@@ -46,8 +46,8 @@ export function LoginForm({
     const data = await res.json()
     router.push(
       data.mustChangePassword
-        ? "/admin/change-password"
-        : (searchParams.get("next") ?? "/admin")
+        ? "/panel/change-password"
+        : (searchParams.get("next") ?? "/panel")
     )
     router.refresh()
   }

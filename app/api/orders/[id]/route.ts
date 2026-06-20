@@ -28,9 +28,9 @@ export async function PUT(request: Request, { params }: Params) {
       return handleApiError(new Error(parsed.error.issues[0]?.message))
     }
     const order = await updateOrder(id, parsed.data)
-    revalidatePath("/admin/orders")
-    revalidatePath(`/admin/orders/${id}`)
-    revalidatePath("/admin")
+    revalidatePath("/panel/orders")
+    revalidatePath(`/panel/orders/${id}`)
+    revalidatePath("/panel")
     return jsonOk(order)
   } catch (error) {
     return handleApiError(error)
@@ -44,8 +44,8 @@ export async function DELETE(_request: Request, { params }: Params) {
     const order = await getOrder(id)
     if (!order) throw new Error("NOT_FOUND")
     await deleteOrder(id)
-    revalidatePath("/admin/orders")
-    revalidatePath("/admin")
+    revalidatePath("/panel/orders")
+    revalidatePath("/panel")
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

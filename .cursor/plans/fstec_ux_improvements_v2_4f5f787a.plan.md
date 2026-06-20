@@ -82,7 +82,7 @@ flowchart LR
 
 ### Admin: управление ссылками
 
-- Новая страница [`/admin/organizations/[id]`](app/(admin)/admin/(panel)/organizations/[id]/page.tsx):
+- Новая страница [`/panel/organizations/[id]`](app/(admin)/admin/(panel)/organizations/[id]/page.tsx):
   - Ссылка ДЗО + copy/revoke
   - Таблица подразделений: каждое — своя ссылка
 - Убрать генерацию ссылки с [`order-detail-client.tsx`](components/admin/order-detail-client.tsx) (или показать «ссылки → страница ДЗО»)

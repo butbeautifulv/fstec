@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
-import { AdminDashboardMatrix } from "@/components/admin/admin-dashboard-matrix"
+import { AdminDashboardMatrix } from "@/components/platform/admin-dashboard-matrix"
 import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
 import {
   PublicMeasuresTable,
@@ -13,8 +13,9 @@ import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
 import {
   overdueInitialFilters,
   toggleBreakdownFilter,
-  toggleCompletionSegmentFilter,
+  toggleStatusBreakdownFilter,
   toggleStatusFilter,
+  toggleStatusFilterPreserveBreakdown,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
 
@@ -71,7 +72,7 @@ export function ScopedDashboardView(props: AdminProps | PublicProps) {
         scope={scope}
         statusDistribution={props.stats.statusDistribution}
         overdueBreakdown={props.stats.overdueBreakdown}
-        completionBreakdown={props.stats.completionBreakdown}
+        statusBreakdown={props.stats.statusBreakdown}
         overdueTitle={props.stats.chartLabels.overdueTitle}
         completionTitle={props.stats.chartLabels.completionTitle}
         columnFilters={columnFilters}
@@ -81,9 +82,14 @@ export function ScopedDashboardView(props: AdminProps | PublicProps) {
         onOverdueBarClick={(label) =>
           setColumnFilters((prev) => toggleBreakdownFilter(prev, scope, label))
         }
-        onCompletionSegmentClick={(label, segment) =>
+        onStatusBreakdownClick={(label, status) =>
           setColumnFilters((prev) =>
-            toggleCompletionSegmentFilter(prev, scope, label, segment)
+            toggleStatusBreakdownFilter(prev, scope, label, status)
+          )
+        }
+        onCompletionLegendClick={(status) =>
+          setColumnFilters((prev) =>
+            toggleStatusFilterPreserveBreakdown(prev, status)
           )
         }
       />

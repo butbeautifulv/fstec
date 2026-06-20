@@ -22,7 +22,7 @@ const LocaleContext = createContext<LocaleContextValue | null>(null)
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith("/admin")
+  const isAdmin = pathname.startsWith("/panel")
   const [locale, setLocale] = useState<LocaleId>(DEFAULT_LOCALE)
   const [loading, setLoading] = useState(true)
   const [tick, setTick] = useState(0)
