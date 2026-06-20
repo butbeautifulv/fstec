@@ -1,16 +1,13 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
-import { EditOrderDialog } from "@/components/platform/crud/edit-order-dialog"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { colMeta, actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { createOrganizationColumn } from "@/lib/data-table/columns"
-import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { dateSortFn, numberSortFn } from "@/lib/data-table/sort-helpers"
 import { TextCell } from "@/lib/data-table/text-cell"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
@@ -27,9 +24,7 @@ type Order = {
 }
 
 export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
-  const router = useRouter()
   const [orders, setOrders] = useState(initialOrders)
-  const [editOrder, setEditOrder] = useState<Order | null>(null)
   const { deleteId, deleting, requestDelete, confirmDelete, cancelDelete } =
     useResourceDelete({
       url: (id) => `/api/orders/${id}`,
@@ -95,7 +90,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
               {
                 label: "Изменить",
                 icon: <Pencil data-icon="inline-start" />,
-                onClick: () => setEditOrder(row.original),
+                href: `/panel/orders/${row.original.id}/edit`,
               },
               {
                 label: "Удалить",
@@ -108,7 +103,7 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
         ),
       },
     ],
-    []
+    [requestDelete]
   )
 
   return (
@@ -128,18 +123,6 @@ export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
             description={`Создайте первое поручение для ${labels.orgGenitive}`}
           />
         }
-      />
-
-      <EditOrderDialog
-        order={editOrder ? { id: editOrder.id, title: editOrder.title } : null}
-        open={editOrder !== null}
-        onOpenChange={(o) => !o && setEditOrder(null)}
-        onSaved={(updated) => {
-          setOrders((prev) =>
-            prev.map((o) => (o.id === updated.id ? { ...o, title: updated.title } : o))
-          )
-          router.refresh()
-        }}
       />
 
       <ConfirmDeleteAlert

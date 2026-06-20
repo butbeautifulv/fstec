@@ -2,16 +2,14 @@ import { getAuthProvider } from "@/lib/auth/providers"
 import { getSession } from "@/lib/auth/session"
 import { loginSchema } from "@/lib/validations/auth"
 import { handleApiError, jsonError, jsonOk } from "@/lib/api/errors"
+import { parseJsonBody } from "@/lib/api/parse-body"
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    const parsed = loginSchema.safeParse(body)
-    if (!parsed.success) {
-      return jsonError(parsed.error.issues[0]?.message ?? "Invalid input")
-    }
+    const body = await parseJsonBody(request, loginSchema)
+    if ("error" in body) return body.error
 
-    const result = await getAuthProvider().authenticate(parsed.data)
+    const result = await getAuthProvider().authenticate(body.data)
     if (!result.ok) {
       return jsonError(result.error, result.status ?? 401)
     }

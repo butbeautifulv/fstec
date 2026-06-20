@@ -1,5 +1,6 @@
 import { ResponseReviewStatus } from "@prisma/client"
 import { z } from "zod"
+import { invalidateKeys } from "@/lib/cache/json-cache"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
 import { parseJsonBody } from "@/lib/api/parse-body"
 import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
@@ -61,6 +62,7 @@ export async function POST(request: Request) {
       responses: true,
       responseId: id,
     })
+    await invalidateKeys("panel:pending:responses")
 
     return jsonOk({ ok: true, response })
   } catch (error) {

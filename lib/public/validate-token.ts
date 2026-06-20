@@ -1,7 +1,69 @@
+import "server-only"
+
 import { cache } from "react"
-import { prisma } from "@/lib/db"
+import { getCachedJson } from "@/lib/cache/json-cache"
+import { prismaRead } from "@/lib/db"
 import { isRevocableLinkActive } from "@/lib/links/is-active"
 import { fetchOrderItemDetail } from "@/lib/order-items/fetch-detail"
+
+const ACCESS_LINK_CACHE_TTL_SECONDS = 300
+
+type AccessLinkRecord = {
+  id: number
+  token: string
+  organizationId: number
+  subdivisionId: number | null
+  revokedAt: Date | null
+  expiresAt: Date | null
+}
+
+type AccessLinkContext = {
+  link: AccessLinkRecord
+  organization: { id: number; name: string }
+  subdivision: { id: number; name: string } | null
+}
+
+type SerializedAccessLinkContext = {
+  link: {
+    id: number
+    token: string
+    organizationId: number
+    subdivisionId: number | null
+    revokedAt: string | null
+    expiresAt: string | null
+  }
+  organization: { id: number; name: string }
+  subdivision: { id: number; name: string } | null
+}
+
+function serializeAccessLinkContext(ctx: AccessLinkContext): SerializedAccessLinkContext {
+  return {
+    link: {
+      id: ctx.link.id,
+      token: ctx.link.token,
+      organizationId: ctx.link.organizationId,
+      subdivisionId: ctx.link.subdivisionId,
+      revokedAt: ctx.link.revokedAt?.toISOString() ?? null,
+      expiresAt: ctx.link.expiresAt?.toISOString() ?? null,
+    },
+    organization: ctx.organization,
+    subdivision: ctx.subdivision,
+  }
+}
+
+function deserializeAccessLinkContext(
+  data: SerializedAccessLinkContext
+): AccessLinkContext {
+  return {
+    link: {
+      ...data.link,
+      revokedAt: data.link.revokedAt ? new Date(data.link.revokedAt) : null,
+      expiresAt: data.link.expiresAt ? new Date(data.link.expiresAt) : null,
+    },
+    organization: data.organization,
+    subdivision: data.subdivision,
+  }
+}
 
 function itemScopeWhere(link: {
   organizationId: number
@@ -13,8 +75,8 @@ function itemScopeWhere(link: {
   }
 }
 
-const loadAccessLink = cache(async (token: string) => {
-  const link = await prisma.accessLink.findUnique({
+async function loadAccessLinkFromDb(token: string): Promise<AccessLinkContext | null> {
+  const link = await prismaRead.accessLink.findUnique({
     where: { token },
     include: {
       organization: true,
@@ -29,7 +91,27 @@ const loadAccessLink = cache(async (token: string) => {
     organization: link.organization,
     subdivision: link.subdivision,
   }
-})
+}
+
+async function loadAccessLinkCached(token: string): Promise<AccessLinkContext | null> {
+  const serialized = await getCachedJson<SerializedAccessLinkContext | null>(
+    `access-link:${token}`,
+    ACCESS_LINK_CACHE_TTL_SECONDS,
+    async () => {
+      const ctx = await loadAccessLinkFromDb(token)
+      if (!ctx) return null
+      return serializeAccessLinkContext(ctx)
+    }
+  )
+
+  if (!serialized) return null
+
+  const ctx = deserializeAccessLinkContext(serialized)
+  if (!isRevocableLinkActive(ctx.link)) return null
+  return ctx
+}
+
+const loadAccessLink = cache(loadAccessLinkCached)
 
 export async function validateAccessLink(token: string) {
   return loadAccessLink(token)
@@ -39,7 +121,7 @@ export const fetchPublicNavOrders = cache(async (token: string) => {
   const ctx = await loadAccessLink(token)
   if (!ctx) return null
 
-  const rows = await prisma.orderItem.findMany({
+  const rows = await prismaRead.orderItem.findMany({
     where: itemScopeWhere(ctx.link),
     select: { id: true, orderId: true },
     orderBy: [{ order: { issuedAt: "desc" } }, { id: "asc" }],
@@ -64,7 +146,7 @@ export const fetchPublicOrderSummaries = cache(async (token: string) => {
   const ctx = await loadAccessLink(token)
   if (!ctx) return null
 
-  const orders = await prisma.order.findMany({
+  const orders = await prismaRead.order.findMany({
     where: {
       organizationId: ctx.link.organizationId,
       items: {
@@ -103,7 +185,7 @@ export async function getOrderForToken(token: string, orderId: number) {
   const ctx = await validateAccessLink(token)
   if (!ctx) return null
 
-  const order = await prisma.order.findFirst({
+  const order = await prismaRead.order.findFirst({
     where: {
       id: orderId,
       organizationId: ctx.link.organizationId,

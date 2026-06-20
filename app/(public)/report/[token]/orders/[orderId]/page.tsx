@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation"
-import { ReportOrderDetailClient } from "@/components/report/report-page-clients"
+import { ScopedOrderDetailClient } from "@/components/shared/scoped-orders-clients"
 import { mapOrderItemsToPublicItems } from "@/lib/public/map-public-items"
+import {
+  serializeMeasuresTableItems,
+  serializePublicOrderDetail,
+  serializePublicStatuses,
+} from "@/lib/public/serialize-public"
 import { getOrderForReportToken } from "@/lib/report-links/validate-token"
 import { getWorkflowStatuses } from "@/lib/statuses"
 
@@ -15,30 +20,19 @@ export default async function ReportOrderDetailPage({ params }: Params) {
   if (!ctx) notFound()
 
   const statuses = await getWorkflowStatuses()
-  const publicItems = mapOrderItemsToPublicItems(ctx.order, ctx.order.items)
-  const showSubdivisionColumn = publicItems.some((item) => item.subdivisionName)
-
-  const items = publicItems.map((item) => ({
-    id: item.id,
-    dueAt: item.dueAt,
-    measure: { name: item.measure.name, code: item.measure.code },
-    status: item.status,
-    subdivisionName: item.subdivisionName,
-  }))
+  const items = mapOrderItemsToPublicItems(ctx.order, ctx.order.items)
+  const showSubdivisionColumn = items.some((item) => item.subdivisionName)
 
   return (
-    <ReportOrderDetailClient
-      token={token}
-      order={JSON.parse(
-        JSON.stringify({
-          id: ctx.order.id,
-          title: ctx.order.title,
-          issuedAt: ctx.order.issuedAt.toISOString(),
-        })
-      )}
-      organizationName={ctx.order.organization.name}
-      items={JSON.parse(JSON.stringify(items))}
-      statuses={JSON.parse(JSON.stringify(statuses))}
+    <ScopedOrderDetailClient
+      context={{
+        scope: "report",
+        token,
+        organizationName: ctx.order.organization.name,
+      }}
+      order={serializePublicOrderDetail(ctx.order)}
+      items={serializeMeasuresTableItems(items)}
+      statuses={serializePublicStatuses(statuses)}
       showSubdivisionColumn={showSubdivisionColumn}
     />
   )

@@ -9,4 +9,8 @@ export const DELAY_STATUS_VARIANT: Record<
   REJECTED: "outline",
 }
 
-export { DELAY_STATUS_LABELS } from "@/lib/delays"
+export const DELAY_STATUS_LABELS: Record<DelayRequestStatus, string> = {
+  PENDING: "Ожидает",
+  APPROVED: "Одобрен",
+  REJECTED: "Отклонён",
+}

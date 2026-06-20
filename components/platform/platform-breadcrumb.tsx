@@ -46,8 +46,15 @@ function buildPlatformCrumbs(
 
   if (pathname.startsWith("/panel/orders")) {
     crumbs.push({ label: "Поручения", href: "/panel/orders" })
-    if (pathname === "/panel/orders/new") crumbs.push({ label: "Создание" })
-    else if (pathname !== "/panel/orders") {
+    if (pathname === "/panel/orders/new") {
+      crumbs.push({ label: "Создание" })
+    } else if (pathname.match(/^\/panel\/orders\/\d+\/edit$/)) {
+      crumbs.push(...middleCrumbs)
+      crumbs.push({ label: "Редактирование" })
+    } else if (pathname.includes("/items/")) {
+      crumbs.push(...middleCrumbs)
+      crumbs.push({ label: dynamicLabel ?? "Позиция" })
+    } else if (pathname !== "/panel/orders") {
       crumbs.push({ label: dynamicLabel ?? "Поручение" })
     }
     return crumbs

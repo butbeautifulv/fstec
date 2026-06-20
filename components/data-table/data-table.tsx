@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   flexRender,
   getCoreRowModel,
@@ -14,6 +14,7 @@ import {
   type ColumnFiltersState,
   type SortingState,
   type Table as TanstackTable,
+  type Updater,
   type VisibilityState,
 } from "@tanstack/react-table"
 import { DataTableActiveFilters } from "@/components/data-table/data-table-active-filters"
@@ -35,6 +36,10 @@ import {
 import { buildVisibleColumnWidths, stripPercentWidthClass } from "@/lib/data-table/column-width"
 import { wrapTableHeaderContent } from "@/lib/data-table/header-text"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
+import {
+  clampColumnVisibility,
+  getColumnDefIds,
+} from "@/lib/data-table/column-visibility"
 import { cn } from "@/lib/utils"
 
 function getColumnCellClassName(
@@ -93,6 +98,18 @@ export function DataTable<TData>({
   const columnFilters = controlledColumnFilters ?? internalColumnFilters
   const setColumnFilters = onColumnFiltersChange ?? setInternalColumnFilters
 
+  const columnIds = useMemo(() => getColumnDefIds(columns), [columns])
+
+  const handleColumnVisibilityChange = useCallback(
+    (updater: Updater<VisibilityState>) => {
+      setColumnVisibility((prev) => {
+        const next = typeof updater === "function" ? updater(prev) : updater
+        return clampColumnVisibility(columnIds, prev, next)
+      })
+    },
+    [columnIds]
+  )
+
   useEffect(() => {
     if (!hideOnMobileColumnIds?.length) return
 
@@ -104,14 +121,14 @@ export function DataTable<TData>({
         for (const id of hideOnMobileColumnIds) {
           next[id] = !compact
         }
-        return next
+        return clampColumnVisibility(columnIds, prev, next)
       })
     }
 
     sync()
     media.addEventListener("change", sync)
     return () => media.removeEventListener("change", sync)
-  }, [hideOnMobileColumnIds])
+  }, [hideOnMobileColumnIds, columnIds])
 
   const table = useReactTable({
     data,
@@ -119,7 +136,7 @@ export function DataTable<TData>({
     defaultColumn: { filterFn: facetedFilter },
     state: { sorting, columnVisibility, globalFilter, columnFilters },
     onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     onGlobalFilterChange: setGlobalFilter,
     onColumnFiltersChange: (updater) => {
       const next = typeof updater === "function" ? updater(columnFilters) : updater

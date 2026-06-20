@@ -1,11 +1,9 @@
 import { Suspense } from "react"
 import dynamic from "next/dynamic"
 import { notFound } from "next/navigation"
-import { PageHeader } from "@/components/shared/page-header"
 import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 import { getOrder } from "@/lib/orders"
-import { listSelectableStatuses } from "@/lib/statuses"
-import { serializeOrderDetail, serializeStatuses } from "@/lib/serialize/panel"
+import { serializeOrderDetail } from "@/lib/serialize/panel"
 
 const OrderDetailClient = dynamic(
   () =>
@@ -16,18 +14,10 @@ const OrderDetailClient = dynamic(
 )
 
 async function OrderDetailSection({ id }: { id: number }) {
-  const [order, statuses] = await Promise.all([
-    getOrder(id),
-    listSelectableStatuses(),
-  ])
+  const order = await getOrder(id)
   if (!order) notFound()
 
-  return (
-    <OrderDetailClient
-      order={serializeOrderDetail(order)}
-      statuses={serializeStatuses(statuses)}
-    />
-  )
+  return <OrderDetailClient order={serializeOrderDetail(order)} />
 }
 
 export default async function OrderDetailPage({
@@ -38,11 +28,8 @@ export default async function OrderDetailPage({
   const id = Number((await params).id)
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader title="Поручение" backHref="/panel/orders" backLabel="Поручения" />
-      <Suspense fallback={<TablePageSkeleton columns={8} />}>
-        <OrderDetailSection id={id} />
-      </Suspense>
-    </div>
+    <Suspense fallback={<TablePageSkeleton columns={8} />}>
+      <OrderDetailSection id={id} />
+    </Suspense>
   )
 }

@@ -3,11 +3,11 @@ import { MeasuresTable } from "@/components/platform/measures-table"
 import { MeasuresPageActions } from "@/components/platform/resource-page-actions"
 import { PageHeader } from "@/components/shared/page-header"
 import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
-import { listMeasures } from "@/lib/measures"
+import { getCachedListMeasures } from "@/lib/cache/list-measures"
 import { serializeMeasures } from "@/lib/serialize/panel"
 
 async function MeasuresTableSection() {
-  const measures = await listMeasures()
+  const measures = await getCachedListMeasures()
   return <MeasuresTable initialMeasures={serializeMeasures(measures)} />
 }
 

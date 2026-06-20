@@ -26,11 +26,13 @@ export function DashboardMatrixTable({
   linkTargets,
   columnFilters,
   onColumnFiltersChange,
+  pageSize = 50,
 }: {
   items: DashboardMatrixRow[]
   linkTargets: DashboardMatrixLinkTargets
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+  pageSize?: number
 }) {
   const columns = useMemo<ColumnDef<DashboardMatrixRow>[]>(
     () => [
@@ -66,6 +68,7 @@ export function DashboardMatrixTable({
     <DataTable
       columns={columns}
       data={items}
+      pageSize={pageSize}
       columnFilters={columnFilters}
       onColumnFiltersChange={onColumnFiltersChange}
       hideOnMobileColumnIds={["organization", "order"]}

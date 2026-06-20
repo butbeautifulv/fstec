@@ -1,4 +1,5 @@
 import { handleApiError, jsonOk } from "@/lib/api/errors"
+import { invalidateKeys } from "@/lib/cache/json-cache"
 import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
 import { assertOrderItemExists } from "@/lib/attachments"
 import { Permission } from "@/lib/auth/permissions"
@@ -20,6 +21,7 @@ export async function POST(request: Request, { params }: Params) {
     if ("error" in result) return result.error
 
     await revalidatePanelOrderMutation(orderId, { responses: true })
+    await invalidateKeys("panel:pending:responses")
 
     return jsonOk(result.data, { status: 201 })
   } catch (error) {

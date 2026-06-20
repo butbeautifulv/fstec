@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { DelayRequestStatus } from "@prisma/client"
+import { invalidateKeys } from "@/lib/cache/json-cache"
 import { prisma } from "@/lib/db"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
@@ -77,6 +78,7 @@ export async function POST(request: Request) {
     }
 
     await revalidatePanelOrderMutation(delay.orderItem.orderId, { delays: true })
+    await invalidateKeys("panel:pending:delays")
 
     return jsonOk({ ok: true })
   } catch (error) {

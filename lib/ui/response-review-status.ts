@@ -1,5 +1,4 @@
 import { ResponseReviewStatus } from "@prisma/client"
-import { RESPONSE_REVIEW_STATUS_LABELS } from "@/lib/responses"
 
 export const RESPONSE_REVIEW_STATUS_VARIANT: Record<
   ResponseReviewStatus,
@@ -10,4 +9,8 @@ export const RESPONSE_REVIEW_STATUS_VARIANT: Record<
   REJECTED: "outline",
 }
 
-export { RESPONSE_REVIEW_STATUS_LABELS }
+export const RESPONSE_REVIEW_STATUS_LABELS: Record<ResponseReviewStatus, string> = {
+  PENDING: "На проверке",
+  ACCEPTED: "Принят",
+  REJECTED: "Не принят",
+}

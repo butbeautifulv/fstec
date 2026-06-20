@@ -1,4 +1,5 @@
 import { revalidatePath } from "next/cache"
+import { invalidateKeys } from "@/lib/cache/json-cache"
 import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
 
 export async function revalidatePanelDashboard() {
@@ -7,6 +8,7 @@ export async function revalidatePanelDashboard() {
 }
 
 export async function revalidatePanelOrder(orderId?: number) {
+  await invalidateKeys("list:orders")
   await revalidatePanelDashboard()
   revalidatePath("/panel/orders")
   if (orderId != null) {
@@ -46,6 +48,7 @@ export async function revalidatePanelUsers(userId?: number) {
 export function revalidatePanelSettings() {
   revalidatePath("/panel/settings")
   revalidatePath("/panel/settings/general")
+  revalidatePath("/panel/settings/account")
 }
 
 export function revalidatePanelResponses() {
@@ -57,6 +60,7 @@ export function revalidatePanelDelayRequests() {
 }
 
 export function revalidatePanelMeasures(measureId?: number) {
+  void invalidateKeys("list:measures")
   revalidatePath("/panel/measures")
   if (measureId != null) {
     revalidatePath(`/panel/measures/${measureId}/edit`)

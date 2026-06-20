@@ -141,7 +141,7 @@ export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportP
         }
       />
 
-      {props.variant === "public" ? (
+      {variantConfig.tableKind === "measures" && props.variant === "public" ? (
         <MeasuresDataTable
           basePath={`/p/${props.token}`}
           items={props.items}
@@ -150,13 +150,15 @@ export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportP
           actionLabel="Заполнить"
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
+          pageSize={50}
         />
-      ) : matrixLinkTargets ? (
+      ) : matrixLinkTargets && props.variant !== "public" ? (
         <DashboardMatrixTable
           items={props.items}
           linkTargets={matrixLinkTargets}
           columnFilters={columnFilters}
           onColumnFiltersChange={setColumnFilters}
+          pageSize={50}
         />
       ) : null}
     </>

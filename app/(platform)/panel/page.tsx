@@ -3,7 +3,6 @@ import { ReportShareButton } from "@/components/report/report-share-button"
 import { Permission, hasPermission } from "@/lib/auth/permissions"
 import { requirePageSession } from "@/lib/auth/page-guard"
 import { labels } from "@/lib/ui/branding"
-import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import { getActiveReportLink } from "@/lib/report-links"
 
 export default async function PlatformDashboardPage({
@@ -16,20 +15,19 @@ export default async function PlatformDashboardPage({
   const session = await requirePageSession()
   const canManageReportLinks = hasPermission(session.role, Permission.settingsWrite)
 
-  const [dashboard, activeReportLink] = await Promise.all([
-    getCachedScopedDashboard({ type: "global" }),
-    canManageReportLinks ? getActiveReportLink() : Promise.resolve(null),
-  ])
+  const activeReportLink = canManageReportLinks
+    ? await getActiveReportLink()
+    : null
 
   return (
     <ScopedDashboardPageShell
       variant="platform"
+      scope={{ type: "global" }}
+      itemLimit={overdueOnly ? undefined : 50}
       title={`Сводка по ${labels.orgPluralGenitive}`}
       description="Статусы исполнения мер по поручениям"
       baseHref="/panel"
       overdueOnly={overdueOnly}
-      stats={dashboard.stats}
-      items={dashboard.items}
       emptyMessage={
         <>Нет данных. Создайте поручение для {labels.orgGenitive} в разделе «Поручения».</>
       }

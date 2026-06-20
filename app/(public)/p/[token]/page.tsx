@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
-import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
-import { mapSerializedMatrixToPublicItems } from "@/lib/public/map-public-items"
 import { serializePublicStatuses } from "@/lib/public/serialize-public"
 import { validateAccessLink } from "@/lib/public/validate-token"
 import { getWorkflowStatuses } from "@/lib/statuses"
@@ -24,16 +22,13 @@ export default async function PublicLinkPage({
   if (!linkCtx) notFound()
 
   const scope = scopeFromAccessLink(linkCtx.link)
-  const [dashboard, statuses] = await Promise.all([
-    getCachedScopedDashboard(scope),
-    getWorkflowStatuses(),
-  ])
-
-  const flatItems = mapSerializedMatrixToPublicItems(dashboard.items)
+  const statuses = await getWorkflowStatuses()
 
   return (
     <ScopedDashboardPageShell
       variant="public"
+      scope={scope}
+      itemLimit={overdueOnly ? undefined : 50}
       title={linkCtx.organization.name}
       description={
         linkCtx.subdivision?.name
@@ -42,14 +37,11 @@ export default async function PublicLinkPage({
       }
       baseHref={`/p/${token}`}
       overdueOnly={overdueOnly}
-      stats={dashboard.stats}
-      items={flatItems}
       statuses={serializePublicStatuses(statuses)}
       token={token}
-      scope={scope.type === "subdivision" ? "subdivision" : "organization"}
+      publicScope={scope.type === "subdivision" ? "subdivision" : "organization"}
       showSubdivisionColumn={scope.type === "organization"}
       emptyMessage="Нет мер для отображения."
-      suspenseCharts={false}
     />
   )
 }

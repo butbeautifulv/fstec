@@ -18,18 +18,12 @@ import {
 import { facetedFilter } from "@/lib/data-table/faceted-column"
 import { TextCell } from "@/lib/data-table/text-cell"
 import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
+import type {
+  MeasuresTableItem,
+  MeasuresTableStatus,
+} from "@/lib/measures/table-types"
 
-export type MeasuresTableStatus = { id: number; name: string; isTerminal: boolean }
-
-export type MeasuresTableItem = {
-  id: number
-  orderId?: number
-  dueAt: string
-  measure: { name: string; code: string | null; description?: string | null }
-  status: { id: number; name: string; isTerminal?: boolean }
-  orderTitle?: string
-  subdivisionName?: string | null
-}
+export type { MeasuresTableItem, MeasuresTableStatus } from "@/lib/measures/table-types"
 
 type MeasuresRow = MeasuresTableItem & {
   isOverdue: boolean
@@ -45,6 +39,7 @@ export function MeasuresDataTable({
   actionLabel,
   columnFilters,
   onColumnFiltersChange,
+  pageSize = 50,
 }: {
   basePath: string
   items: MeasuresTableItem[]
@@ -54,6 +49,7 @@ export function MeasuresDataTable({
   actionLabel?: string
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
+  pageSize?: number
 }) {
   const statusById = useMemo(
     () => new Map(statuses.map((s) => [s.id, s])),
@@ -149,6 +145,7 @@ export function MeasuresDataTable({
     <DataTable
       columns={columns}
       data={rows}
+      pageSize={pageSize}
       columnFilters={columnFilters}
       onColumnFiltersChange={onColumnFiltersChange}
       hideOnMobileColumnIds={hideOnMobileColumnIds}

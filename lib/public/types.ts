@@ -1,7 +1,7 @@
 import type {
   MeasuresTableItem,
   MeasuresTableStatus,
-} from "@/components/shared/measures-data-table"
+} from "@/lib/measures/table-types"
 
 export type PublicStatus = MeasuresTableStatus
 

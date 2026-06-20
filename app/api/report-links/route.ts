@@ -1,8 +1,7 @@
-import { revalidatePath } from "next/cache"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { handleApiError, jsonOk } from "@/lib/api/errors"
-import { invalidateDashboardOnMutation } from "@/lib/dashboard/invalidate-on-mutation"
+import { revalidatePanelDashboard } from "@/lib/api/revalidate-panel"
 import {
   createReportLink,
   getActiveReportLink,
@@ -27,8 +26,7 @@ export async function POST() {
   try {
     await requirePermission(Permission.settingsWrite)
     const link = await createReportLink()
-    await invalidateDashboardOnMutation()
-    revalidatePath("/panel")
+    await revalidatePanelDashboard()
     return jsonOk(link, { status: 201 })
   } catch (error) {
     return handleApiError(error)
@@ -41,8 +39,7 @@ export async function DELETE(request: Request) {
     const linkId = Number(new URL(request.url).searchParams.get("linkId"))
     if (!linkId) return handleApiError(new Error("linkId required"))
     await revokeReportLink(linkId)
-    await invalidateDashboardOnMutation()
-    revalidatePath("/panel")
+    await revalidatePanelDashboard()
     return jsonOk({ ok: true })
   } catch (error) {
     return handleApiError(error)

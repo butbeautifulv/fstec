@@ -12,7 +12,7 @@ type Params = { params: Promise<{ token: string; id: string }> }
 export async function POST(request: Request, { params }: Params) {
   try {
     const { token, id } = await params
-    const rateLimited = assertPublicRateLimit(request, token, "write")
+    const rateLimited = await assertPublicRateLimit(request, token, "write")
     if (rateLimited) return rateLimited
 
     const orderItemId = Number(id)

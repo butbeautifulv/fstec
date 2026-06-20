@@ -38,6 +38,59 @@ export async function getOrder(id: number) {
   })
 }
 
+export async function getOrderForEdit(id: number) {
+  return prisma.order.findUnique({
+    where: { id },
+    select: { id: true, title: true },
+  })
+}
+
+export async function getOrderItemContext(orderId: number, itemId: number) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: itemId, orderId },
+    include: {
+      measure: { select: { id: true, name: true } },
+      status: true,
+      subdivision: true,
+      order: {
+        select: {
+          id: true,
+          title: true,
+          organization: {
+            select: {
+              subdivisions: { select: { id: true, name: true }, orderBy: { name: "asc" } },
+            },
+          },
+        },
+      },
+    },
+  })
+  return item
+}
+
+export async function getOrderItemDelayRequests(orderId: number, itemId: number) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: itemId, orderId },
+    include: {
+      measure: { select: { id: true, name: true } },
+      order: { select: { id: true, title: true } },
+      delayRequests: { orderBy: { createdAt: "desc" } },
+    },
+  })
+  return item
+}
+
+export async function getOrderItemForResponse(orderId: number, itemId: number) {
+  const item = await prisma.orderItem.findFirst({
+    where: { id: itemId, orderId },
+    include: {
+      measure: { select: { id: true, name: true } },
+      order: { select: { id: true, title: true } },
+    },
+  })
+  return item
+}
+
 export async function createOrder(input: CreateOrderInput, createdById: number) {
   const defaultStatusId = await getDefaultStatusId()
 

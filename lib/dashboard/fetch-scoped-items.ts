@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/db"
+import { prismaRead } from "@/lib/db"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 
 export async function fetchScopedItems(scope: DashboardScope) {
-  return prisma.orderItem.findMany({
+  return prismaRead.orderItem.findMany({
     where: {
       ...(scope.type === "organization" && {
         order: { organizationId: scope.organizationId },

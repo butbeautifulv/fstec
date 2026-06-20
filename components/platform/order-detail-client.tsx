@@ -6,18 +6,13 @@ import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
 import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
-import { EditOrderDialog } from "@/components/platform/crud/edit-order-dialog"
-import { EditOrderItemDialog } from "@/components/platform/crud/edit-order-item-dialog"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader, DataTableRowLink } from "@/components/data-table"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
 import { createDueAtColumn, createMatrixWorkflowStatusColumn } from "@/lib/data-table/columns"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
-import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { TruncatedCell } from "@/lib/data-table/truncated-cell"
-import { DelayListDialog } from "@/components/platform/delay-list-dialog"
-import { SubmitResponseDialog } from "@/components/platform/submit-response-dialog"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -43,7 +38,6 @@ import { format } from "date-fns"
 import { ResponseReviewStatus } from "@prisma/client"
 import { ClipboardList, Pencil, Trash2 } from "lucide-react"
 
-type Status = { id: number; name: string; isTerminal?: boolean }
 type Subdivision = { id: number; name: string }
 
 type Response = {
@@ -82,23 +76,15 @@ export type OrderDetail = {
 
 export function OrderDetailClient({
   order: initialOrder,
-  statuses,
 }: {
   order: OrderDetail
-  statuses: Status[]
 }) {
   const router = useRouter()
   const [order, setOrder] = useState(initialOrder)
-  const [delayItemId, setDelayItemId] = useState<number | null>(null)
-  const [editOrderOpen, setEditOrderOpen] = useState(false)
-  const [editItem, setEditItem] = useState<OrderItem | null>(null)
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null)
-  const [submitItem, setSubmitItem] = useState<OrderItem | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   useAdminBreadcrumbLabel(order.title)
-
-  const delayItem = order.items.find((i) => i.id === delayItemId)
 
   const pendingCount = (item: OrderItem) =>
     item.delayRequests.filter((d) => d.status === "PENDING").length
@@ -239,22 +225,19 @@ export function OrderDetailClient({
         enableColumnFilter: false,
         cell: ({ row }) =>
           row.original.delayRequests.length > 0 ? (
-            <Button
-              variant="outline"
-              size="icon-xs"
-              className="relative shrink-0"
-              onClick={() => setDelayItemId(row.original.id)}
-            >
-              <span className="text-xs tabular-nums">{row.original.delayRequests.length}</span>
-              <span className="sr-only">Переносы</span>
-              {pendingCount(row.original) > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -right-1 -top-1 size-4 p-0 text-[10px]"
-                >
-                  {pendingCount(row.original)}
-                </Badge>
-              )}
+            <Button variant="outline" size="icon-xs" className="relative shrink-0" asChild>
+              <Link href={`/panel/orders/${order.id}/items/${row.original.id}/delays`}>
+                <span className="text-xs tabular-nums">{row.original.delayRequests.length}</span>
+                <span className="sr-only">Переносы</span>
+                {pendingCount(row.original) > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -right-1 -top-1 size-4 p-0 text-[10px]"
+                  >
+                    {pendingCount(row.original)}
+                  </Badge>
+                )}
+              </Link>
             </Button>
           ) : (
             <span className="text-muted-foreground">—</span>
@@ -278,14 +261,14 @@ export function OrderDetailClient({
                     {
                       label: "Отправить отчёт",
                       icon: <ClipboardList data-icon="inline-start" />,
-                      onClick: () => setSubmitItem(row.original),
+                      href: `/panel/orders/${order.id}/items/${row.original.id}/responses/new`,
                     },
                   ]
                 : []),
               {
                 label: "Изменить",
                 icon: <Pencil data-icon="inline-start" />,
-                onClick: () => setEditItem(row.original),
+                href: `/panel/orders/${order.id}/items/${row.original.id}/edit`,
               },
               {
                 label: "Удалить",
@@ -298,7 +281,7 @@ export function OrderDetailClient({
         ),
       },
     ],
-    []
+    [order.id]
   )
 
   return (
@@ -317,8 +300,8 @@ export function OrderDetailClient({
         backLabel="Поручения"
         actions={
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={() => setEditOrderOpen(true)}>
-              Изменить поручение
+            <Button variant="outline" size="sm" asChild>
+              <Link href={`/panel/orders/${order.id}/edit`}>Изменить поручение</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href={`/panel/organizations/${order.organization.id}`}>
@@ -346,45 +329,6 @@ export function OrderDetailClient({
         }
       />
 
-      <EditOrderDialog
-        order={{ id: order.id, title: order.title }}
-        open={editOrderOpen}
-        onOpenChange={setEditOrderOpen}
-        onSaved={(updated) => {
-          setOrder((prev) => ({ ...prev, title: updated.title }))
-          router.refresh()
-        }}
-      />
-
-      <EditOrderItemDialog
-        orderId={order.id}
-        item={editItem}
-        statuses={statuses}
-        subdivisions={order.organization.subdivisions}
-        open={editItem !== null}
-        onOpenChange={(o) => !o && setEditItem(null)}
-        onSaved={(updated) => {
-          setOrder((prev) => ({
-            ...prev,
-            items: prev.items.map((i) =>
-              i.id === updated.id
-                ? {
-                    ...i,
-                    dueAt: updated.dueAt,
-                    status: {
-                      id: updated.status.id,
-                      name: updated.status.name,
-                      isTerminal: updated.status.isTerminal ?? i.status.isTerminal ?? false,
-                    },
-                    subdivision: updated.subdivision,
-                  }
-                : i
-            ),
-          }))
-          router.refresh()
-        }}
-      />
-
       <ConfirmDeleteAlert
         open={deleteItemId !== null}
         onOpenChange={(o) => !o && setDeleteItemId(null)}
@@ -392,22 +336,6 @@ export function OrderDetailClient({
         description="Позиция будет удалена из поручения вместе с отчётами и запросами переноса."
         onConfirm={confirmDeleteItem}
         loading={deleting}
-      />
-
-      {delayItem && (
-        <DelayListDialog
-          open={delayItemId !== null}
-          onOpenChange={(o) => !o && setDelayItemId(null)}
-          measureName={delayItem.measure.name}
-          delayRequests={delayItem.delayRequests}
-        />
-      )}
-
-      <SubmitResponseDialog
-        orderId={order.id}
-        item={submitItem}
-        open={submitItem !== null}
-        onOpenChange={(o) => !o && setSubmitItem(null)}
       />
     </div>
   )

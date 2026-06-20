@@ -2,8 +2,10 @@ import { notFound } from "next/navigation"
 import { PlatformShell } from "@/components/platform/platform-shell"
 import { buildPlatformSessionUser } from "@/lib/auth/platform-session"
 import { requirePageSession } from "@/lib/auth/page-guard"
-import { countPendingDelayRequests } from "@/lib/delays"
-import { countPendingResponses } from "@/lib/responses"
+import {
+  getCachedPendingDelayCount,
+  getCachedPendingResponseCount,
+} from "@/lib/cache/panel-counts"
 import { getUserById } from "@/lib/users"
 
 export default async function PanelLayout({
@@ -14,8 +16,8 @@ export default async function PanelLayout({
   const session = await requirePageSession()
   const [user, pendingDelays, pendingResponses] = await Promise.all([
     getUserById(session.userId),
-    countPendingDelayRequests(),
-    countPendingResponses(),
+    getCachedPendingDelayCount(),
+    getCachedPendingResponseCount(),
   ])
 
   if (!user) notFound()

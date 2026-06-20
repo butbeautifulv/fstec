@@ -1,14 +1,16 @@
 "use client"
 
-import { format } from "date-fns"
 import type { ReactNode } from "react"
-import {
-  MeasuresDataTable,
-  type MeasuresTableItem,
-  type MeasuresTableStatus,
-} from "@/components/shared/measures-data-table"
+import type {
+  MeasuresTableItem,
+  MeasuresTableStatus,
+} from "@/lib/measures/table-types"
+import { MeasuresDataTable } from "@/components/shared/measures-data-table"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
+import { formatOrderIssuedDescription } from "@/lib/nav/scoped-orders-config"
+
+export { formatOrderIssuedDescription }
 
 export function OrderMeasuresPage({
   basePath,
@@ -51,8 +53,4 @@ export function OrderMeasuresPage({
       />
     </div>
   )
-}
-
-export function formatOrderIssuedDescription(issuedAt: string): string {
-  return `Выдано ${format(new Date(issuedAt), "dd.MM.yyyy")}`
 }

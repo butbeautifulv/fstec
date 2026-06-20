@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { PublicOrdersListClient } from "@/components/public/public-page-clients"
+import { ScopedOrdersListClient } from "@/components/shared/scoped-orders-clients"
 import { serializePublicOrderSummary } from "@/lib/public/serialize-public"
 import { fetchPublicOrderSummaries } from "@/lib/public/validate-token"
 
@@ -12,5 +12,5 @@ export default async function PublicOrdersPage({ params }: Params) {
 
   const orders = ctx.orders.map(serializePublicOrderSummary)
 
-  return <PublicOrdersListClient token={token} orders={orders} />
+  return <ScopedOrdersListClient context={{ scope: "public", token }} orders={orders} />
 }

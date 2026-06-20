@@ -14,7 +14,7 @@ type Params = { params: Promise<{ token: string }> }
 export async function GET(request: Request, { params }: Params) {
   try {
     const { token } = await params
-    const rateLimited = assertPublicRateLimit(request, token, "read")
+    const rateLimited = await assertPublicRateLimit(request, token, "read")
     if (rateLimited) return rateLimited
 
     const ctx = await fetchPublicOrderSummaries(token)

@@ -35,8 +35,8 @@ export function serializeOrders(
   orders: {
     id: number
     title: string
-    issuedAt: Date
-    defaultDueAt: Date | null
+    issuedAt: Date | string
+    defaultDueAt: Date | string | null
     organization: { id: number; name: string }
     createdBy: { id: number; name: string }
     _count: { items: number }
@@ -45,7 +45,7 @@ export function serializeOrders(
   return orders.map((order) => ({
     id: order.id,
     title: order.title,
-    issuedAt: order.issuedAt.toISOString(),
+    issuedAt: toIso(order.issuedAt)!,
     defaultDueAt: toIso(order.defaultDueAt),
     organization: order.organization,
     createdBy: order.createdBy,
@@ -70,8 +70,8 @@ export function serializeMeasures(
     name: string
     code: string | null
     description: string | null
-    createdAt: Date
-    updatedAt: Date
+    createdAt: Date | string
+    updatedAt: Date | string
   }[]
 ) {
   return measures.map((measure) => ({
@@ -79,8 +79,8 @@ export function serializeMeasures(
     name: measure.name,
     code: measure.code,
     description: measure.description,
-    createdAt: measure.createdAt.toISOString(),
-    updatedAt: measure.updatedAt.toISOString(),
+    createdAt: toIso(measure.createdAt)!,
+    updatedAt: toIso(measure.updatedAt)!,
   }))
 }
 
@@ -126,6 +126,77 @@ export function serializeAccessLinks(
 
 export function serializeOrderDetail(order: object): OrderDetail {
   return serializeForClient(order) as OrderDetail
+}
+
+export function serializeOrderForEdit(order: { id: number; title: string }) {
+  return { id: order.id, title: order.title }
+}
+
+export function serializeOrderItemEditContext(item: {
+  id: number
+  dueAt: Date
+  status: { id: number; name: string; isTerminal: boolean }
+  subdivision: { id: number; name: string } | null
+  measure: { id: number; name: string }
+  order: {
+    id: number
+    title: string
+    organization: { subdivisions: { id: number; name: string }[] }
+  }
+}) {
+  return serializeForClient({
+    orderId: item.order.id,
+    orderTitle: item.order.title,
+    item: {
+      id: item.id,
+      dueAt: item.dueAt.toISOString(),
+      status: item.status,
+      subdivision: item.subdivision,
+      measure: item.measure,
+    },
+    subdivisions: item.order.organization.subdivisions,
+  })
+}
+
+export function serializeOrderItemResponseContext(item: {
+  id: number
+  measure: { id: number; name: string }
+  order: { id: number; title: string }
+}) {
+  return serializeForClient({
+    orderId: item.order.id,
+    orderTitle: item.order.title,
+    item: {
+      id: item.id,
+      measure: item.measure,
+    },
+  })
+}
+
+export function serializeOrderItemDelaysContext(item: {
+  id: number
+  measure: { id: number; name: string }
+  order: { id: number; title: string }
+  delayRequests: {
+    id: number
+    status: string
+    requestedDueAt: Date
+    justification: string | null
+    createdAt: Date
+  }[]
+}) {
+  return serializeForClient({
+    orderId: item.order.id,
+    orderTitle: item.order.title,
+    measureName: item.measure.name,
+    delayRequests: item.delayRequests.map((delay) => ({
+      id: delay.id,
+      status: delay.status,
+      requestedDueAt: delay.requestedDueAt.toISOString(),
+      justification: delay.justification,
+      createdAt: delay.createdAt.toISOString(),
+    })),
+  })
 }
 
 export function serializeResponseDetail(response: ResponseDetail | object): ResponseDetail {

@@ -29,7 +29,7 @@ const VARIANT_CONFIG: Record<
     needsStatuses: true,
     needsToken: true,
     defaultScope: "organization",
-    suspenseChartsDefault: false,
+    suspenseChartsDefault: true,
   },
   report: {
     tableKind: "matrix",

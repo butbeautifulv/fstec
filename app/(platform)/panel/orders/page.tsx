@@ -4,11 +4,11 @@ import { OrdersPageActions } from "@/components/platform/resource-page-actions"
 import { PageHeader } from "@/components/shared/page-header"
 import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
 import { labels } from "@/lib/ui/branding"
-import { listOrders } from "@/lib/orders"
+import { getCachedListOrders } from "@/lib/cache/list-orders"
 import { serializeOrders } from "@/lib/serialize/panel"
 
 async function OrdersTableSection() {
-  const orders = await listOrders()
+  const orders = await getCachedListOrders()
   return <OrdersTable initialOrders={serializeOrders(orders)} />
 }
 

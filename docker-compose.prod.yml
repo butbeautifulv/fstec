@@ -1,0 +1,198 @@
+# Production stack: compiled Next.js + TLS nginx (non-root) + Postgres + Redis + MinIO
+#
+# Quick start:
+#   cp .env.production.example .env.production
+#   sh docker/scripts/generate-dev-certs.sh
+#   sh docker/scripts/prod-scale.sh --build -d
+#   open https://localhost:8443  (accept self-signed cert)
+#
+# Scale tiers (powers of 2):
+#   SCALE_TIER=0  → 1 app, single-node data layer
+#   SCALE_TIER=3  → 8 app, HA postgres/redis/minio
+#
+# Optional seed (first run):
+#   sh docker/scripts/prod-scale.sh --profile seed run --rm seed      # single
+#   sh docker/scripts/prod-scale.sh --profile seed run --rm seed-ha  # ha
+
+name: fstec-prod
+
+services:
+  db:
+    profiles: ["single"]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-fstec}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-fstec}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fstec} -d ${POSTGRES_DB:-fstec}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+
+  redis:
+    profiles: ["single"]
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks: [internal]
+
+  minio:
+    profiles: ["single"]
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:?set S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:?set S3_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [internal]
+
+  minio-init:
+    profiles: ["single"]
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET:-fstec-attachments}
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 $$S3_ACCESS_KEY $$S3_SECRET_KEY &&
+      mc mb local/$$S3_BUCKET --ignore-existing
+      "
+    restart: "no"
+    networks: [internal]
+
+  migrate:
+    profiles: ["single"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrate
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fstec}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fstec}?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fstec}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fstec}?schema=public
+      REDIS_URL: redis://redis:6379
+      SESSION_SECRET: ${SESSION_SECRET:?set SESSION_SECRET}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-local}
+      AD_LDAP_URL: ${AD_LDAP_URL:-}
+      AD_BASE_DN: ${AD_BASE_DN:-}
+      KEYCLOAK_ISSUER: ${KEYCLOAK_ISSUER:-}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID:-}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET:-}
+      KEYCLOAK_REDIRECT_URI: ${KEYCLOAK_REDIRECT_URI:-https://localhost:8443/api/auth/keycloak/callback}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET:-fstec-attachments}
+      S3_FORCE_PATH_STYLE: "true"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    networks: [internal]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+      args:
+        NGINX_BENCH_MODE: ${NGINX_BENCH_MODE:-0}
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "${HTTPS_PORT:-8443}:8443"
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    networks: [internal]
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /var/cache/nginx:size=32m,mode=1775
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  seed:
+    profiles: ["seed-single"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    working_dir: /app
+    command: ["npx", "tsx", "prisma/seed.ts"]
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-fstec}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-fstec}?schema=public
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@fstec.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+      SEED_MOCK: ${SEED_MOCK:-}
+    volumes:
+      - ./prisma:/app/prisma:ro
+      - ./lib:/app/lib:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [internal]
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

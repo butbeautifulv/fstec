@@ -9,8 +9,11 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { MIN_VISIBLE_DATA_TABLE_COLUMNS } from "@/lib/data-table/column-visibility"
 
 export function DataTableColumnToggle<TData>({ table }: { table: Table<TData> }) {
+  const visibleCount = table.getVisibleLeafColumns().length
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,18 +26,27 @@ export function DataTableColumnToggle<TData>({ table }: { table: Table<TData> })
         {table
           .getAllColumns()
           .filter((column) => column.getCanHide())
-          .map((column) => (
-            <DropdownMenuCheckboxItem
-              key={column.id}
-              className="capitalize"
-              checked={column.getIsVisible()}
-              onCheckedChange={(value) => column.toggleVisibility(!!value)}
-            >
-              {typeof column.columnDef.header === "string"
-                ? column.columnDef.header
-                : (column.columnDef.meta?.title ?? column.id)}
-            </DropdownMenuCheckboxItem>
-          ))}
+          .map((column) => {
+            const isVisible = column.getIsVisible()
+            const hideLocked = isVisible && visibleCount <= MIN_VISIBLE_DATA_TABLE_COLUMNS
+
+            return (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                className="capitalize"
+                checked={isVisible}
+                disabled={hideLocked}
+                onCheckedChange={(value) => {
+                  if (!value && hideLocked) return
+                  column.toggleVisibility(!!value)
+                }}
+              >
+                {typeof column.columnDef.header === "string"
+                  ? column.columnDef.header
+                  : (column.columnDef.meta?.title ?? column.id)}
+              </DropdownMenuCheckboxItem>
+            )
+          })}
       </DropdownMenuContent>
     </DropdownMenu>
   )

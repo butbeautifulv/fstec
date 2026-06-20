@@ -1,6 +1,16 @@
+import { invalidateKeys } from "@/lib/cache/json-cache"
 import { prisma } from "@/lib/db"
 import { activeLinkWhere } from "@/lib/links/active-where"
 import { generateLinkToken } from "@/lib/links/generate-token"
+
+function accessLinkCacheKey(token: string) {
+  return `access-link:${token}`
+}
+
+async function invalidateAccessLinkTokens(tokens: string[]) {
+  if (tokens.length === 0) return
+  await invalidateKeys(...tokens.map(accessLinkCacheKey))
+}
 
 export async function createOrganizationAccessLink(organizationId: number) {
   await revokeActiveLinks(organizationId, null)
@@ -33,6 +43,15 @@ async function revokeActiveLinks(
   organizationId: number,
   subdivisionId: number | null
 ) {
+  const activeLinks = await prisma.accessLink.findMany({
+    where: {
+      organizationId,
+      subdivisionId,
+      revokedAt: null,
+    },
+    select: { token: true },
+  })
+
   await prisma.accessLink.updateMany({
     where: {
       organizationId,
@@ -41,13 +60,17 @@ async function revokeActiveLinks(
     },
     data: { revokedAt: new Date() },
   })
+
+  await invalidateAccessLinkTokens(activeLinks.map((link) => link.token))
 }
 
 export async function revokeAccessLink(linkId: number) {
-  return prisma.accessLink.update({
+  const link = await prisma.accessLink.update({
     where: { id: linkId },
     data: { revokedAt: new Date() },
   })
+  await invalidateAccessLinkTokens([link.token])
+  return link
 }
 
 export async function getOrganizationLinks(organizationId: number) {

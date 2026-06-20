@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client"
-import { prisma } from "@/lib/db"
+import { prismaRead } from "@/lib/db"
 
 export const ORDER_ITEM_DETAIL_INCLUDE = {
   measure: true,
@@ -27,7 +27,7 @@ export type OrderItemDetail = Prisma.OrderItemGetPayload<{
 export async function fetchOrderItemDetail(
   where: Prisma.OrderItemWhereInput
 ): Promise<OrderItemDetail | null> {
-  return prisma.orderItem.findFirst({
+  return prismaRead.orderItem.findFirst({
     where,
     include: ORDER_ITEM_DETAIL_INCLUDE,
   })
@@ -36,7 +36,7 @@ export async function fetchOrderItemDetail(
 export async function fetchOrderItemDetailById(
   id: number
 ): Promise<OrderItemDetail | null> {
-  return prisma.orderItem.findUnique({
+  return prismaRead.orderItem.findUnique({
     where: { id },
     include: ORDER_ITEM_DETAIL_INCLUDE,
   })

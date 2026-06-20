@@ -30,13 +30,21 @@ export type SerializedDashboardDto = {
   items: SerializedMatrixItem[]
 }
 
-export function serializeDashboardDto(data: {
-  stats: ScopedDashboardStats
-  items: DashboardMatrixItem[]
-}): SerializedDashboardDto {
+export function serializeDashboardDto(
+  data: {
+    stats: ScopedDashboardStats
+    items: DashboardMatrixItem[]
+  },
+  options?: { limit?: number }
+): SerializedDashboardDto {
+  const items =
+    options?.limit != null && options.limit > 0
+      ? data.items.slice(0, options.limit)
+      : data.items
+
   return {
     stats: data.stats,
-    items: data.items.map(serializeMatrixItem),
+    items: items.map(serializeMatrixItem),
   }
 }
 

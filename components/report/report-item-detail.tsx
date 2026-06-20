@@ -1,17 +1,9 @@
 "use client"
 
 import { ResponseReviewStatus } from "@prisma/client"
-import { ItemDetailHeaderActions } from "@/components/shared/item-detail/item-detail-header-actions"
-import { ItemDueStatusCard } from "@/components/shared/item-detail/item-due-status-card"
-import { ItemMeasureInfoCard } from "@/components/shared/item-detail/item-measure-info-card"
-import { ItemResponseCard } from "@/components/shared/item-detail/item-response-card"
-import { PageHeader } from "@/components/shared/page-header"
-import {
-  getDisplayStatusName,
-  isCompleted,
-  isOrderItemOverdue,
-} from "@/lib/statuses/workflow"
-import { getItemDetailStatusVariant } from "@/lib/ui/item-detail-status"
+import { ItemDetailOverview } from "@/components/shared/item-detail/item-detail-overview"
+import { ItemReportWorkflowCard } from "@/components/shared/item-detail/item-report-workflow-card"
+import { getItemDetailDisplayState } from "@/lib/ui/item-detail-display"
 
 type ReportItem = {
   id: number
@@ -39,62 +31,45 @@ export function ReportItemDetail({
   token: string
   item: ReportItem
 }) {
-  const isOverdue = isOrderItemOverdue(item)
-  const isPendingReview = item.latestResponse?.reviewStatus === ResponseReviewStatus.PENDING
-  const displayStatus = isPendingReview ? "На проверке" : getDisplayStatusName(item)
-  const completed = isCompleted({
-    isTerminal: item.status.isTerminal ?? false,
-    name: item.status.name,
-  })
+  const {
+    isOverdue,
+    completed,
+    isPendingReview,
+    isRejected,
+    canSubmitReport,
+    displayStatus,
+    statusVariant,
+  } = getItemDetailDisplayState(item, item.latestResponse)
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6">
-      <PageHeader
-        title={item.measure.name}
-        description={`${item.organizationName}${item.subdivisionName ? ` · ${item.subdivisionName}` : ""}`}
-        backHref={`/report/${token}`}
-        backLabel="Назад к сводке"
-        actions={
-          <ItemDetailHeaderActions
-            code={item.measure.code}
-            orderTitle={item.orderTitle}
-            orderHref={`/report/${token}/orders/${item.orderId}`}
-          />
-        }
-      />
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ItemMeasureInfoCard
-          description={item.measure.description}
-          organizationName={item.organizationName}
-          subdivisionName={item.subdivisionName}
-        />
-
-        <ItemDueStatusCard
-          dueAt={item.dueAt}
-          displayStatus={displayStatus}
-          isOverdue={isOverdue}
-          statusVariant={getItemDetailStatusVariant({
-            isOverdue,
-            isPendingReview,
-            completed,
-          })}
-        />
-      </div>
-
+    <ItemDetailOverview
+      title={item.measure.name}
+      description={`${item.organizationName}${item.subdivisionName ? ` · ${item.subdivisionName}` : ""}`}
+      backHref={`/report/${token}`}
+      backLabel="Назад к сводке"
+      measureCode={item.measure.code}
+      orderTitle={item.orderTitle}
+      orderHref={`/report/${token}/orders/${item.orderId}`}
+      measureDescription={item.measure.description}
+      organizationName={item.organizationName}
+      subdivisionName={item.subdivisionName}
+      dueAt={item.dueAt}
+      displayStatus={displayStatus}
+      isOverdue={isOverdue}
+      statusVariant={statusVariant}
+    >
       {item.latestResponse && (
-        <ItemResponseCard
-          result={item.latestResponse.result}
-          commentary={item.latestResponse.commentary}
-          submittedAt={item.latestResponse.submittedAt}
-          submittedByLabel={item.latestResponse.submittedByLabel}
-          reviewStatus={item.latestResponse.reviewStatus}
-          attachments={item.latestResponse.attachments}
+        <ItemReportWorkflowCard
+          completed={completed}
+          isPendingReview={isPendingReview}
+          isRejected={isRejected}
+          canSubmitReport={canSubmitReport}
+          latestResponse={item.latestResponse}
           attachmentViewUrl={(attachmentId) =>
             `/api/report/${token}/attachments/${attachmentId}`
           }
         />
       )}
-    </div>
+    </ItemDetailOverview>
   )
 }

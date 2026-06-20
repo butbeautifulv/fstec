@@ -1,0 +1,18 @@
+# FSTEC UI performance benchmark (post UI perf phase)
+# date: 2026-06-20
+# tier: 3 (8 app + HA data layer)
+# duration: 15s, concurrency: 20, direct app:3000
+
+## Results
+
+| Endpoint | Requests | Duration | Approx RPS |
+|----------|----------|----------|------------|
+| /login | 3286 | 15.1s | ~218 |
+| /p/dev-rost | 434 | 15.1s | ~29 |
+
+## Notes
+
+- Redis cache enabled for dashboard, statuses, access links, panel counts, list pages
+- RSC streaming: PageHeader renders before dashboard Suspense resolves
+- Next.js cacheHandler on Redis (production)
+- nginx: /_next/static immutable cache + brotli
