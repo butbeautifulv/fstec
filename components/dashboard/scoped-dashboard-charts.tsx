@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic"
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import { DashboardChartCard } from "@/components/dashboard/dashboard-chart-card"
+import { DashboardChartBodySkeleton } from "@/components/dashboard/dashboard-chart-body-skeleton"
 import { DashboardChartCardSkeleton } from "@/components/dashboard/dashboard-chart-card-skeleton"
 import { ChartsLazyBoundary } from "@/components/dashboard/charts-lazy-boundary"
 import { ChartEmptyState } from "@/components/dashboard/dashboard-chart-shared"
@@ -23,7 +24,7 @@ const OverdueBreakdownChartSection = dynamic(
     import("@/components/dashboard/overdue-breakdown-chart-section").then(
       (mod) => mod.OverdueBreakdownChartSection
     ),
-  { loading: () => null }
+  { loading: () => <DashboardChartBodySkeleton /> }
 )
 
 const CompletionBreakdownChartSection = dynamic(
@@ -31,7 +32,7 @@ const CompletionBreakdownChartSection = dynamic(
     import("@/components/dashboard/completion-breakdown-chart-section").then(
       (mod) => mod.CompletionBreakdownChartSection
     ),
-  { loading: () => null }
+  { loading: () => <DashboardChartBodySkeleton /> }
 )
 
 export function ScopedDashboardCharts({

@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { MotionPressable } from "@/components/motion"
 import { cn } from "@/lib/utils"
 
 export function DashboardChartCard({
@@ -33,15 +34,17 @@ export function DashboardChartCard({
         <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
           <CardTitle className="text-base">{title}</CardTitle>
           {expandable ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setOpen(true)}
-              aria-label={`Развернуть: ${title}`}
-            >
-              <Maximize2Icon />
-            </Button>
+            <MotionPressable>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setOpen(true)}
+                aria-label={`Развернуть: ${title}`}
+              >
+                <Maximize2Icon />
+              </Button>
+            </MotionPressable>
           ) : null}
         </CardHeader>
         <CardContent className="flex flex-1 flex-col pt-0">{children}</CardContent>

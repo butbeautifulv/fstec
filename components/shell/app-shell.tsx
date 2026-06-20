@@ -1,6 +1,8 @@
 "use client"
 
+import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { MotionPageEnter } from "@/components/motion"
 import { SidebarAutoCollapse } from "@/components/shell/sidebar-auto-collapse"
 import {
   SidebarInset,
@@ -20,6 +22,8 @@ export function AppShell({
   provider?: React.ComponentType<{ children: React.ReactNode }>
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+
   const body = (
     <>
       <SidebarAutoCollapse />
@@ -34,9 +38,9 @@ export function AppShell({
           <ThemeToggle />
         </div>
       </header>
-      <div className="@container/main flex min-w-0 flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+      <MotionPageEnter pageKey={pathname} className="@container/main flex min-w-0 flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         {children}
-      </div>
+      </MotionPageEnter>
     </>
   )
 

@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
+import { MotionStagger, MotionStaggerItem } from "@/components/motion"
 import { cn } from "@/lib/utils"
 import {
   OVERDUE_LABEL,
@@ -90,7 +91,7 @@ export function DashboardStatCards({
   })
 
   return (
-    <div className="grid grid-cols-1 gap-4 @2xl/main:grid-cols-2 @4xl/main:grid-cols-4">
+    <MotionStagger className="grid grid-cols-1 gap-4 @2xl/main:grid-cols-2 @4xl/main:grid-cols-4">
       {cards.map((card) => {
         const interactive = Boolean(onStatusClick)
         const isActive = interactive && activeStatus === card.status
@@ -118,29 +119,30 @@ export function DashboardStatCards({
         )
 
         return (
-          <Card
-            key={card.status}
-            className={cn(
-              "@container/card shadow-xs transition-colors",
-              interactive && "hover:ring-2 hover:ring-ring/40",
-              isActive && "ring-2 ring-primary"
-            )}
-          >
-            {interactive ? (
-              <button
-                type="button"
-                className="w-full text-left"
-                aria-pressed={isActive}
-                onClick={() => onStatusClick?.(card.status)}
-              >
-                {cardBody}
-              </button>
-            ) : (
-              cardBody
-            )}
-          </Card>
+          <MotionStaggerItem key={card.status}>
+            <Card
+              className={cn(
+                "@container/card shadow-xs transition-colors",
+                interactive && "hover:ring-2 hover:ring-ring/40",
+                isActive && "ring-2 ring-primary"
+              )}
+            >
+              {interactive ? (
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  aria-pressed={isActive}
+                  onClick={() => onStatusClick?.(card.status)}
+                >
+                  {cardBody}
+                </button>
+              ) : (
+                cardBody
+              )}
+            </Card>
+          </MotionStaggerItem>
         )
       })}
-    </div>
+    </MotionStagger>
   )
 }

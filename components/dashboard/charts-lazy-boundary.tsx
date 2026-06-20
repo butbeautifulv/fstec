@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, type ReactNode } from "react"
+import { MotionFadeIn } from "@/components/motion"
 
 export function ChartsLazyBoundary({
   children,
@@ -34,5 +35,5 @@ export function ChartsLazyBoundary({
     return () => observer.disconnect()
   }, [inView, rootMargin])
 
-  return <div ref={ref}>{inView ? children : fallback}</div>
+  return <div ref={ref}>{inView ? <MotionFadeIn>{children}</MotionFadeIn> : fallback}</div>
 }

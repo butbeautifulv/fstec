@@ -10,12 +10,15 @@ RUN apk add --no-cache openssl curl \
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY conf.d/ /etc/nginx/conf.d/
 COPY snippets/ /etc/nginx/snippets/
+RUN rm -f /etc/nginx/conf.d/default.conf
 
 RUN if [ "$NGINX_BENCH_MODE" = "1" ]; then \
-  sed -i 's/rate=20r\/s/rate=200r\/s/' /etc/nginx/nginx.conf && \
-  sed -i 's/rate=10r\/s/rate=100r\/s/' /etc/nginx/nginx.conf && \
-  sed -i 's/burst=40/burst=400/' /etc/nginx/conf.d/fstec.conf && \
-  sed -i 's/burst=20/burst=200/' /etc/nginx/conf.d/fstec.conf; \
+  sed -i 's/rate=40r\/s/rate=400r\/s/' /etc/nginx/conf.d/fstec.conf && \
+  sed -i 's/rate=200r\/s/rate=2000r\/s/' /etc/nginx/conf.d/fstec.conf && \
+  sed -i 's/rate=20r\/s/rate=200r\/s/' /etc/nginx/conf.d/fstec.conf && \
+  sed -i 's/burst=80/burst=800/' /etc/nginx/conf.d/fstec.conf && \
+  sed -i 's/burst=400/burst=4000/' /etc/nginx/conf.d/fstec.conf && \
+  sed -i 's/burst=40/burst=400/' /etc/nginx/conf.d/fstec.conf; \
   fi
 
 USER nginx

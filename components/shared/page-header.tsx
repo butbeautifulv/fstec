@@ -1,5 +1,8 @@
+"use client"
+
 import Link from "next/link"
 import type { ReactNode } from "react"
+import { MotionFadeIn } from "@/components/motion"
 import { TypographyH2, TypographyMuted } from "@/components/ui/typography"
 import { cn } from "@/lib/utils"
 
@@ -19,7 +22,7 @@ export function PageHeader({
   className?: string
 }) {
   return (
-    <div className={cn("flex flex-col gap-1", className)}>
+    <MotionFadeIn className={cn("flex flex-col gap-1", className)}>
       {backHref && (
         <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
           ← {backLabel}
@@ -36,6 +39,6 @@ export function PageHeader({
           </div>
         )}
       </div>
-    </div>
+    </MotionFadeIn>
   )
 }

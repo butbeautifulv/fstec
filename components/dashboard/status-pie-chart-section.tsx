@@ -17,6 +17,7 @@ import {
   hasStatusFilter,
   INACTIVE_OPACITY,
 } from "@/components/dashboard/dashboard-chart-shared"
+import { MotionFadeIn } from "@/components/motion"
 import type { ChartSize } from "@/components/dashboard/chart-category-viewport"
 import { cn } from "@/lib/utils"
 import { isStatusFilterActive } from "@/lib/dashboard/chart-filters"
@@ -53,12 +54,13 @@ export function StatusPieChartSection({
   }))
 
   const chart = (
-    <div
-      className={cn(
-        "relative mx-auto",
-        isCard ? "flex h-full w-full items-center justify-center" : "w-full"
-      )}
-    >
+    <MotionFadeIn className="h-full w-full">
+      <div
+        className={cn(
+          "relative mx-auto",
+          isCard ? "flex h-full w-full items-center justify-center" : "w-full"
+        )}
+      >
       <div
         className={cn(
           "relative",
@@ -116,6 +118,7 @@ export function StatusPieChartSection({
         </div>
       </div>
     </div>
+    </MotionFadeIn>
   )
 
   return (

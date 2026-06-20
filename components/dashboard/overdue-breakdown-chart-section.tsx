@@ -23,6 +23,7 @@ import {
   INACTIVE_OPACITY,
   CARD_CHART_HEIGHT,
 } from "@/components/dashboard/dashboard-chart-shared"
+import { MotionFadeIn } from "@/components/motion"
 import { cn } from "@/lib/utils"
 import type { BreakdownRow, StatusDistribution } from "@/lib/dashboard/stats"
 import {
@@ -250,15 +251,17 @@ export function OverdueBreakdownChartSection({
   }
 
   return (
-    <DashboardChartLayout
-      size={size}
-      chart={chart}
-      legend={
-        <DashboardChartLegend
-          items={overdueLegendItems}
-          onItemClick={(key) => onOverdueLegendClick?.(key as OverdueChartSegment)}
-        />
-      }
-    />
+    <MotionFadeIn className="h-full">
+      <DashboardChartLayout
+        size={size}
+        chart={chart}
+        legend={
+          <DashboardChartLegend
+            items={overdueLegendItems}
+            onItemClick={(key) => onOverdueLegendClick?.(key as OverdueChartSegment)}
+          />
+        }
+      />
+    </MotionFadeIn>
   )
 }

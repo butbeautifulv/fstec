@@ -23,6 +23,7 @@ import {
   hasStatusFilter,
   INACTIVE_OPACITY,
 } from "@/components/dashboard/dashboard-chart-shared"
+import { MotionFadeIn } from "@/components/motion"
 import type { StatusBreakdownRow, StatusDistribution } from "@/lib/dashboard/stats"
 import {
   isBreakdownFilterActive,
@@ -201,15 +202,17 @@ export function CompletionBreakdownChartSection({
   )
 
   return (
-    <DashboardChartLayout
-      size={size}
-      chart={chart}
-      legend={
-        <DashboardChartLegend
-          items={completionLegendItems}
-          onItemClick={onCompletionLegendClick}
-        />
-      }
-    />
+    <MotionFadeIn className="h-full">
+      <DashboardChartLayout
+        size={size}
+        chart={chart}
+        legend={
+          <DashboardChartLegend
+            items={completionLegendItems}
+            onItemClick={onCompletionLegendClick}
+          />
+        }
+      />
+    </MotionFadeIn>
   )
 }
