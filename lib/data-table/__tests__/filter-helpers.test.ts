@@ -162,7 +162,7 @@ describe("createOrderItemContextColumns", () => {
 
     expect(columns.map((c) => c.id)).toEqual([
       "organization",
-      "subdivision",
+      "subdivisionName",
       "order",
       "measure",
     ])
@@ -181,7 +181,7 @@ describe("createOrderItemContextColumns", () => {
 
     expect(columns.map((c) => c.id)).toEqual([
       "organization",
-      "subdivision",
+      "subdivisionName",
       "order",
       "measure",
     ])
