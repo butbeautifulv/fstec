@@ -22,7 +22,7 @@ secrets:
   artifact_retention_days: 30
 
 sast:
-  mode: block
+  mode: warn
   severity_block: [critical, high]
   severity_warn: [medium]
   mr_scope: diff

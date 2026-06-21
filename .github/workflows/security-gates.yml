@@ -25,7 +25,7 @@ jobs:
           fetch-depth: 0
       - name: Scan
         run: |
-          docker run --rm -v "$PWD:/repo" -w /repo "${{ env.OSS_GITLEAKS_IMAGE }}" \
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/repo" -w /repo "${{ env.OSS_GITLEAKS_IMAGE }}" \
             detect --source . --report-format sarif --report-path gitleaks.sarif || true
       - uses: ./.github/actions/gate-and-export
         if: always()
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Semgrep scan
         run: |
-          docker run --rm -v "$PWD:/src" "${{ env.OSS_SEMGREP_IMAGE }}" \
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/src" "${{ env.OSS_SEMGREP_IMAGE }}" \
             semgrep scan --config p/ci --sarif -o /src/semgrep.sarif /src || true
       - uses: ./.github/actions/gate-and-export
         if: always()
@@ -57,7 +57,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Scan npm lockfile
         run: |
-          docker run --rm -v "$PWD:/work" -w /work "${{ env.OSS_TRIVY_IMAGE }}" \
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/work" -w /work "${{ env.OSS_TRIVY_IMAGE }}" \
             fs package-lock.json --scanners vuln --severity CRITICAL,HIGH,MEDIUM \
             --format sarif --output osa.sarif || true
       - uses: ./.github/actions/gate-and-export

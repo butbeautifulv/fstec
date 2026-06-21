@@ -7,6 +7,15 @@ import sys
 from pathlib import Path
 
 
+def is_valid(data: dict) -> bool:
+    if not isinstance(data, dict) or not data.get("version"):
+        return False
+    runs = data.get("runs")
+    if not isinstance(runs, list) or not runs:
+        return False
+    return all(isinstance(run, dict) and run.get("tool") for run in runs)
+
+
 def normalize(path: Path, tool_name: str = "scanner") -> None:
     if path.exists() and path.stat().st_size > 0:
         try:
@@ -15,6 +24,9 @@ def normalize(path: Path, tool_name: str = "scanner") -> None:
             data = {}
     else:
         data = {}
+
+    if is_valid(data):
+        return
 
     data.setdefault("version", "2.1.0")
     runs = data.get("runs")
@@ -30,6 +42,7 @@ def normalize(path: Path, tool_name: str = "scanner") -> None:
         elif not tool["driver"].get("name"):
             tool["driver"]["name"] = tool_name
     data["runs"] = runs
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
