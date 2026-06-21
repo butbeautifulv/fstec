@@ -59,6 +59,10 @@ Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
 Production deploy: [docs/deployment.md](docs/deployment.md).
 
+## Unified dashboard summary
+
+All dashboard views (platform `/panel`, public `/p/[token]`, report `/report/[token]`) use `ScopedDashboardPageShell` with a single `DashboardScope`. Variant (`platform` | `public` | `report`) controls auth and table shape; scope type (`global` | `organization` | `subdivision`) drives chart breakdown and filters. Route pages should use `buildDashboardPageProps()` from `lib/dashboard/build-dashboard-page-props.ts`.
+
 Measure import (DOCX): `/panel/measures/imports`, tests: `npm run test` (batched vitest via `scripts/test-batch.mjs`).
 
 ## Multi-phase work

@@ -110,9 +110,10 @@ export function CompletionBreakdownChartSection({
           <BarChart
             data={statusBreakdown}
             barCategoryGap={layout.barCategoryGap}
-            barGap={categoryCount > 5 ? 1 : 2}
+            barGap={categoryCount > 5 ? 2 : 3}
+            maxBarSize={layout.maxBarSize}
             margin={{
-              top: 8,
+              top: 14,
               right: 40,
               left: 12,
               bottom: layout.chartMarginBottom,

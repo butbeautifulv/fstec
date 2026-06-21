@@ -5,7 +5,6 @@ import { OverdueFilterActions } from "@/components/dashboard/overdue-filter-acti
 import { PageHeader } from "@/components/shared/page-header"
 import type { PublicStatus } from "@/lib/public/types"
 import type { DashboardScope } from "@/lib/dashboard/stats"
-import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
 import type { DashboardVariant } from "@/lib/dashboard/interactive-props"
 import { getDashboardVariantConfig } from "@/lib/dashboard/variant-config"
 
@@ -20,24 +19,24 @@ type BaseShellProps = {
   extraActions?: ReactNode
   suspenseCharts?: boolean
   itemLimit?: number
+  beforeContent?: ReactNode
+  breadcrumbEffect?: ReactNode
 }
 
 type PlatformShellProps = BaseShellProps & {
   variant: "platform"
-  chartScope?: ChartFilterScope
 }
 
 type ReportShellProps = BaseShellProps & {
   variant: "report"
   token: string
+  linkScope: DashboardScope
 }
 
 type PublicShellProps = BaseShellProps & {
   variant: "public"
   token: string
   statuses: PublicStatus[]
-  publicScope: "organization" | "subdivision"
-  showSubdivisionColumn: boolean
 }
 
 export type ScopedDashboardPageShellProps =
@@ -56,6 +55,8 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
     extraActions,
     scope,
     itemLimit,
+    beforeContent,
+    breadcrumbEffect,
   } = props
 
   const config = getDashboardVariantConfig(props.variant)
@@ -63,6 +64,8 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
+      {breadcrumbEffect}
+      {beforeContent}
       <PageHeader
         title={title}
         description={description}

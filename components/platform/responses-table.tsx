@@ -27,6 +27,7 @@ export type ResponseTableRow = {
   orderItem: {
     id: number
     measure: { id: number; name: string }
+    subdivision: { id: number; name: string } | null
     order: {
       id: number
       title: string
@@ -47,6 +48,7 @@ export function ResponsesTable({
           organization: row.orderItem.order.organization,
           order: row.orderItem.order,
           measure: row.orderItem.measure,
+          subdivision: row.orderItem.subdivision,
         })
       ),
       {

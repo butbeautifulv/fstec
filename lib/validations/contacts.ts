@@ -11,6 +11,7 @@ export const createContactSchema = z.object({
 
 export const updateContactSchema = createContactSchema.partial().extend({
   isActive: z.boolean().optional(),
+  subdivisionId: z.number().int().positive().nullable().optional(),
 })
 
 export type CreateContactInput = z.infer<typeof createContactSchema>
@@ -24,3 +25,14 @@ export const CONTACT_ROLE_LABELS: Record<
   RESPONSIBLE: "Ответственный",
   NOTIFY: "Для оповещений",
 }
+
+export const CONTACT_ROLE_HINTS: Record<
+  z.infer<typeof contactRoleSchema>,
+  string
+> = {
+  PRIMARY: "Один на область — основной получатель оповещений",
+  RESPONSIBLE: "Ответственный за исполнение в области",
+  NOTIFY: "Дополнительный адрес для копий оповещений",
+}
+
+export const ORG_CONTACT_SCOPE_LABEL = "Вся организация"

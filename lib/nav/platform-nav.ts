@@ -29,19 +29,19 @@ const NAV_DEFS: NavDef[] = [
     permission: Permission.ordersRead,
   },
   {
+    title: "Письма",
+    href: "/panel/measures/imports",
+    icon: MailIcon,
+    match: (p) => p.startsWith("/panel/measures/imports"),
+    permission: Permission.measuresRead,
+  },
+  {
     title: "Меры",
     href: "/panel/measures",
     icon: ShieldIcon,
     match: (p) =>
       p === "/panel/measures" ||
       (p.startsWith("/panel/measures/") && !p.startsWith("/panel/measures/imports")),
-    permission: Permission.measuresRead,
-  },
-  {
-    title: "Письма",
-    href: "/panel/measures/imports",
-    icon: MailIcon,
-    match: (p) => p.startsWith("/panel/measures/imports"),
     permission: Permission.measuresRead,
   },
   {
@@ -52,11 +52,11 @@ const NAV_DEFS: NavDef[] = [
     permission: Permission.ordersRead,
   },
   {
-    title: labels.orgs,
-    href: "/panel/organizations",
-    icon: Building2Icon,
-    match: (p) => p === "/panel/organizations" || p.startsWith("/panel/organizations/"),
-    permission: Permission.orgsRead,
+    title: "Отчёты",
+    href: "/panel/responses",
+    icon: FileTextIcon,
+    match: (p) => p.startsWith("/panel/responses"),
+    permission: Permission.ordersRead,
   },
   {
     title: "Переносы",
@@ -66,11 +66,11 @@ const NAV_DEFS: NavDef[] = [
     permission: Permission.delaysRead,
   },
   {
-    title: "Отчёты",
-    href: "/panel/responses",
-    icon: FileTextIcon,
-    match: (p) => p.startsWith("/panel/responses"),
-    permission: Permission.ordersRead,
+    title: labels.orgs,
+    href: "/panel/organizations",
+    icon: Building2Icon,
+    match: (p) => p === "/panel/organizations" || p.startsWith("/panel/organizations/"),
+    permission: Permission.orgsRead,
   },
 ]
 

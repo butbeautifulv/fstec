@@ -16,6 +16,7 @@ import {
   DashboardChartLayout,
   DashboardChartLegend,
   WrappedXAxisTick,
+  OverdueCountLabel,
   barChartContainerClassName,
   formatChartLegendLabel,
   hasBreakdownFilter,
@@ -75,6 +76,7 @@ export function OverdueBreakdownChartSection({
     ...row,
     remainder: row.total - row.count,
   }))
+  const compactLabels = overdueChartData.length > 5
 
   const overdueTotal = overdueBreakdown.reduce((sum, row) => sum + row.count, 0)
   const nonOverdueTotal = overdueBreakdown.reduce(
@@ -100,21 +102,24 @@ export function OverdueBreakdownChartSection({
 
   const chart = (
     <ChartCategoryViewport categoryCount={overdueChartData.length} size={size}>
-      {(layout, chartWidth) => (
-        <ChartContainer
-          config={overdueChartConfig}
-          className={barChartContainerClassName(layout, size)}
-          initialDimension={
-            chartWidth
-              ? { width: chartWidth, height: layout.overdueInitial.height }
-              : layout.overdueInitial
-          }
-        >
+      {(layout, chartWidth) => {
+        const compact = layout.maxTickWidth != null || compactLabels
+        return (
+          <ChartContainer
+            config={overdueChartConfig}
+            className={barChartContainerClassName(layout, size)}
+            initialDimension={
+              chartWidth
+                ? { width: chartWidth, height: layout.overdueInitial.height }
+                : layout.overdueInitial
+            }
+          >
           <BarChart
             data={overdueChartData}
             barCategoryGap={layout.barCategoryGap}
+            maxBarSize={layout.maxBarSize}
             margin={{
-              top: 8,
+              top: 14,
               right: 12,
               left: 8,
               bottom: layout.chartMarginBottom,
@@ -178,26 +183,19 @@ export function OverdueBreakdownChartSection({
               })}
               <LabelList
                 dataKey="count"
-                position="top"
-                content={(props) => {
-                  const { x, y, width, value, index } = props
-                  if (value == null || x == null || y == null) return null
-                  const row = overdueChartData[index ?? 0]
-                  const total = row?.total ?? 0
-                  const pct =
-                    total > 0 ? Math.round((Number(value) / total) * 100) : 0
-                  return (
-                    <text
-                      x={Number(x) + Number(width ?? 0) / 2}
-                      y={Number(y) - 6}
-                      textAnchor="middle"
-                      className="fill-foreground text-xs font-medium"
-                      dominantBaseline="auto"
-                    >
-                      {`${value} · ${pct}%`}
-                    </text>
-                  )
-                }}
+                content={
+                  ((props: Record<string, unknown>) => {
+                    const index = props.index as number | undefined
+                    const row = overdueChartData[index ?? 0]
+                    return (
+                      <OverdueCountLabel
+                        {...props}
+                        total={row?.total}
+                        compact={compact}
+                      />
+                    )
+                  }) as never
+                }
               />
             </Bar>
             <Bar
@@ -232,8 +230,9 @@ export function OverdueBreakdownChartSection({
               })}
             </Bar>
           </BarChart>
-        </ChartContainer>
-      )}
+          </ChartContainer>
+        )
+      }}
     </ChartCategoryViewport>
   )
 

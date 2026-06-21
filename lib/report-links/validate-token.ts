@@ -2,15 +2,30 @@ import { cache } from "react"
 import { prisma } from "@/lib/db"
 import { isRevocableLinkActive } from "@/lib/links/is-active"
 import { fetchOrderItemDetailById } from "@/lib/order-items/fetch-detail"
+import {
+  isOrderItemInReportScope,
+  isOrganizationInReportScope,
+  isReportScopeAllowed,
+  scopeFromReportLink,
+} from "@/lib/report-links/scope"
+import type { DashboardScope } from "@/lib/dashboard/stats"
 
 const loadReportLink = cache(async (token: string) => {
   const link = await prisma.reportLink.findUnique({ where: { token } })
   if (!link || !isRevocableLinkActive(link)) return null
-  return { link }
+  const scope = scopeFromReportLink(link)
+  return { link, scope }
 })
 
 export async function validateReportToken(token: string) {
   return loadReportLink(token)
+}
+
+export function assertReportScopeAllowed(
+  ctx: { scope: DashboardScope },
+  requestedScope: DashboardScope
+): boolean {
+  return isReportScopeAllowed(ctx.scope, requestedScope)
 }
 
 export async function getOrderItemForReportToken(token: string, orderItemId: number) {
@@ -19,9 +34,11 @@ export async function getOrderItemForReportToken(token: string, orderItemId: num
 
   const item = await fetchOrderItemDetailById(orderItemId)
 
-  if (!item) throw new Error("NOT_FOUND")
+  if (!item || !isOrderItemInReportScope(ctx.scope, item)) {
+    throw new Error("NOT_FOUND")
+  }
 
-  return { link: ctx.link, item }
+  return { link: ctx.link, scope: ctx.scope, item }
 }
 
 export async function getOrderForReportToken(token: string, orderId: number) {
@@ -43,9 +60,24 @@ export async function getOrderForReportToken(token: string, orderId: number) {
     },
   })
 
-  if (!order || order.items.length === 0) return null
+  if (
+    !order ||
+    order.items.length === 0 ||
+    !isOrganizationInReportScope(ctx.scope, order.organizationId)
+  ) {
+    return null
+  }
 
-  return { link: ctx.link, order }
+  if (ctx.scope.type === "subdivision") {
+    const { subdivisionId } = ctx.scope
+    const scopedItems = order.items.filter(
+      (item) => item.subdivisionId === subdivisionId
+    )
+    if (scopedItems.length === 0) return null
+    return { link: ctx.link, scope: ctx.scope, order: { ...order, items: scopedItems } }
+  }
+
+  return { link: ctx.link, scope: ctx.scope, order }
 }
 
 export async function getOrganizationOrdersForReportToken(
@@ -53,7 +85,7 @@ export async function getOrganizationOrdersForReportToken(
   organizationId: number
 ) {
   const ctx = await validateReportToken(token)
-  if (!ctx) return null
+  if (!ctx || !isOrganizationInReportScope(ctx.scope, organizationId)) return null
 
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
@@ -70,5 +102,5 @@ export async function getOrganizationOrdersForReportToken(
     orderBy: { issuedAt: "desc" },
   })
 
-  return { link: ctx.link, organization, orders }
+  return { link: ctx.link, scope: ctx.scope, organization, orders }
 }

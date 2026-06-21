@@ -25,6 +25,7 @@ export type DelayRequestTableRow = {
     id: number
     dueAt: string
     measure: { id: number; name: string }
+    subdivision: { id: number; name: string } | null
     order: {
       id: number
       title: string
@@ -45,6 +46,7 @@ export function DelayRequestsTable({
           organization: row.orderItem.order.organization,
           order: row.orderItem.order,
           measure: row.orderItem.measure,
+          subdivision: row.orderItem.subdivision,
         })
       ),
       {

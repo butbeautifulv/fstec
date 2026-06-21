@@ -13,6 +13,11 @@ export async function listOrders(options?: { sourceImportId?: number }) {
       organization: true,
       createdBy: { select: { id: true, name: true } },
       _count: { select: { items: true } },
+      items: {
+        select: {
+          subdivision: { select: { id: true, name: true } },
+        },
+      },
     },
   })
 }

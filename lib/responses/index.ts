@@ -44,6 +44,7 @@ export async function listResponses(status?: ResponseReviewStatus) {
       orderItem: {
         include: {
           measure: { select: { id: true, name: true } },
+          subdivision: { select: { id: true, name: true } },
           order: {
             select: {
               id: true,

@@ -8,7 +8,7 @@ import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-al
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTableShell } from "@/components/platform/data-table-shell"
-import { ShareLinkActions } from "@/components/shared/share-link-actions"
+import { ShareLinkField } from "@/components/shared/share-link-field"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { reportSharePath } from "@/lib/report-links/scoped-path"
 import { labels } from "@/lib/ui/branding"
 import { notify } from "@/lib/ui/feedback"
 import { Pencil, Plus, Trash2 } from "lucide-react"
@@ -42,18 +43,20 @@ function getActiveForSubdivision(links: LinkRow[], subdivisionId: number | null)
   })
 }
 
-function CopyLinkButton({ token }: { token: string }) {
-  return <ShareLinkActions path={`/p/${token}`} />
-}
-
 export function OrgLinksPanel({
   organizationId,
   initialSubdivisions,
   initialLinks,
+  orgReportToken = null,
+  subReportTokens = {},
+  canManageReportLinks = false,
 }: {
   organizationId: number
   initialSubdivisions: Subdivision[]
   initialLinks: LinkRow[]
+  orgReportToken?: string | null
+  subReportTokens?: Record<number, string>
+  canManageReportLinks?: boolean
 }) {
   const router = useRouter()
   const [subdivisions, setSubdivisions] = useState(initialSubdivisions)
@@ -114,23 +117,42 @@ export function OrgLinksPanel({
   }
 
   const orgLink = getActiveForSubdivision(links, null)
+  const orgReportPath = orgReportToken ? reportSharePath(orgReportToken) : null
 
   return (
     <div className="flex flex-col gap-6">
       <div className="rounded-md border p-4">
+        <h2 className="mb-1 font-medium">Отчёт (только просмотр)</h2>
+        <p className="mb-3 text-sm text-muted-foreground">
+          Отдельная ссылка на сводку по организации — без доступа к остальным срезам.
+        </p>
+        {orgReportPath ? (
+          <ShareLinkField
+            path={orgReportPath}
+            copySuccessMessage="Ссылка на отчёт скопирована"
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            {canManageReportLinks
+              ? "Создайте ссылку на отчёт в сводке организации или в Настройки → Публичные ссылки."
+              : "Ссылка на отчёт ещё не создана. Обратитесь к администратору."}
+          </p>
+        )}
+      </div>
+
+      <div className="rounded-md border p-4">
         <h2 className="mb-3 font-medium">Ссылка {labels.orgGenitive} (все меры организации)</h2>
         {orgLink ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <code className="rounded bg-muted px-2 py-1 font-mono text-xs">
-              /p/{orgLink.token.slice(0, 16)}…
-            </code>
-            <CopyLinkButton token={orgLink.token} />
-            <Button size="sm" variant="outline" onClick={() => revoke(orgLink.id)}>
-              Отозвать
-            </Button>
-            <Button size="sm" variant="outline" onClick={generateOrgLink}>
-              Новая ссылка
-            </Button>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <ShareLinkField path={`/p/${orgLink.token}`} className="flex-1" />
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => revoke(orgLink.id)}>
+                Отозвать
+              </Button>
+              <Button size="sm" variant="outline" onClick={generateOrgLink}>
+                Новая ссылка
+              </Button>
+            </div>
           </div>
         ) : (
           <Button size="sm" onClick={generateOrgLink}>
@@ -154,14 +176,15 @@ export function OrgLinksPanel({
             <TableHeader>
               <TableRow>
                 <TableHead>Название</TableHead>
-                <TableHead>Ссылка</TableHead>
+                <TableHead>Portal (/p/)</TableHead>
+                <TableHead>Отчёт (/report/)</TableHead>
                 <TableHead className="w-[70px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
               {subdivisions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3}>
+                  <TableCell colSpan={4}>
                     <EmptyTableState
                       title="Нет подразделений"
                       description="Добавьте подразделения для разграничения доступа и генерации ссылок"
@@ -180,6 +203,10 @@ export function OrgLinksPanel({
               ) : (
                 subdivisions.map((sub) => {
                   const subLink = getActiveForSubdivision(links, sub.id)
+                  const subReportToken = subReportTokens[sub.id]
+                  const subReportPath = subReportToken
+                    ? reportSharePath(subReportToken)
+                    : null
                   return (
                     <TableRow key={sub.id}>
                       <TableCell className="max-w-0 w-[30%]">
@@ -190,23 +217,33 @@ export function OrgLinksPanel({
                       </TableCell>
                       <TableCell>
                         {subLink ? (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <code className="font-mono text-xs">
-                              /p/{subLink.token.slice(0, 12)}…
-                            </code>
-                            <CopyLinkButton token={subLink.token} />
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => revoke(subLink.id)}
-                            >
-                              Отозвать
-                            </Button>
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                            <ShareLinkField path={`/p/${subLink.token}`} className="min-w-[20rem]" />
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => revoke(subLink.id)}
+                              >
+                                Отозвать
+                              </Button>
+                            </div>
                           </div>
                         ) : (
                           <Button size="sm" onClick={() => generateSubLink(sub.id)}>
                             Создать
                           </Button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {subReportPath ? (
+                          <ShareLinkField
+                            path={subReportPath}
+                            className="min-w-[20rem]"
+                            copySuccessMessage="Ссылка на отчёт скопирована"
+                          />
+                        ) : (
+                          "—"
                         )}
                       </TableCell>
                       <TableCell>

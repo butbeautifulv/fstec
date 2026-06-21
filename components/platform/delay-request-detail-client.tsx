@@ -33,6 +33,7 @@ export type DelayRequestDetail = {
     id: number
     dueAt: string
     measure: { id: number; name: string }
+    subdivision: { id: number; name: string } | null
     order: {
       id: number
       title: string
@@ -163,6 +164,17 @@ export function DelayRequestDetailClient({
                 {delay.orderItem.order.organization.name}
               </Link>
             </div>
+            {delay.orderItem.subdivision && (
+              <div className="flex flex-col gap-1">
+                <span className="text-muted-foreground">Подразделение</span>
+                <Link
+                  href={`/panel/organizations/${delay.orderItem.order.organization.id}/subdivisions/${delay.orderItem.subdivision.id}/dashboard`}
+                  className="font-medium hover:underline"
+                >
+                  {delay.orderItem.subdivision.name}
+                </Link>
+              </div>
+            )}
             <div className="flex flex-col gap-1">
               <span className="text-muted-foreground">Поручение</span>
               <Link

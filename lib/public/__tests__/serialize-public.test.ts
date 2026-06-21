@@ -30,7 +30,7 @@ describe("mapOrderItemsToPublicItems", () => {
             dueAt,
             measure: { name: "M1", code: "C1", description: "Desc" },
             status: { id: 1, name: "К исполнению", isTerminal: false },
-            subdivision: { name: "IT" },
+            subdivision: { id: 3, name: "IT" },
           },
         ]
       )
@@ -44,6 +44,7 @@ describe("mapOrderItemsToPublicItems", () => {
         orderTitle: "Order A",
         orderIssuedAt: "2024-01-15T00:00:00.000Z",
         subdivisionName: "IT",
+        subdivisionId: 3,
       },
     ])
   })
@@ -125,6 +126,7 @@ describe("mapMatrixItemToPublicItem", () => {
       orderTitle: "Order",
       orderIssuedAt: "2024-01-01T00:00:00.000Z",
       subdivisionName: "Sub",
+      subdivisionId: 3,
     })
   })
 

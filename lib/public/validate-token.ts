@@ -117,6 +117,25 @@ export async function validateAccessLink(token: string) {
   return loadAccessLink(token)
 }
 
+export async function validateOrgAccessLinkSubdivision(
+  token: string,
+  subdivisionId: number
+) {
+  const ctx = await loadAccessLink(token)
+  if (!ctx || ctx.link.subdivisionId != null) return null
+
+  const subdivision = await prismaRead.subdivision.findFirst({
+    where: {
+      id: subdivisionId,
+      organizationId: ctx.organization.id,
+    },
+    select: { id: true, name: true },
+  })
+  if (!subdivision) return null
+
+  return { ...ctx, subdivision }
+}
+
 export const fetchPublicNavOrders = cache(async (token: string) => {
   const ctx = await loadAccessLink(token)
   if (!ctx) return null

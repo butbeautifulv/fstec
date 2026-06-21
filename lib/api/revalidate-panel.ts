@@ -71,5 +71,7 @@ export function revalidatePanelOrganizations(organizationId?: number) {
   revalidatePath("/panel/organizations")
   if (organizationId != null) {
     revalidatePath(`/panel/organizations/${organizationId}`)
+    revalidatePath(`/panel/organizations/${organizationId}/links`)
+    revalidatePath(`/panel/organizations/${organizationId}/contacts`)
   }
 }

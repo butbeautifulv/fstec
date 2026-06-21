@@ -78,18 +78,35 @@ function buildPlatformCrumbs(
       crumbs.push({ label: `Новая ${labels.org.toLowerCase()}` })
       return crumbs
     }
+    if (pathname.match(/^\/panel\/organizations\/\d+\/dashboard$/)) {
+      crumbs.push(...middleCrumbs)
+      crumbs.push({ label: dynamicLabel ?? "Сводка" })
+      return crumbs
+    }
     if (pathname.includes("/subdivisions/")) {
       crumbs.push(...middleCrumbs)
       if (pathname.endsWith("/subdivisions/new")) {
         crumbs.push({ label: "Новое подразделение" })
       } else if (pathname.endsWith("/edit")) {
         crumbs.push({ label: "Редактирование подразделения" })
+      } else if (pathname.endsWith("/dashboard")) {
+        crumbs.push({ label: dynamicLabel ?? "Сводка" })
       }
       return crumbs
     }
     if (pathname.endsWith("/edit")) {
       crumbs.push(...middleCrumbs)
       crumbs.push({ label: "Редактирование" })
+      return crumbs
+    }
+    if (pathname.match(/^\/panel\/organizations\/\d+\/links$/)) {
+      crumbs.push(...middleCrumbs)
+      crumbs.push({ label: "Подразделения и ссылки" })
+      return crumbs
+    }
+    if (pathname.match(/^\/panel\/organizations\/\d+\/contacts$/)) {
+      crumbs.push(...middleCrumbs)
+      crumbs.push({ label: "Контакты для оповещений" })
       return crumbs
     }
     if (pathname !== "/panel/organizations") {
@@ -122,6 +139,8 @@ function buildPlatformCrumbs(
     } else if (pathname.match(/^\/panel\/settings\/users\/\d+\/edit$/)) {
       crumbs.push({ label: "Пользователи", href: "/panel/settings/users" })
       crumbs.push({ label: "Редактирование" })
+    } else if (pathname === "/panel/settings/public-links") {
+      crumbs.push({ label: "Публичные ссылки" })
     }
     return crumbs
   }

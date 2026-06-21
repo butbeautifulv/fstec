@@ -80,6 +80,11 @@ export function ScopedOrderDetailClient({
       items={items}
       statuses={statuses}
       showSubdivisionColumn={showSubdivisionColumn}
+      subdivisionHref={
+        context.scope === "public" && showSubdivisionColumn
+          ? (subdivisionId) => `/p/${context.token}/subdivisions/${subdivisionId}`
+          : undefined
+      }
       actionLabel={config.actionLabel}
     />
   )

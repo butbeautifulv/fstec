@@ -1,69 +1,96 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import type { ColumnDef, SortingState } from "@tanstack/react-table"
 import type { ContactRole } from "@prisma/client"
-import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
-import { TableRowActions } from "@/components/platform/crud/table-row-actions"
-import { StaticCrudTable } from "@/components/platform/crud/static-crud-table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  ContactEditDialog,
+  type EditableContact,
+} from "@/components/platform/contact-edit-dialog"
+import {
+  ContactFormFields,
+  ORG_SCOPE_VALUE,
+  type ContactFormValues,
+} from "@/components/platform/contact-form-fields"
+import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
+import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
+import { TableRowActions } from "@/components/platform/crud/table-row-actions"
+import { DataTable, DataTableColumnHeader } from "@/components/data-table"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { FieldGroup } from "@/components/ui/field"
+import { actionsColumnMeta, colMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import { facetedFilter } from "@/lib/data-table/faceted-column"
+import { TextCell, TruncatedCell } from "@/lib/data-table/text-cell"
 import { notify } from "@/lib/ui/feedback"
-import { CONTACT_ROLE_LABELS } from "@/lib/validations/contacts"
-import { Plus, Trash2 } from "lucide-react"
+import {
+  CONTACT_ROLE_LABELS,
+  ORG_CONTACT_SCOPE_LABEL,
+} from "@/lib/validations/contacts"
+import { Pencil, Plus, Trash2 } from "lucide-react"
 
-type ContactRow = {
-  id: number
-  fullName: string
-  position: string | null
-  email: string
-  role: ContactRole
+type Subdivision = { id: number; name: string }
+
+type ContactRow = EditableContact
+
+const ROLE_SORT_ORDER: Record<ContactRole, number> = {
+  PRIMARY: 0,
+  RESPONSIBLE: 1,
+  NOTIFY: 2,
+}
+
+const DEFAULT_SORTING: SortingState = [
+  { id: "role", desc: false },
+  { id: "fullName", desc: false },
+]
+
+function contactScopeLabel(contact: ContactRow): string {
+  return contact.subdivision?.name ?? ORG_CONTACT_SCOPE_LABEL
 }
 
 export function OrgContactsPanel({
   organizationId,
+  subdivisions,
   initialContacts,
 }: {
   organizationId: number
+  subdivisions: Subdivision[]
   initialContacts: ContactRow[]
 }) {
   const [contacts, setContacts] = useState(initialContacts)
-  const [fullName, setFullName] = useState("")
-  const [position, setPosition] = useState("")
-  const [email, setEmail] = useState("")
-  const [role, setRole] = useState<ContactRole>("RESPONSIBLE")
+  const [formValues, setFormValues] = useState<ContactFormValues>({
+    fullName: "",
+    position: "",
+    email: "",
+    role: "RESPONSIBLE",
+    subdivisionScope: ORG_SCOPE_VALUE,
+  })
   const [saving, setSaving] = useState(false)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
-
-  const roleOptions = useMemo(
-    () =>
-      (Object.keys(CONTACT_ROLE_LABELS) as ContactRole[]).map((value) => ({
-        value,
-        label: CONTACT_ROLE_LABELS[value],
-      })),
-    []
-  )
+  const [editContact, setEditContact] = useState<ContactRow | null>(null)
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
-    if (!fullName.trim() || !email.trim()) return
+    if (!formValues.fullName.trim() || !formValues.email.trim()) return
     setSaving(true)
-    const res = await fetch(`/api/organizations/${organizationId}/contacts`, {
+
+    const body = {
+      fullName: formValues.fullName.trim(),
+      position: formValues.position.trim() || null,
+      email: formValues.email.trim(),
+      role: formValues.role,
+    }
+
+    const url =
+      formValues.subdivisionScope === ORG_SCOPE_VALUE
+        ? `/api/organizations/${organizationId}/contacts`
+        : `/api/subdivisions/${formValues.subdivisionScope}/contacts`
+
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName: fullName.trim(),
-        position: position.trim() || null,
-        email: email.trim(),
-        role,
-      }),
+      body: JSON.stringify(body),
     })
     setSaving(false)
     if (!res.ok) {
@@ -72,21 +99,33 @@ export function OrgContactsPanel({
       return
     }
     const contact = await res.json()
-    setContacts((prev) => [...prev, contact])
-    setFullName("")
-    setPosition("")
-    setEmail("")
-    setRole("RESPONSIBLE")
+    const selectedSubdivision =
+      formValues.subdivisionScope === ORG_SCOPE_VALUE
+        ? null
+        : subdivisions.find((sub) => String(sub.id) === formValues.subdivisionScope) ?? null
+
+    setContacts((prev) => [
+      ...prev,
+      {
+        ...contact,
+        subdivisionId: selectedSubdivision?.id ?? null,
+        subdivision: selectedSubdivision,
+      },
+    ])
+    setFormValues({
+      fullName: "",
+      position: "",
+      email: "",
+      role: "RESPONSIBLE",
+      subdivisionScope: ORG_SCOPE_VALUE,
+    })
     notify.success("Контакт добавлен")
   }
 
   async function confirmDelete() {
     if (deleteId == null) return
     setDeleting(true)
-    const res = await fetch(
-      `/api/organizations/${organizationId}/contacts/${deleteId}`,
-      { method: "DELETE" }
-    )
+    const res = await fetch(`/api/contacts/${deleteId}`, { method: "DELETE" })
     setDeleting(false)
     if (!res.ok) {
       notify.error("Не удалось удалить контакт")
@@ -97,65 +136,162 @@ export function OrgContactsPanel({
     notify.success("Контакт удалён")
   }
 
-  return (
-    <div className="flex flex-col gap-4">
-      <form onSubmit={handleAdd} className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-        <Input
-          placeholder="ФИО"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-        />
-        <Input
-          placeholder="Должность"
-          value={position}
-          onChange={(e) => setPosition(e.target.value)}
-        />
-        <Input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <Select value={role} onValueChange={(value) => setRole(value as ContactRole)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {roleOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button type="submit" disabled={saving}>
-          <Plus data-icon="inline-start" />
-          Добавить
-        </Button>
-      </form>
-
-      <StaticCrudTable
-        columns={[
-          { header: "ФИО", cell: (contact) => contact.fullName },
-          { header: "Должность", cell: (contact) => contact.position ?? "—" },
-          { header: "Email", cell: (contact) => contact.email },
-          { header: "Роль", cell: (contact) => CONTACT_ROLE_LABELS[contact.role] },
-        ]}
-        rows={contacts}
-        getRowKey={(contact) => contact.id}
-        emptyMessage="Контакты не добавлены"
-        actions={(contact) => (
+  const columns = useMemo<ColumnDef<ContactRow>[]>(
+    () => [
+      {
+        accessorKey: "fullName",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="ФИО" />
+        ),
+        cell: ({ row }) => <TextCell text={row.original.fullName} />,
+        meta: textColumnMeta("ФИО", "w-[20%]"),
+      },
+      {
+        accessorKey: "email",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Email" />
+        ),
+        cell: ({ row }) => row.original.email,
+        meta: textColumnMeta("Email", "w-[22%]", { faceted: false }),
+      },
+      {
+        id: "position",
+        accessorFn: (row) => row.position ?? "—",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Должность" />
+        ),
+        cell: ({ row }) => (
+          <TruncatedCell text={row.original.position ?? "—"} />
+        ),
+        meta: colMeta("Должность", { faceted: false, cellClassName: "max-w-0 w-[16%]" }),
+      },
+      {
+        id: "subdivision",
+        accessorFn: (row) => contactScopeLabel(row),
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Область" />
+        ),
+        cell: ({ row }) => (
+          <TruncatedCell text={contactScopeLabel(row.original)} />
+        ),
+        enableColumnFilter: true,
+        filterFn: facetedFilter,
+        meta: colMeta("Область", { cellClassName: "max-w-0 w-[18%]" }),
+      },
+      {
+        id: "role",
+        accessorFn: (row) => CONTACT_ROLE_LABELS[row.role],
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Роль" />
+        ),
+        cell: ({ row }) => (
+          <Badge variant="secondary">{CONTACT_ROLE_LABELS[row.original.role]}</Badge>
+        ),
+        enableColumnFilter: true,
+        filterFn: facetedFilter,
+        sortingFn: (a, b) => {
+          const roleDiff =
+            ROLE_SORT_ORDER[a.original.role] - ROLE_SORT_ORDER[b.original.role]
+          if (roleDiff !== 0) return roleDiff
+          return a.original.fullName.localeCompare(b.original.fullName, "ru")
+        },
+        meta: colMeta("Роль", {
+          cellClassName: "w-[14%]",
+          valueLabels: CONTACT_ROLE_LABELS,
+        }),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableHiding: false,
+        enableColumnFilter: false,
+        meta: actionsColumnMeta(),
+        cell: ({ row }) => (
           <TableRowActions
             actions={[
+              {
+                label: "Изменить",
+                icon: <Pencil data-icon="inline-start" />,
+                onClick: () => setEditContact(row.original),
+              },
               {
                 label: "Удалить",
                 icon: <Trash2 data-icon="inline-start" />,
                 destructive: true,
-                onClick: () => setDeleteId(contact.id),
+                onClick: () => setDeleteId(row.original.id),
               },
             ]}
           />
-        )}
+        ),
+      },
+    ],
+    []
+  )
+
+  return (
+    <div className="flex flex-col gap-6">
+      <form onSubmit={handleAdd} className="flex flex-col gap-4">
+        <FieldGroup>
+          <ContactFormFields
+            idPrefix="add-contact"
+            subdivisions={subdivisions}
+            values={formValues}
+            onChange={(patch) => setFormValues((prev) => ({ ...prev, ...patch }))}
+            contacts={contacts}
+          />
+        </FieldGroup>
+        <div className="flex justify-end">
+          <Button type="submit" disabled={saving}>
+            <Plus data-icon="inline-start" />
+            Добавить
+          </Button>
+        </div>
+      </form>
+
+      <DataTable
+        columns={columns}
+        data={contacts}
+        pageSize={25}
+        showColumnToggle={false}
+        initialSorting={DEFAULT_SORTING}
+        searchPlaceholder="Поиск по ФИО, email, должности…"
+        globalFilterFn={(row, _columnId, filterValue) => {
+          const q = String(filterValue).toLowerCase()
+          if (!q) return true
+          const contact = row
+          return [
+            contact.fullName,
+            contact.email,
+            contact.position ?? "",
+            contactScopeLabel(contact),
+            CONTACT_ROLE_LABELS[contact.role],
+          ]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
+        }}
+        empty={
+          <EmptyTableState
+            title="Контакты не добавлены"
+            description="Добавьте получателей email-оповещений по поручениям"
+          />
+        }
+      />
+
+      <ContactEditDialog
+        contact={editContact}
+        subdivisions={subdivisions}
+        contacts={contacts}
+        open={editContact != null}
+        onOpenChange={(open) => {
+          if (!open) setEditContact(null)
+        }}
+        onSaved={(updated) => {
+          setContacts((prev) =>
+            prev.map((contact) => (contact.id === updated.id ? updated : contact))
+          )
+        }}
       />
 
       <ConfirmDeleteAlert

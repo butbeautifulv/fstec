@@ -1,0 +1,87 @@
+name: DAST (OWASP ZAP)
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  POSTGRES_USER: fstec
+  POSTGRES_PASSWORD: fstec
+  POSTGRES_DB: fstec
+  POSTGRES_PORT: 5432
+  S3_ACCESS_KEY: minio
+  S3_SECRET_KEY: minioadmin
+  S3_BUCKET: fstec-attachments
+  DATABASE_URL: postgresql://fstec:fstec@localhost:5432/fstec?schema=public
+  SESSION_SECRET: ci-session-secret-min-32-chars-long
+  S3_ENDPOINT: http://localhost:9000
+  S3_REGION: us-east-1
+  S3_FORCE_PATH_STYLE: "true"
+  REDIS_URL: redis://localhost:6379
+  APP_URL: http://localhost:3000
+  AUTH_PROVIDER: local
+
+jobs:
+  zap-baseline:
+    name: ZAP baseline scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start infrastructure
+        run: docker compose up -d --wait db minio redis
+
+      - name: Initialize object storage
+        run: docker compose run --rm minio-init
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
+      - name: Build application
+        run: npm run build
+
+      - name: Start application
+        run: |
+          npm run start > /tmp/fstec-app.log 2>&1 &
+          echo $! > /tmp/fstec-app.pid
+
+      - name: Wait for application
+        run: |
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/login > /dev/null; then
+              echo "Application is ready (attempt ${attempt})"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Application failed to start"
+          tail -n 200 /tmp/fstec-app.log || true
+          exit 1
+
+      - name: ZAP baseline scan
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: http://localhost:3000
+          docker_network: host
+          allow_issue_writing: false
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -f /tmp/fstec-app.pid ]; then
+            kill "$(cat /tmp/fstec-app.pid)" || true
+          fi

@@ -11,7 +11,7 @@ type OrderItemInput = {
     description: string | null
   }
   status: { id: number; name: string; isTerminal: boolean }
-  subdivision?: { name: string } | null
+  subdivision?: { id: number; name: string } | null
 }
 
 type OrderInput = {
@@ -41,6 +41,7 @@ export function mapOrderItemsToPublicItems(
     orderTitle: order.title,
     orderIssuedAt: order.issuedAt.toISOString(),
     subdivisionName: item.subdivision?.name ?? null,
+    subdivisionId: item.subdivision?.id ?? null,
   }))
 }
 
@@ -76,6 +77,7 @@ export function mapMatrixItemToPublicItem(
     orderTitle: item.order.title,
     orderIssuedAt: issuedAt,
     subdivisionName: item.subdivision?.name ?? null,
+    subdivisionId: item.subdivision?.id ?? null,
   }
 }
 

@@ -98,9 +98,9 @@ flowchart LR
 | Письма | `/panel/measures/imports` | Импорт мер из DOCX |
 | Меры | `/panel/measures` | Каталог мер ФСТЭК |
 | Поручения | `/panel/orders` | Создание поручений, позиции, назначение мер |
-| Организации | `/panel/organizations` | Организации, подразделения, access links |
-| Переносы | `/panel/delay-requests` | Рассмотрение заявок на продление срока |
 | Отчёты | `/panel/responses` | Проверка ответов ДЗО |
+| Переносы | `/panel/delay-requests` | Рассмотрение заявок на продление срока |
+| Организации | `/panel/organizations` | Организации, подразделения, access links |
 | Настройки | `/panel/settings/*` | Общие, аккаунт, пользователи, аутентификация |
 
 ### Public (`/p/{token}`)

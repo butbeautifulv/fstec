@@ -74,7 +74,7 @@ export function DataTableFacetedFilter<TData, TValue>({
           <span className="sr-only">Фильтр {filterTitle}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64 p-0" align="start">
+      <PopoverContent className="w-80 p-0 sm:w-96" align="start">
         <Command>
           <CommandInput placeholder={filterTitle} />
           <CommandList>

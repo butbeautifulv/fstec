@@ -21,7 +21,7 @@ export function DataTableToolbar<TData>({
         placeholder={searchPlaceholder}
         value={(table.getState().globalFilter as string) ?? ""}
         onChange={(e) => table.setGlobalFilter(e.target.value)}
-        className="max-w-sm"
+        className="min-w-[16rem] flex-1 max-w-lg"
       />
       {filters}
       {showColumnToggle && <DataTableColumnToggle table={table} />}

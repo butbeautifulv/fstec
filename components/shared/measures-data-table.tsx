@@ -7,7 +7,7 @@ import {
   DataTableColumnHeader,
   DataTableRowLink,
 } from "@/components/data-table"
-import { actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import { actionsColumnMeta } from "@/lib/data-table/column-meta"
 import {
   createCodeColumn,
   createDueAtColumn,
@@ -15,7 +15,7 @@ import {
   createOrderColumn,
   createWorkflowStatusColumn,
 } from "@/lib/data-table/columns"
-import { facetedFilter } from "@/lib/data-table/faceted-column"
+import { createSubdivisionColumn } from "@/lib/data-table/columns/subdivision-column"
 import { TextCell } from "@/lib/data-table/text-cell"
 import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
 import type {
@@ -36,6 +36,7 @@ export function MeasuresDataTable({
   statuses,
   showSubdivisionColumn = false,
   showOrderColumn = false,
+  subdivisionHref,
   actionLabel,
   columnFilters,
   onColumnFiltersChange,
@@ -46,6 +47,7 @@ export function MeasuresDataTable({
   statuses: MeasuresTableStatus[]
   showSubdivisionColumn?: boolean
   showOrderColumn?: boolean
+  subdivisionHref?: (subdivisionId: number) => string
   actionLabel?: string
   columnFilters?: ColumnFiltersState
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
@@ -87,19 +89,16 @@ export function MeasuresDataTable({
     }
 
     if (showSubdivisionColumn) {
-      base.push({
-        id: "subdivisionName",
-        accessorFn: (row) => row.subdivisionName ?? "Без подразделения",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Подразделение" />
-        ),
-        cell: ({ row }) => (
-          <TextCell text={row.original.subdivisionName ?? "Без подразделения"} />
-        ),
-        enableColumnFilter: true,
-        filterFn: facetedFilter,
-        meta: textColumnMeta("Подразделение", "w-[16%]"),
-      })
+      base.push(
+        createSubdivisionColumn(
+          (row) =>
+            row.subdivisionId != null && row.subdivisionName
+              ? { id: row.subdivisionId, name: row.subdivisionName }
+              : null,
+          (sub) => (subdivisionHref ? subdivisionHref(sub.id) : undefined),
+          "w-[16%]"
+        )
+      )
     }
 
     base.push(
@@ -132,7 +131,7 @@ export function MeasuresDataTable({
     )
 
     return base
-  }, [basePath, showSubdivisionColumn, showOrderColumn, actionLabel, items])
+  }, [basePath, showSubdivisionColumn, showOrderColumn, subdivisionHref, actionLabel, items])
 
   const hideOnMobileColumnIds = useMemo(() => {
     const ids: string[] = []

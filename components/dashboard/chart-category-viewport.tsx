@@ -19,6 +19,7 @@ export type BarChartLayout = ReturnType<typeof chartMetrics> & {
   chartMarginBottom: number
   maxTickWidth?: number
   barCategoryGap: string
+  maxBarSize?: number
 }
 
 function chartMetrics(size: ChartSize) {
@@ -52,7 +53,12 @@ function chartMetrics(size: ChartSize) {
 }
 
 function minWidthPerCategory(size: ChartSize) {
-  return size === "expanded" ? 96 : 72
+  return size === "expanded" ? 108 : 84
+}
+
+function maxBarSizeForCategories(size: ChartSize, dense: boolean) {
+  if (!dense) return undefined
+  return size === "expanded" ? 56 : 48
 }
 
 function fallbackContainerWidth(size: ChartSize) {
@@ -72,16 +78,18 @@ export function categoryBarChartLayout(
   const barCategoryGap =
     variant === "completion"
       ? dense
-        ? "20%"
-        : "12%"
+        ? "26%"
+        : "16%"
       : dense
-        ? "8%"
-        : "18%"
+        ? "15%"
+        : "24%"
+  const maxBarSize = maxBarSizeForCategories(size, dense)
 
   if (!dense) {
     return {
       ...base,
       barCategoryGap,
+      maxBarSize,
       chartMarginBottom: Math.max(base.xAxisHeight - 8, 8),
     }
   }
@@ -107,6 +115,7 @@ export function categoryBarChartLayout(
     xAxisHeight,
     maxTickWidth,
     barCategoryGap,
+    maxBarSize,
     chartMarginBottom: Math.max(xAxisHeight - 4, 12),
   }
 }
@@ -175,6 +184,7 @@ export function ChartCategoryViewport({
   children: (layout: BarChartLayout, chartWidth: number | undefined) => ReactNode
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
+  const autoZoomAppliedRef = useRef(false)
   const [containerWidth, setContainerWidth] = useState(0)
   const [zoom, setZoom] = useState(ZOOM_MIN)
   const [panPercent, setPanPercent] = useState(0)
@@ -198,6 +208,22 @@ export function ChartCategoryViewport({
     Math.ceil((comfortableWidth / effectiveWidth) * 100)
   )
   const showControls = categoryCount > DENSE_CATEGORY_THRESHOLD && maxZoom > ZOOM_MIN
+
+  useEffect(() => {
+    if (
+      autoZoomAppliedRef.current ||
+      containerWidth === 0 ||
+      categoryCount <= DENSE_CATEGORY_THRESHOLD
+    ) {
+      return
+    }
+
+    const targetZoom = Math.min(maxZoom, Math.ceil((comfortableWidth / containerWidth) * 100))
+    if (targetZoom > ZOOM_MIN) {
+      setZoom(targetZoom)
+      autoZoomAppliedRef.current = true
+    }
+  }, [categoryCount, containerWidth, comfortableWidth, maxZoom])
 
   const clampedZoom = Math.min(zoom, maxZoom)
   const chartWidth = Math.round(effectiveWidth * (clampedZoom / 100))

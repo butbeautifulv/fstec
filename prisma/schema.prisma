@@ -62,6 +62,7 @@ model Organization {
   subdivisions Subdivision[]
   orders       Order[]
   accessLinks  AccessLink[]
+  reportLinks  ReportLink[]
   contacts     ContactPerson[]
   appSettingsHead AppSettings?
 
@@ -75,6 +76,7 @@ model Subdivision {
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   orderItems     OrderItem[]
   accessLinks    AccessLink[]
+  reportLinks    ReportLink[]
   contacts       ContactPerson[]
 
   @@unique([organizationId, name])
@@ -183,12 +185,17 @@ model AccessLink {
 }
 
 model ReportLink {
-  id        Int       @id @default(autoincrement())
-  token     String    @unique
-  revokedAt DateTime? @map("revoked_at") @db.Timestamptz()
-  expiresAt DateTime? @map("expires_at") @db.Timestamptz()
-  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  id             Int           @id @default(autoincrement())
+  token          String        @unique
+  organizationId Int?          @map("organization_id")
+  subdivisionId  Int?          @map("subdivision_id")
+  revokedAt      DateTime?     @map("revoked_at") @db.Timestamptz()
+  expiresAt      DateTime?     @map("expires_at") @db.Timestamptz()
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz()
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  subdivision    Subdivision?  @relation(fields: [subdivisionId], references: [id], onDelete: Cascade)
 
+  @@index([organizationId, subdivisionId])
   @@map("report_links")
 }
 

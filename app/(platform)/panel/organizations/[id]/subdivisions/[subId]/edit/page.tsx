@@ -25,8 +25,8 @@ export default async function EditSubdivisionPage({
       <PageHeader
         title="Редактирование подразделения"
         description={org.name}
-        backHref={`/panel/organizations/${org.id}`}
-        backLabel={org.name}
+        backHref={`/panel/organizations/${org.id}/links`}
+        backLabel="Подразделения и ссылки"
       />
       <SubdivisionForm
         organizationId={org.id}

@@ -7,10 +7,11 @@ import { TextCell } from "@/lib/data-table/text-cell"
 export function createOrderColumn<TRow>(
   accessor: (row: TRow) => { id: number; title: string },
   href: (order: { id: number; title: string }) => string,
-  width = "w-[16%]"
+  width = "w-[16%]",
+  columnId = "order"
 ): ColumnDef<TRow> {
   return {
-    id: "order",
+    id: columnId,
     accessorFn: (row) => accessor(row).title,
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Поручение" />

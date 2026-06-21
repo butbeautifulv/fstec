@@ -171,6 +171,62 @@ export function PieSliceLabel({
   )
 }
 
+const MIN_OVERDUE_LABEL_BAR_WIDTH = 28
+const MIN_OVERDUE_FULL_LABEL_BAR_WIDTH = 44
+
+export function OverdueCountLabel(props: {
+  x?: number | string
+  y?: number | string
+  width?: number | string
+  height?: number | string
+  value?: number | string
+  total?: number
+  compact?: boolean
+}) {
+  const { x, y, width, height, value, total, compact } = props
+  if (value == null || Number(value) === 0) return null
+
+  const barX = Number(x ?? 0)
+  const barY = Number(y ?? 0)
+  const barW = Number(width ?? 0)
+  const barH = Number(height ?? 0)
+  const numValue = Number(value)
+  const pct = total != null && total > 0 ? Math.round((numValue / total) * 100) : 0
+  const minWidth = compact ? MIN_OVERDUE_LABEL_BAR_WIDTH : MIN_OVERDUE_FULL_LABEL_BAR_WIDTH
+
+  if (barW < minWidth) return null
+
+  const label = compact ? `${pct}%` : `${numValue} · ${pct}%`
+
+  if (barH >= MIN_SEGMENT_LABEL_PX) {
+    return (
+      <text
+        x={barX + barW / 2}
+        y={barY + barH / 2}
+        textAnchor="middle"
+        dominantBaseline="central"
+        className="fill-background text-[10px] font-semibold"
+      >
+        {label}
+      </text>
+    )
+  }
+
+  if (compact) return null
+
+  return (
+    <text
+      x={barX + barW / 2}
+      y={barY - 6}
+      textAnchor="middle"
+      dominantBaseline="auto"
+      className="fill-foreground text-xs font-medium"
+    >
+      {label}
+    </text>
+  )
+}
+
 export function StackedBarSegmentLabel(props: {
   x?: number | string
   y?: number | string

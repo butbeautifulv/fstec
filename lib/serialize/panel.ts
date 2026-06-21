@@ -9,6 +9,7 @@ import type { DelayRequestTableRow } from "@/components/platform/delay-requests-
 import type { DelayRequestDetail } from "@/components/platform/delay-request-detail-client"
 import type { ResponseTableRow } from "@/components/platform/responses-table"
 import type { ResponseDetail } from "@/components/platform/response-detail-client"
+import { summarizeOrderSubdivisions } from "@/lib/orders/summarize-subdivisions"
 
 type WithDates = Record<string, unknown>
 
@@ -45,6 +46,7 @@ export function serializeOrders(
     organization: { id: number; name: string }
     createdBy: { id: number; name: string }
     _count: { items: number }
+    items?: { subdivision: { id: number; name: string } | null }[]
   }[]
 ) {
   return orders.map((order) => ({
@@ -55,6 +57,8 @@ export function serializeOrders(
     organization: order.organization,
     createdBy: order.createdBy,
     _count: order._count,
+    subdivisionSummary:
+      order.items != null ? summarizeOrderSubdivisions(order.items) : null,
   }))
 }
 

@@ -1,5 +1,5 @@
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
-import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
+import type { ScopedDashboardStats, DashboardScope } from "@/lib/dashboard/stats"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
 import {
@@ -7,32 +7,33 @@ import {
   type DashboardVariant,
 } from "@/lib/dashboard/variant-config"
 
-type PlatformInteractiveProps = {
-  variant: "platform"
-  scope: ChartFilterScope
+type InteractiveBase = {
   stats: ScopedDashboardStats
-  items: DashboardMatrixRow[]
   overdueOnly: boolean
+  dashboardScope: DashboardScope
 }
 
-type PublicInteractiveProps = {
+type PlatformInteractiveProps = InteractiveBase & {
+  variant: "platform"
+  scope: ChartFilterScope
+  items: DashboardMatrixRow[]
+}
+
+type PublicInteractiveProps = InteractiveBase & {
   variant: "public"
-  scope: "organization" | "subdivision"
-  stats: ScopedDashboardStats
+  scope: ChartFilterScope
   token: string
   items: PublicItem[]
   statuses: PublicStatus[]
   showSubdivisionColumn: boolean
-  overdueOnly: boolean
 }
 
-type ReportInteractiveProps = {
+type ReportInteractiveProps = InteractiveBase & {
   variant: "report"
-  scope: "global"
-  stats: ScopedDashboardStats
+  scope: ChartFilterScope
   token: string
+  linkScope: DashboardScope
   items: DashboardMatrixRow[]
-  overdueOnly: boolean
 }
 
 export type DashboardInteractiveProps =
@@ -45,19 +46,24 @@ type ShellVariantProps =
       variant: "platform"
       scope?: ChartFilterScope
       items: DashboardMatrixRow[]
+      dashboardScope: DashboardScope
     }
   | {
       variant: "report"
       token: string
+      linkScope: DashboardScope
+      scope?: ChartFilterScope
       items: DashboardMatrixRow[]
+      dashboardScope: DashboardScope
     }
   | {
       variant: "public"
       token: string
       items: PublicItem[]
       statuses: PublicStatus[]
-      scope: "organization" | "subdivision"
+      scope: ChartFilterScope
       showSubdivisionColumn: boolean
+      dashboardScope: DashboardScope
     }
 
 export function toDashboardInteractiveProps(
@@ -66,37 +72,36 @@ export function toDashboardInteractiveProps(
   overdueOnly: boolean
 ): DashboardInteractiveProps {
   const config = getDashboardVariantConfig(props.variant)
+  const base = { stats, overdueOnly, dashboardScope: props.dashboardScope }
 
   if (props.variant === "platform") {
     return {
+      ...base,
       variant: "platform",
       scope: props.scope ?? config.defaultScope,
-      stats,
       items: props.items,
-      overdueOnly,
     }
   }
 
   if (props.variant === "report") {
     return {
+      ...base,
       variant: "report",
-      scope: "global",
-      stats,
+      scope: props.scope ?? config.defaultScope,
       token: props.token,
+      linkScope: props.linkScope,
       items: props.items,
-      overdueOnly,
     }
   }
 
   return {
+    ...base,
     variant: "public",
     scope: props.scope,
-    stats,
     token: props.token,
     items: props.items,
     statuses: props.statuses,
     showSubdivisionColumn: props.showSubdivisionColumn,
-    overdueOnly,
   }
 }
 

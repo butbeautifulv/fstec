@@ -1,15 +1,11 @@
 "use client"
 
-import { useMemo, useState, type Dispatch, type SetStateAction } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import type { ColumnFiltersState } from "@tanstack/react-table"
-import { DashboardMatrixTable } from "@/components/dashboard/dashboard-matrix-table"
-import type { DashboardMatrixLinkTargets } from "@/components/dashboard/dashboard-matrix-table"
 import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
-import { MeasuresDataTable } from "@/components/shared/measures-data-table"
-import { dashboardMatrixLinkTargets } from "@/lib/dashboard/link-targets"
-import type { ScopedDashboardStats } from "@/lib/dashboard/stats"
+import { DashboardScopedTable } from "@/components/dashboard/dashboard-scoped-table"
+import type { ScopedDashboardStats, DashboardScope } from "@/lib/dashboard/stats"
 import {
-  overdueInitialFilters,
   toggleBreakdownFilter,
   toggleOverdueLegendFilter,
   toggleOverdueSegmentFilter,
@@ -20,119 +16,82 @@ import {
 } from "@/lib/dashboard/chart-filters"
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
-import { getDashboardVariantConfig } from "@/lib/dashboard/variant-config"
+import type { DashboardVariant } from "@/lib/dashboard/variant-config"
 
-type FilterControl = {
-  columnFilters?: ColumnFiltersState
-  onColumnFiltersChange?: Dispatch<SetStateAction<ColumnFiltersState>>
+type ScopedDashboardViewProps = {
+  variant: DashboardVariant
+  scope: ChartFilterScope
+  dashboardScope: DashboardScope
+  linkScope?: DashboardScope
+  stats: ScopedDashboardStats
+  items: DashboardMatrixRow[] | PublicItem[]
+  token?: string
+  statuses?: PublicStatus[]
+  showSubdivisionColumn?: boolean
+  columnFilters: ColumnFiltersState
+  onColumnFiltersChange: Dispatch<SetStateAction<ColumnFiltersState>>
 }
 
-type PlatformProps = {
-  variant: "platform"
-  scope: ChartFilterScope
-  stats: ScopedDashboardStats
-  items: DashboardMatrixRow[]
-  overdueOnly?: boolean
-} & FilterControl
-
-type PublicProps = {
-  variant: "public"
-  scope: ChartFilterScope
-  stats: ScopedDashboardStats
-  token: string
-  items: PublicItem[]
-  statuses: PublicStatus[]
-  showSubdivisionColumn?: boolean
-  overdueOnly?: boolean
-} & FilterControl
-
-type ReportProps = {
-  variant: "report"
-  scope: ChartFilterScope
-  stats: ScopedDashboardStats
-  token: string
-  items: DashboardMatrixRow[]
-  overdueOnly?: boolean
-} & FilterControl
-
-export function ScopedDashboardView(props: PlatformProps | PublicProps | ReportProps) {
-  const initialFilters = useMemo(
-    () => (props.overdueOnly ? overdueInitialFilters() : []),
-    [props.overdueOnly]
-  )
-  const [internalFilters, setInternalFilters] =
-    useState<ColumnFiltersState>(initialFilters)
-
-  const columnFilters = props.columnFilters ?? internalFilters
-  const setColumnFilters = props.onColumnFiltersChange ?? setInternalFilters
-
-  const scope = props.scope
-  const variantConfig = getDashboardVariantConfig(props.variant)
-
-  const matrixLinkTargets: DashboardMatrixLinkTargets | null = useMemo(() => {
-    if (variantConfig.tableKind !== "matrix") return null
-    return dashboardMatrixLinkTargets(
-      props.variant === "platform" ? "platform" : "report",
-      props.variant === "report" ? props.token : undefined
-    )
-  }, [props, variantConfig.tableKind])
-
+export function ScopedDashboardView({
+  variant,
+  scope,
+  dashboardScope,
+  linkScope,
+  stats,
+  items,
+  token,
+  statuses,
+  columnFilters,
+  onColumnFiltersChange,
+}: ScopedDashboardViewProps) {
   return (
     <>
       <ScopedDashboardCharts
         scope={scope}
-        statusDistribution={props.stats.statusDistribution}
-        overdueBreakdown={props.stats.overdueBreakdown}
-        statusBreakdown={props.stats.statusBreakdown}
-        overdueTitle={props.stats.chartLabels.overdueTitle}
-        completionTitle={props.stats.chartLabels.completionTitle}
+        statusDistribution={stats.statusDistribution}
+        overdueBreakdown={stats.overdueBreakdown}
+        statusBreakdown={stats.statusBreakdown}
+        overdueTitle={stats.chartLabels.overdueTitle}
+        completionTitle={stats.chartLabels.completionTitle}
         columnFilters={columnFilters}
         onStatusClick={(status) =>
-          setColumnFilters((prev) => toggleStatusFilter(prev, status))
+          onColumnFiltersChange((prev) => toggleStatusFilter(prev, status))
         }
         onOverdueBarClick={(label) =>
-          setColumnFilters((prev) => toggleBreakdownFilter(prev, scope, label))
+          onColumnFiltersChange((prev) => toggleBreakdownFilter(prev, scope, label))
         }
         onOverdueSegmentClick={(label, segment) =>
-          setColumnFilters((prev) =>
+          onColumnFiltersChange((prev) =>
             toggleOverdueSegmentFilter(prev, scope, label, segment)
           )
         }
         onOverdueLegendClick={(segment) =>
-          setColumnFilters((prev) => toggleOverdueLegendFilter(prev, segment))
+          onColumnFiltersChange((prev) => toggleOverdueLegendFilter(prev, segment))
         }
         onStatusBreakdownClick={(label, status) =>
-          setColumnFilters((prev) =>
+          onColumnFiltersChange((prev) =>
             toggleStatusBreakdownFilter(prev, scope, label, status)
           )
         }
         onCompletionLegendClick={(status) =>
-          setColumnFilters((prev) =>
+          onColumnFiltersChange((prev) =>
             toggleStatusFilterPreserveBreakdown(prev, status)
           )
         }
       />
 
-      {variantConfig.tableKind === "measures" && props.variant === "public" ? (
-        <MeasuresDataTable
-          basePath={`/p/${props.token}`}
-          items={props.items}
-          statuses={props.statuses}
-          showSubdivisionColumn={props.showSubdivisionColumn}
-          actionLabel="Заполнить"
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          pageSize={50}
-        />
-      ) : matrixLinkTargets && props.variant !== "public" ? (
-        <DashboardMatrixTable
-          items={props.items}
-          linkTargets={matrixLinkTargets}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={setColumnFilters}
-          pageSize={50}
-        />
-      ) : null}
+      <DashboardScopedTable
+        variant={variant}
+        chartScope={scope}
+        dashboardScope={dashboardScope}
+        linkScope={linkScope}
+        token={token}
+        items={items}
+        statuses={statuses}
+        columnFilters={columnFilters}
+        onColumnFiltersChange={onColumnFiltersChange}
+        pageSize={50}
+      />
     </>
   )
 }

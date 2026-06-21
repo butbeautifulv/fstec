@@ -1,5 +1,6 @@
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { ReportShareButton } from "@/components/report/report-share-button"
+import { buildDashboardPageProps } from "@/lib/dashboard/build-dashboard-page-props"
 import { Permission, hasPermission } from "@/lib/auth/permissions"
 import { requirePageSession } from "@/lib/auth/page-guard"
 import { labels } from "@/lib/ui/branding"
@@ -16,35 +17,35 @@ export default async function PlatformDashboardPage({
   const canManageReportLinks = hasPermission(session.role, Permission.settingsWrite)
 
   const activeReportLink = canManageReportLinks
-    ? await getActiveReportLink()
+    ? await getActiveReportLink({ type: "global" })
     : null
 
   return (
     <ScopedDashboardPageShell
-      variant="platform"
-      scope={{ type: "global" }}
-      title={`Сводка по ${labels.orgPluralGenitive}`}
-      description="Статусы исполнения мер по поручениям"
-      baseHref="/panel"
-      overdueOnly={overdueOnly}
-      emptyMessage={
-        <>Нет данных. Создайте поручение для {labels.orgGenitive} в разделе «Поручения».</>
-      }
-      extraActions={
-        canManageReportLinks ? (
-          <ReportShareButton
-            initialActive={
-              activeReportLink
-                ? {
-                    id: activeReportLink.id,
-                    token: activeReportLink.token,
-                    revokedAt: activeReportLink.revokedAt?.toISOString() ?? null,
-                  }
-                : null
-            }
-          />
-        ) : undefined
-      }
+      {...buildDashboardPageProps({
+        variant: "platform",
+        scope: { type: "global" },
+        title: `Сводка по ${labels.orgPluralGenitive}`,
+        description: "Статусы исполнения мер по поручениям",
+        overdueOnly,
+        emptyMessage: (
+          <>Нет данных. Создайте поручение для {labels.orgGenitive} в разделе «Поручения».</>
+        ),
+        extraActions:
+          canManageReportLinks ? (
+            <ReportShareButton
+              initialActive={
+                activeReportLink
+                  ? {
+                      id: activeReportLink.id,
+                      token: activeReportLink.token,
+                      revokedAt: activeReportLink.revokedAt?.toISOString() ?? null,
+                    }
+                  : null
+              }
+            />
+          ) : undefined,
+      })}
     />
   )
 }

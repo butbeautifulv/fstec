@@ -4,24 +4,25 @@ import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { getCachedScopedDashboard } from "@/lib/dashboard/cache"
 import {
+  chartScopeFromDashboardScope,
+  publicShowsSubdivisionColumn,
+} from "@/lib/dashboard/chart-scope"
+import {
   dashboardShowsEmptyInteractive,
   toDashboardInteractiveProps,
 } from "@/lib/dashboard/interactive-props"
 import { mapSerializedMatrixToPublicItems } from "@/lib/public/map-public-items"
-import type { PublicStatus } from "@/lib/public/types"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { ScopedDashboardPageShellProps } from "@/components/dashboard/dashboard-page-shell"
 
 type DashboardMatrixSectionProps = ScopedDashboardPageShellProps & {
   scope: DashboardScope
   itemLimit?: number
-  publicStatuses?: PublicStatus[]
 }
 
 export async function DashboardMatrixSection({
   scope,
   itemLimit,
-  publicStatuses,
   overdueOnly,
   emptyMessage,
   suspenseCharts,
@@ -33,6 +34,7 @@ export async function DashboardMatrixSection({
   )
 
   const variant = shellProps.variant
+  const chartScope = chartScopeFromDashboardScope(scope)
   const itemCount =
     variant === "public"
       ? mapSerializedMatrixToPublicItems(dashboard.items).length
@@ -44,20 +46,25 @@ export async function DashboardMatrixSection({
           variant: "public" as const,
           token: shellProps.token,
           items: mapSerializedMatrixToPublicItems(dashboard.items),
-          statuses: publicStatuses ?? shellProps.statuses,
-          scope: shellProps.publicScope,
-          showSubdivisionColumn: shellProps.showSubdivisionColumn,
+          statuses: shellProps.statuses,
+          scope: chartScope,
+          showSubdivisionColumn: publicShowsSubdivisionColumn(scope),
+          dashboardScope: scope,
         }
       : variant === "report"
         ? {
             variant: "report" as const,
             token: shellProps.token,
+            linkScope: shellProps.linkScope,
+            scope: chartScope,
             items: dashboard.items,
+            dashboardScope: scope,
           }
         : {
             variant: "platform" as const,
-            scope: shellProps.chartScope,
+            scope: chartScope,
             items: dashboard.items,
+            dashboardScope: scope,
           }
 
   const interactive = (
@@ -68,6 +75,7 @@ export async function DashboardMatrixSection({
         dashboard.stats,
         overdueOnly
       )}
+      dashboardScope={scope}
     />
   )
 

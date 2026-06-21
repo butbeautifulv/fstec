@@ -37,7 +37,7 @@ export function MeasuresTable({ initialMeasures }: { initialMeasures: Measure[] 
         (m) => `/panel/measures/${m.id}/edit`,
         { width: "w-[40%]", title: "Название", linkClassName: undefined }
       ),
-      createCodeColumn((row) => row.code, { cellClassName: "w-28", mono: true }),
+      createCodeColumn((row) => row.code, { cellClassName: "w-40", mono: true }),
       {
         accessorKey: "createdAt",
         header: ({ column }) => (

@@ -12,4 +12,5 @@ export type MeasuresTableItem = {
   status: { id: number; name: string; isTerminal?: boolean }
   orderTitle?: string
   subdivisionName?: string | null
+  subdivisionId?: number | null
 }

@@ -84,9 +84,12 @@ describe("serializeDashboardDto", () => {
 })
 
 describe("toDashboardInteractiveProps", () => {
+  const globalScope = { type: "global" as const }
+  const orgScope = { type: "organization" as const, organizationId: 1 }
+
   it("builds platform props with default scope", () => {
     const props = toDashboardInteractiveProps(
-      { variant: "platform", items: [] },
+      { variant: "platform", items: [], dashboardScope: globalScope },
       stats,
       false
     )
@@ -96,12 +99,18 @@ describe("toDashboardInteractiveProps", () => {
       stats,
       items: [],
       overdueOnly: false,
+      dashboardScope: globalScope,
     })
   })
 
   it("builds platform props with explicit scope", () => {
     const props = toDashboardInteractiveProps(
-      { variant: "platform", scope: "organization", items: [] },
+      {
+        variant: "platform",
+        scope: "organization",
+        items: [],
+        dashboardScope: orgScope,
+      },
       stats,
       true
     )
@@ -110,7 +119,7 @@ describe("toDashboardInteractiveProps", () => {
 
   it("builds report props", () => {
     const props = toDashboardInteractiveProps(
-      { variant: "report", token: "tok", items: [] },
+      { variant: "report", token: "tok", linkScope: globalScope, items: [], dashboardScope: globalScope },
       stats,
       false
     )
@@ -119,8 +128,10 @@ describe("toDashboardInteractiveProps", () => {
       scope: "global",
       stats,
       token: "tok",
+      linkScope: globalScope,
       items: [],
       overdueOnly: false,
+      dashboardScope: globalScope,
     })
   })
 
@@ -145,6 +156,7 @@ describe("toDashboardInteractiveProps", () => {
         statuses,
         scope: "organization",
         showSubdivisionColumn: true,
+        dashboardScope: orgScope,
       },
       stats,
       false
@@ -158,6 +170,7 @@ describe("toDashboardInteractiveProps", () => {
       statuses,
       showSubdivisionColumn: true,
       overdueOnly: false,
+      dashboardScope: orgScope,
     })
   })
 })
@@ -182,7 +195,10 @@ describe("dashboardShowsEmptyInteractive", () => {
 describe("dashboardMatrixLinkTargets", () => {
   it("returns platform panel links", () => {
     const targets = dashboardMatrixLinkTargets("platform")
-    expect(targets.organization(2)).toBe("/panel/organizations/2")
+    expect(targets.organization(2)).toBe("/panel/organizations/2/dashboard")
+    expect(targets.subdivision?.(2, 5)).toBe(
+      "/panel/organizations/2/subdivisions/5/dashboard"
+    )
     expect(targets.order(10)).toBe("/panel/orders/10")
     expect(
       targets.measure({
@@ -203,7 +219,10 @@ describe("dashboardMatrixLinkTargets", () => {
 
   it("returns report links with token", () => {
     const targets = dashboardMatrixLinkTargets("report", "abc123")
-    expect(targets.organization(2)).toBe("/report/abc123/organizations/2")
+    expect(targets.organization(2)).toBe("/report/abc123/organizations/2/dashboard")
+    expect(targets.subdivision?.(2, 5)).toBe(
+      "/report/abc123/organizations/2/subdivisions/5/dashboard"
+    )
     expect(targets.order(10)).toBe("/report/abc123/orders/10")
     expect(
       targets.measure({

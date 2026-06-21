@@ -6,6 +6,7 @@ import {
   ChevronRight,
   Globe,
   KeyRound,
+  Link2,
   Settings2,
   UserCircle,
   Users,
@@ -50,6 +51,13 @@ const items: SettingsNavItem[] = [
     title: "Аутентификация",
     description: "Провайдеры входа: локальный, Active Directory, Keycloak",
     icon: KeyRound,
+    permission: Permission.settingsWrite,
+  },
+  {
+    href: "/panel/settings/public-links",
+    title: "Публичные ссылки",
+    description: "Portal- и report-ссылки: просмотр и экстренная регенерация",
+    icon: Link2,
     permission: Permission.settingsWrite,
   },
 ]

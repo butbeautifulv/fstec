@@ -63,6 +63,14 @@ export function buildPublicCrumbs(
     return crumbs
   }
 
+  if (pathname.includes("/subdivisions/")) {
+    crumbs.push(...middleCrumbs)
+    if (dynamicLabel) {
+      crumbs.push({ label: dynamicLabel })
+    }
+    return crumbs
+  }
+
   crumbs.push({ label: "Раздел" })
   return crumbs
 }

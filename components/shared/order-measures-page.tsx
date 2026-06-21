@@ -21,6 +21,7 @@ export function OrderMeasuresPage({
   items,
   statuses,
   showSubdivisionColumn,
+  subdivisionHref,
   actionLabel,
 }: {
   basePath: string
@@ -31,6 +32,7 @@ export function OrderMeasuresPage({
   items: MeasuresTableItem[]
   statuses: MeasuresTableStatus[]
   showSubdivisionColumn: boolean
+  subdivisionHref?: (subdivisionId: number) => string
   actionLabel?: string
   headerActions?: ReactNode
 }) {
@@ -49,6 +51,7 @@ export function OrderMeasuresPage({
         items={items}
         statuses={statuses}
         showSubdivisionColumn={showSubdivisionColumn}
+        subdivisionHref={subdivisionHref}
         actionLabel={actionLabel}
       />
     </div>

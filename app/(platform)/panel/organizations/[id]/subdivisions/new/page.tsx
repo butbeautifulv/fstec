@@ -19,8 +19,8 @@ export default async function NewSubdivisionPage({
       <PageHeader
         title="Новое подразделение"
         description={org.name}
-        backHref={`/panel/organizations/${org.id}`}
-        backLabel={org.name}
+        backHref={`/panel/organizations/${org.id}/links`}
+        backLabel="Подразделения и ссылки"
       />
       <SubdivisionForm organizationId={org.id} />
     </div>

@@ -27,6 +27,14 @@ export function listOrganizationContacts(organizationId: number) {
   return listContacts({ organizationId })
 }
 
+export function listAllOrganizationContacts(organizationId: number) {
+  return prisma.contactPerson.findMany({
+    where: { organizationId },
+    include: { subdivision: { select: { id: true, name: true } } },
+    orderBy: [{ role: "asc" }, { fullName: "asc" }],
+  })
+}
+
 export function listSubdivisionContacts(subdivisionId: number) {
   return listContacts({ subdivisionId })
 }
@@ -119,15 +127,32 @@ export async function updateContact(
     email?: string
     role?: ContactRole
     isActive?: boolean
+    subdivisionId?: number | null
   }
 ) {
   const existing = await prisma.contactPerson.findUnique({ where: { id } })
   if (!existing) throw new Error("NOT_FOUND")
 
+  let subdivisionId = existing.subdivisionId
+  if (input.subdivisionId !== undefined) {
+    if (input.subdivisionId != null) {
+      const subdivision = await prisma.subdivision.findFirst({
+        where: {
+          id: input.subdivisionId,
+          organizationId: existing.organizationId,
+        },
+      })
+      if (!subdivision) throw new Error("NOT_FOUND")
+      subdivisionId = input.subdivisionId
+    } else {
+      subdivisionId = null
+    }
+  }
+
   const role = input.role ?? existing.role
   await assertPrimaryUnique({
     organizationId: existing.organizationId,
-    subdivisionId: existing.subdivisionId,
+    subdivisionId,
     role,
     excludeId: id,
   })
@@ -140,7 +165,9 @@ export async function updateContact(
       ...(input.email != null ? { email: input.email } : {}),
       ...(input.role != null ? { role: input.role } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+      ...(input.subdivisionId !== undefined ? { subdivisionId } : {}),
     },
+    include: { subdivision: { select: { id: true, name: true } } },
   })
 }
 

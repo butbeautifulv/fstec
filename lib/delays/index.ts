@@ -11,6 +11,7 @@ export type DelayRequestRow = {
     id: number
     dueAt: Date
     measure: { id: number; name: string }
+    subdivision: { id: number; name: string } | null
     order: {
       id: number
       title: string
@@ -33,6 +34,7 @@ export async function listDelayRequests(status?: DelayRequestStatus) {
       orderItem: {
         include: {
           measure: { select: { id: true, name: true } },
+          subdivision: { select: { id: true, name: true } },
           order: {
             select: {
               id: true,
@@ -54,6 +56,7 @@ export async function getDelayRequest(id: number) {
       orderItem: {
         include: {
           measure: { select: { id: true, name: true } },
+          subdivision: { select: { id: true, name: true } },
           order: {
             select: {
               id: true,

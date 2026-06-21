@@ -44,7 +44,7 @@ export function SubdivisionForm({
     )
     if (res.ok) {
       notify.success(isEdit ? "Подразделение обновлено" : "Подразделение добавлено")
-      router.push(`/panel/organizations/${organizationId}`)
+      router.push(`/panel/organizations/${organizationId}/links`)
       router.refresh()
       return { ok: true as const }
     }

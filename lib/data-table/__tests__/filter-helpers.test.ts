@@ -160,7 +160,12 @@ describe("createOrderItemContextColumns", () => {
       measure: { id: 3, name: "Measure" },
     }))
 
-    expect(columns.map((c) => c.id)).toEqual(["organization", "order", "measure"])
+    expect(columns.map((c) => c.id)).toEqual([
+      "organization",
+      "subdivision",
+      "order",
+      "measure",
+    ])
   })
 
   it("uses custom base path in href builders", () => {
@@ -174,14 +179,20 @@ describe("createOrderItemContextColumns", () => {
       "/custom"
     )
 
-    expect(columns.map((c) => c.id)).toEqual(["organization", "order", "measure"])
+    expect(columns.map((c) => c.id)).toEqual([
+      "organization",
+      "subdivision",
+      "order",
+      "measure",
+    ])
     type ContextRow = { id: number }
     type AccessorCol = ColumnDef<ContextRow> & {
       accessorFn?: (row: ContextRow) => string
     }
     expect((columns[0] as AccessorCol).accessorFn?.(row)).toBe("Org")
-    expect((columns[1] as AccessorCol).accessorFn?.(row)).toBe("Order")
-    expect((columns[2] as AccessorCol).accessorFn?.(row)).toBe("Measure")
+    expect((columns[1] as AccessorCol).accessorFn?.(row)).toBe("—")
+    expect((columns[2] as AccessorCol).accessorFn?.(row)).toBe("Order")
+    expect((columns[3] as AccessorCol).accessorFn?.(row)).toBe("Measure")
   })
 })
 
@@ -196,6 +207,6 @@ describe("orderItemContextSearchFields", () => {
         },
         ["extra"]
       )
-    ).toEqual(["Org A", "Order B", "Measure C", "extra"])
+    ).toEqual(["Org A", "", "Order B", "Measure C", "extra"])
   })
 })

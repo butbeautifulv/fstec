@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { PublicReportsRevisionBanner } from "@/components/public/public-reports-revision-banner"
+import { buildDashboardPageProps } from "@/lib/dashboard/build-dashboard-page-props"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { countPublicReportsNeedingRevision } from "@/lib/public/reports"
 import { serializePublicStatuses } from "@/lib/public/serialize-public"
@@ -30,28 +31,24 @@ export default async function PublicLinkPage({
   const scope = scopeFromAccessLink(linkCtx.link)
 
   return (
-    <div className="flex min-w-0 flex-col gap-4 md:gap-6">
-      {needsRevisionCount > 0 && (
-        <PublicReportsRevisionBanner token={token} count={needsRevisionCount} />
-      )}
-
-      <ScopedDashboardPageShell
-        variant="public"
-        scope={scope}
-        title={linkCtx.organization.name}
-        description={
+    <ScopedDashboardPageShell
+      {...buildDashboardPageProps({
+        variant: "public",
+        scope,
+        token,
+        statuses: serializePublicStatuses(statuses),
+        title: linkCtx.organization.name,
+        description:
           linkCtx.subdivision?.name
             ? `Подразделение: ${linkCtx.subdivision.name}`
-            : "Все меры организации"
-        }
-        baseHref={`/p/${token}`}
-        overdueOnly={overdueOnly}
-        statuses={serializePublicStatuses(statuses)}
-        token={token}
-        publicScope={scope.type === "subdivision" ? "subdivision" : "organization"}
-        showSubdivisionColumn={scope.type === "organization"}
-        emptyMessage="Нет мер для отображения."
-      />
-    </div>
+            : "Все меры организации",
+        overdueOnly,
+        emptyMessage: "Нет мер для отображения.",
+        beforeContent:
+          needsRevisionCount > 0 ? (
+            <PublicReportsRevisionBanner token={token} count={needsRevisionCount} />
+          ) : undefined,
+      })}
+    />
   )
 }

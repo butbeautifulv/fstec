@@ -63,7 +63,32 @@ describe("serializeOrders", () => {
         organization: { id: 10, name: "Org" },
         createdBy: { id: 2, name: "User" },
         _count: { items: 5 },
+        subdivisionSummary: null,
       },
+    ])
+  })
+
+  it("summarizes subdivision names from items", () => {
+    expect(
+      serializeOrders([
+        {
+          id: 3,
+          title: "Order C",
+          issuedAt: "2024-05-01T00:00:00.000Z",
+          defaultDueAt: null,
+          organization: { id: 1, name: "Org" },
+          createdBy: { id: 1, name: "Admin" },
+          _count: { items: 2 },
+          items: [
+            { subdivision: { id: 1, name: "IT" } },
+            { subdivision: { id: 2, name: "HR" } },
+          ],
+        },
+      ])
+    ).toEqual([
+      expect.objectContaining({
+        subdivisionSummary: "HR, IT",
+      }),
     ])
   })
 
@@ -89,6 +114,7 @@ describe("serializeOrders", () => {
         organization: { id: 1, name: "Org" },
         createdBy: { id: 1, name: "Admin" },
         _count: { items: 0 },
+        subdivisionSummary: null,
       },
     ])
   })

@@ -209,6 +209,67 @@ describe("contacts CRUD", () => {
     )
   })
 
+  it("updateContact changes subdivision scope", async () => {
+    mockPrisma.contactPerson.findUnique.mockResolvedValue({
+      id: 1,
+      organizationId: 1,
+      subdivisionId: null,
+      role: "RESPONSIBLE",
+    })
+    mockPrisma.subdivision.findFirst.mockResolvedValue({ id: 12, organizationId: 1 })
+    mockPrisma.contactPerson.findFirst.mockResolvedValue(null)
+    mockPrisma.contactPerson.update.mockResolvedValue({
+      id: 1,
+      subdivisionId: 12,
+      subdivision: { id: 12, name: "IT" },
+    })
+
+    await updateContact(1, { subdivisionId: 12 })
+
+    expect(mockPrisma.subdivision.findFirst).toHaveBeenCalledWith({
+      where: { id: 12, organizationId: 1 },
+    })
+    expect(mockPrisma.contactPerson.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ subdivisionId: 12 }),
+      })
+    )
+  })
+
+  it("updateContact clears subdivision scope", async () => {
+    mockPrisma.contactPerson.findUnique.mockResolvedValue({
+      id: 1,
+      organizationId: 1,
+      subdivisionId: 12,
+      role: "RESPONSIBLE",
+    })
+    mockPrisma.contactPerson.findFirst.mockResolvedValue(null)
+    mockPrisma.contactPerson.update.mockResolvedValue({
+      id: 1,
+      subdivisionId: null,
+    })
+
+    await updateContact(1, { subdivisionId: null })
+
+    expect(mockPrisma.contactPerson.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ subdivisionId: null }),
+      })
+    )
+  })
+
+  it("updateContact throws NOT_FOUND for foreign subdivision", async () => {
+    mockPrisma.contactPerson.findUnique.mockResolvedValue({
+      id: 1,
+      organizationId: 1,
+      subdivisionId: null,
+      role: "RESPONSIBLE",
+    })
+    mockPrisma.subdivision.findFirst.mockResolvedValue(null)
+
+    await expect(updateContact(1, { subdivisionId: 99 })).rejects.toThrow("NOT_FOUND")
+  })
+
   it("deleteContact succeeds", async () => {
     mockPrisma.contactPerson.findUnique.mockResolvedValue({ id: 1 })
     mockPrisma.contactPerson.delete.mockResolvedValue({ id: 1 })

@@ -18,6 +18,11 @@ export type StatusBreakdownRow = {
   [K in (typeof STATUS_DISPLAY_ORDER)[number]]: number
 }
 
+/**
+ * Data scope for the unified dashboard summary.
+ * Same charts/table/filter logic across platform, public, and report variants;
+ * scope.type drives breakdown columns (org → subdivision → order).
+ */
 export type DashboardScope =
   | { type: "global" }
   | { type: "organization"; organizationId: number }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ShareLinkActions } from "@/components/shared/share-link-actions"
+import { ShareLinkField } from "@/components/shared/share-link-field"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { reportSharePath } from "@/lib/report-links/scoped-path"
 import { notify } from "@/lib/ui/feedback"
 import { Share2, Trash2 } from "lucide-react"
 
@@ -28,11 +29,15 @@ export function ReportShareButton({
   const [active, setActive] = useState(initialActive)
   const [loading, setLoading] = useState(false)
 
-  const path = active ? `/report/${active.token}` : null
+  const path = active ? reportSharePath(active.token) : null
 
   async function generate() {
     setLoading(true)
-    const res = await fetch("/api/report-links", { method: "POST" })
+    const res = await fetch("/api/report-links", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ scope: { type: "global" } }),
+    })
     setLoading(false)
     if (res.ok) {
       const link = await res.json()
@@ -66,7 +71,7 @@ export function ReportShareButton({
           <span className="hidden sm:inline">Поделиться</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-72">
+      <DropdownMenuContent align="end" className="w-[min(24rem,90vw)]">
         {!active ? (
           <>
             <DropdownMenuLabel>Ссылка на отчёт</DropdownMenuLabel>
@@ -78,14 +83,12 @@ export function ReportShareButton({
         ) : (
           <>
             <DropdownMenuLabel>Ссылка на отчёт</DropdownMenuLabel>
-            <p className="px-2 pb-1 text-xs text-muted-foreground">
-              Публичная сводка для руководителя
-            </p>
-            <p className="truncate px-2 pb-2 font-mono text-xs text-muted-foreground">
-              /report/{active.token.slice(0, 16)}…
+            <p className="px-2 pb-2 text-xs text-muted-foreground">
+              Публичная сводка для руководителя. Для среза по организации или подразделению
+              используйте кнопку «Отчёт» на соответствующей сводке.
             </p>
             <div className="px-2 pb-2">
-              <ShareLinkActions
+              <ShareLinkField
                 path={path!}
                 copySuccessMessage="Ссылка на отчёт скопирована"
               />

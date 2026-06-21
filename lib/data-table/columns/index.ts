@@ -1,6 +1,7 @@
 export { createOrganizationColumn } from "@/lib/data-table/columns/organization-column"
 export { createOrderColumn } from "@/lib/data-table/columns/order-column"
 export { createMeasureColumn } from "@/lib/data-table/columns/measure-column"
+export { createSubdivisionColumn } from "@/lib/data-table/columns/subdivision-column"
 export { createDueAtColumn } from "@/lib/data-table/columns/due-at-column"
 export { createCodeColumn } from "@/lib/data-table/columns/code-column"
 export {

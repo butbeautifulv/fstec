@@ -9,7 +9,7 @@ import { DataTable, DataTableColumnHeader } from "@/components/data-table"
 import { colMeta, actionsColumnMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { createOrganizationColumn } from "@/lib/data-table/columns"
 import { dateSortFn, numberSortFn } from "@/lib/data-table/sort-helpers"
-import { TextCell } from "@/lib/data-table/text-cell"
+import { TextCell, TruncatedCell } from "@/lib/data-table/text-cell"
 import { useResourceDelete } from "@/hooks/use-resource-delete"
 import { labels } from "@/lib/ui/branding"
 import { format } from "date-fns"
@@ -20,6 +20,7 @@ type Order = {
   title: string
   issuedAt: string
   organization: { id: number; name: string }
+  subdivisionSummary: string | null
   _count: { items: number }
 }
 
@@ -55,8 +56,19 @@ export function OrdersTable({
       createOrganizationColumn<Order>(
         (row) => row.organization,
         (org) => `/panel/organizations/${org.id}`,
-        "w-[20%]"
+        "w-[16%]"
       ),
+      {
+        id: "subdivision",
+        accessorFn: (row) => row.subdivisionSummary ?? "—",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Подразделение" />
+        ),
+        cell: ({ row }) => (
+          <TruncatedCell text={row.original.subdivisionSummary ?? "—"} />
+        ),
+        meta: colMeta("Подразделение", { cellClassName: "max-w-0 w-[16%]" }),
+      },
       {
         id: "items",
         header: ({ column }) => (
@@ -115,11 +127,14 @@ export function OrdersTable({
       <DataTable
         columns={columns}
         data={orders}
-        searchPlaceholder="Поиск по названию или организации…"
+        searchPlaceholder="Поиск по названию, организации или подразделению…"
         globalFilterFn={(row, _columnId, filterValue) => {
           const q = String(filterValue).toLowerCase()
           if (!q) return true
-          return [row.title, row.organization.name].join(" ").toLowerCase().includes(q)
+          return [row.title, row.organization.name, row.subdivisionSummary ?? ""]
+            .join(" ")
+            .toLowerCase()
+            .includes(q)
         }}
         empty={
           <EmptyTableState
