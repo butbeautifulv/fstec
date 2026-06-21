@@ -38,6 +38,8 @@ export function ReportItemDetail({
     isRejected,
     canSubmitReport,
     displayStatus,
+    workflowStatusName,
+    reportStatusLabel,
     statusVariant,
   } = getItemDetailDisplayState(item, item.latestResponse)
 
@@ -55,6 +57,8 @@ export function ReportItemDetail({
       subdivisionName={item.subdivisionName}
       dueAt={item.dueAt}
       displayStatus={displayStatus}
+      workflowStatusName={workflowStatusName}
+      reportStatusLabel={reportStatusLabel}
       isOverdue={isOverdue}
       statusVariant={statusVariant}
     >

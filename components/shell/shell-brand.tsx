@@ -34,7 +34,7 @@ export function ShellBrand({
                 <Icon className="size-4" />
               </div>
             )}
-            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight">
+            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <OverflowText className="w-full min-w-0 font-medium">{title}</OverflowText>
               {subtitle && (
                 <span

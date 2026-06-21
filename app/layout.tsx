@@ -7,7 +7,7 @@ import { TimezoneProvider } from "@/components/timezone-provider"
 import { LocaleProvider } from "@/components/locale-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { APP_NAME } from "@/lib/ui/branding"
+import { APP_NAME, APP_TAGLINE } from "@/lib/ui/branding"
 import { cn } from "@/lib/utils"
 
 const geist = Geist({ subsets: ["latin", "cyrillic"], variable: "--font-sans" })
@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: APP_NAME,
+  description: APP_TAGLINE,
 }
 
 export default function RootLayout({

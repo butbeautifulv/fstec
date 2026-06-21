@@ -13,6 +13,7 @@ import {
   usePublicBreadcrumbMiddle,
 } from "@/components/public/public-breadcrumb"
 import { Button } from "@/components/ui/button"
+import { MotionActionButton } from "@/components/motion"
 import { notify } from "@/lib/ui/feedback"
 import { WORKFLOW_STATUS } from "@/lib/statuses/workflow"
 import { getItemDetailDisplayState } from "@/lib/ui/item-detail-display"
@@ -69,6 +70,8 @@ export function PublicItemDetail({
   const [delayOpen, setDelayOpen] = useState(false)
   const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [startSuccessPulseKey, setStartSuccessPulseKey] = useState(0)
+  const [submitSuccessPulseKey, setSubmitSuccessPulseKey] = useState(0)
 
   const {
     isOverdue,
@@ -78,6 +81,8 @@ export function PublicItemDetail({
     canStart,
     canSubmitReport,
     displayStatus,
+    workflowStatusName,
+    reportStatusLabel,
     statusVariant,
   } = getItemDetailDisplayState(item, latestResponse)
 
@@ -115,6 +120,7 @@ export function PublicItemDetail({
         },
       }))
       notify.success("Мера взята в работу")
+      setStartSuccessPulseKey((key) => key + 1)
     } else {
       const data = await res.json().catch(() => null)
       notify.error(data?.error ?? "Не удалось взять меру в работу")
@@ -147,6 +153,7 @@ export function PublicItemDetail({
       setResult("")
       setCommentaryState({ commentary: "", attachmentIds: [] })
       notify.success("Отчёт отправлен, ожидает проверки")
+      setSubmitSuccessPulseKey((key) => key + 1)
     } else {
       const data = await res.json().catch(() => null)
       notify.error(data?.error ?? "Не удалось отправить отчёт")
@@ -165,6 +172,8 @@ export function PublicItemDetail({
         subdivisionName={subdivisionName}
         dueAt={item.dueAt}
         displayStatus={displayStatus}
+        workflowStatusName={workflowStatusName}
+        reportStatusLabel={reportStatusLabel}
         isOverdue={isOverdue}
         statusVariant={statusVariant}
         dueStatusFooter={
@@ -177,9 +186,11 @@ export function PublicItemDetail({
         }
         dueStatusChildren={
           canStart ? (
-            <Button onClick={startWork} disabled={starting} className="w-full sm:w-auto">
-              Взять в работу
-            </Button>
+            <MotionActionButton successPulseKey={startSuccessPulseKey}>
+              <Button onClick={startWork} disabled={starting} className="w-full sm:w-auto">
+                Взять в работу
+              </Button>
+            </MotionActionButton>
           ) : undefined
         }
       >
@@ -201,6 +212,7 @@ export function PublicItemDetail({
           presignUrl={`/api/public/${token}/items/${item.id}/attachments/presign`}
           onSubmit={submitReport}
           submitting={submitting}
+          submitSuccessPulseKey={submitSuccessPulseKey}
         />
       </ItemDetailOverview>
 

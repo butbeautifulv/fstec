@@ -7,6 +7,13 @@ import {
 } from "@/components/shared/commentary-attachments-field"
 import { ItemResponseCard } from "@/components/shared/item-detail/item-response-card"
 import { ResponseRevisionAlert } from "@/components/shared/response-revision-alert"
+import {
+  MotionActionButton,
+  MotionPulseText,
+  MotionStagger,
+  MotionStaggerItem,
+  MotionWorkflowPanel,
+} from "@/components/motion"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -19,6 +26,7 @@ import {
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { getItemWorkflowPhase } from "@/lib/ui/item-detail-display"
 import { cn } from "@/lib/utils"
 
 type ReadonlyResponse = {
@@ -29,6 +37,17 @@ type ReadonlyResponse = {
   submittedAt: string
   submittedByLabel: string | null
   attachments?: { id: number; originalName: string }[]
+}
+
+function workflowCardClassName(
+  phase: ReturnType<typeof getItemWorkflowPhase>
+) {
+  return cn(
+    phase === "completed" && "border-primary/30 bg-primary/5",
+    phase === "pending_review" && "border-destructive/30 bg-destructive/5",
+    phase === "rejected" && "border-destructive/30 bg-destructive/5",
+    phase === "in_progress_form" && "border-primary/30"
+  )
 }
 
 export function ItemReportWorkflowCard({
@@ -47,6 +66,7 @@ export function ItemReportWorkflowCard({
   presignUrl,
   onSubmit,
   submitting,
+  submitSuccessPulseKey = 0,
 }: {
   completed: boolean
   isPendingReview: boolean
@@ -63,106 +83,117 @@ export function ItemReportWorkflowCard({
   presignUrl?: string
   onSubmit?: () => void
   submitting?: boolean
+  submitSuccessPulseKey?: number
 }) {
-  if (completed && latestResponse) {
+  const phase = getItemWorkflowPhase({
+    completed,
+    isPendingReview,
+    isRejected,
+    canSubmitReport,
+  })
+
+  if (phase === "completed" && latestResponse) {
     return (
-      <ItemResponseCard
-        result={latestResponse.result}
-        commentary={latestResponse.commentary}
-        submittedAt={latestResponse.submittedAt}
-        submittedByLabel={latestResponse.submittedByLabel}
-        reviewStatus={latestResponse.reviewStatus}
-        attachments={latestResponse.attachments}
-        attachmentViewUrl={attachmentViewUrl}
-      />
+      <MotionWorkflowPanel phase={phase}>
+        <ItemResponseCard
+          result={latestResponse.result}
+          commentary={latestResponse.commentary}
+          submittedAt={latestResponse.submittedAt}
+          submittedByLabel={latestResponse.submittedByLabel}
+          reviewStatus={latestResponse.reviewStatus}
+          attachments={latestResponse.attachments}
+          attachmentViewUrl={attachmentViewUrl}
+        />
+      </MotionWorkflowPanel>
     )
   }
 
+  const description =
+    phase === "pending_review"
+      ? "Отчёт отправлен и ожидает проверки оператором."
+      : phase === "rejected"
+        ? "Исправьте замечания и отправьте отчёт повторно."
+        : phase === "in_progress_form"
+          ? "Опишите выполненные работы и отправьте отчёт."
+          : "Сначала возьмите меру в работу."
+
   return (
-    <Card
-      className={cn(
-        completed && "border-primary/30 bg-primary/5",
-        isPendingReview && "border-destructive/30 bg-destructive/5",
-        isRejected && "border-destructive/30 bg-destructive/5",
-        canSubmitReport &&
-          !completed &&
-          !isPendingReview &&
-          !isRejected &&
-          "border-primary/30"
-      )}
-    >
+    <Card className={workflowCardClassName(phase)}>
       <CardHeader>
         <CardTitle className="text-base">Отчёт о выполнении</CardTitle>
-        <CardDescription>
-          {completed
-            ? "Мера завершена, отчёт принят."
-            : isPendingReview
-              ? "Отчёт отправлен и ожидает проверки оператором."
-              : isRejected
-                ? "Исправьте замечания и отправьте отчёт повторно."
-                : canSubmitReport
-                  ? "Опишите выполненные работы и отправьте отчёт."
-                  : "Сначала возьмите меру в работу."}
-        </CardDescription>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col gap-4">
-        {isRejected && latestResponse?.reviewNote && (
-          <ResponseRevisionAlert reviewNote={latestResponse.reviewNote} />
+
+      <MotionWorkflowPanel phase={phase}>
+        <CardContent className="flex flex-col gap-4 pt-0">
+          {phase === "rejected" && latestResponse?.reviewNote && (
+            <ResponseRevisionAlert reviewNote={latestResponse.reviewNote} />
+          )}
+
+          {phase === "not_started" ? (
+            <p className="text-sm text-muted-foreground">
+              Нажмите «Взять в работу», чтобы открыть форму отчёта.
+            </p>
+          ) : phase === "pending_review" ? (
+            <MotionPulseText active>
+              <p className="text-sm text-muted-foreground">
+                После проверки статус меры обновится автоматически.
+              </p>
+            </MotionPulseText>
+          ) : (
+            <MotionStagger variant="workflow" className="flex flex-col gap-4">
+              <FieldGroup className="gap-4">
+                <MotionStaggerItem variant="workflow">
+                  <Field>
+                    <FieldLabel htmlFor="submitter">ФИО исполнителя</FieldLabel>
+                    <Input
+                      id="submitter"
+                      placeholder="Необязательно"
+                      value={submitter ?? ""}
+                      onChange={(e) => onSubmitterChange?.(e.target.value)}
+                    />
+                  </Field>
+                </MotionStaggerItem>
+                <MotionStaggerItem variant="workflow">
+                  <Field>
+                    <FieldLabel htmlFor="result">Описание выполненных работ</FieldLabel>
+                    <Textarea
+                      id="result"
+                      placeholder="Опишите, что сделано по мере"
+                      value={result ?? ""}
+                      onChange={(e) => onResultChange?.(e.target.value)}
+                      rows={6}
+                      className="min-h-32"
+                    />
+                  </Field>
+                </MotionStaggerItem>
+                {commentaryState && onCommentaryChange && presignUrl && (
+                  <MotionStaggerItem variant="workflow">
+                    <CommentaryAttachmentsField
+                      presignUrl={presignUrl}
+                      value={commentaryState}
+                      onChange={onCommentaryChange}
+                    />
+                  </MotionStaggerItem>
+                )}
+              </FieldGroup>
+            </MotionStagger>
+          )}
+        </CardContent>
+
+        {canSubmitReport && onSubmit && (
+          <CardFooter>
+            <MotionActionButton successPulseKey={submitSuccessPulseKey}>
+              <Button
+                onClick={onSubmit}
+                disabled={!result?.trim() || submitting}
+              >
+                {phase === "rejected" ? "Отправить повторно" : "Отправить отчёт"}
+              </Button>
+            </MotionActionButton>
+          </CardFooter>
         )}
-        {completed ? (
-          <p className="text-sm text-muted-foreground">
-            Дополнительных действий не требуется.
-          </p>
-        ) : isPendingReview ? (
-          <p className="text-sm text-muted-foreground">
-            После проверки статус меры обновится автоматически.
-          </p>
-        ) : !canSubmitReport ? (
-          <p className="text-sm text-muted-foreground">
-            Нажмите «Взять в работу», чтобы открыть форму отчёта.
-          </p>
-        ) : (
-          <FieldGroup className="gap-4">
-            <Field>
-              <FieldLabel htmlFor="submitter">ФИО исполнителя</FieldLabel>
-              <Input
-                id="submitter"
-                placeholder="Необязательно"
-                value={submitter ?? ""}
-                onChange={(e) => onSubmitterChange?.(e.target.value)}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="result">Описание выполненных работ</FieldLabel>
-              <Textarea
-                id="result"
-                placeholder="Опишите, что сделано по мере"
-                value={result ?? ""}
-                onChange={(e) => onResultChange?.(e.target.value)}
-                rows={6}
-                className="min-h-32"
-              />
-            </Field>
-            {commentaryState && onCommentaryChange && presignUrl && (
-              <CommentaryAttachmentsField
-                presignUrl={presignUrl}
-                value={commentaryState}
-                onChange={onCommentaryChange}
-              />
-            )}
-          </FieldGroup>
-        )}
-      </CardContent>
-      {canSubmitReport && onSubmit && (
-        <CardFooter>
-          <Button
-            onClick={onSubmit}
-            disabled={!result?.trim() || submitting}
-          >
-            Отправить отчёт
-          </Button>
-        </CardFooter>
-      )}
+      </MotionWorkflowPanel>
     </Card>
   )
 }

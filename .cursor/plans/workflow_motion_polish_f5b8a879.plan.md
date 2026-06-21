@@ -4,25 +4,25 @@ overview: Расширить motion-kit orchestration-компонентами (
 todos:
   - id: workflow-motion-kit
     content: Add motion-workflow-presets, MotionWorkflowPanel, MotionStatusBadge, MotionActionButton + index exports
-    status: pending
+    status: completed
   - id: workflow-phase-helper
     content: Add getItemWorkflowPhase to lib/ui/item-detail-display.ts
-    status: pending
+    status: completed
   - id: report-workflow-card
     content: Animate ItemReportWorkflowCard phases with AnimatePresence + per-phase variants
-    status: pending
+    status: completed
   - id: due-status-start-work
     content: Animate ItemDueStatusCard badge + public startWork MotionActionButton
-    status: pending
+    status: completed
   - id: review-pages-motion
     content: ResponseDetailClient + DelayRequestDetailClient reject toggle and action pulses
-    status: pending
+    status: completed
   - id: detail-entrance
     content: ItemDetailOverview stagger + SubmitOrderItemResponseForm field stagger
-    status: pending
+    status: completed
   - id: verify-workflow-motion
     content: typecheck/build + workflow smoke + reduced-motion check
-    status: pending
+    status: completed
 isProject: false
 ---
 

@@ -1,5 +1,9 @@
 import type { ReactNode } from "react"
 
+/** Full-width hairline that fades out toward the end (e.g. near header badges). */
+export const pageHeaderHairlineClassName =
+  "relative after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:h-px after:bg-gradient-to-r after:from-border after:via-border/50 after:to-transparent"
+
 export function TypographyH1({ children }: { children: ReactNode }) {
   return (
     <h1 className="scroll-m-20 text-2xl font-bold tracking-tight text-balance sm:text-3xl">
@@ -10,7 +14,7 @@ export function TypographyH1({ children }: { children: ReactNode }) {
 
 export function TypographyH2({ children }: { children: ReactNode }) {
   return (
-    <h2 className="scroll-m-20 border-b pb-2 text-2xl font-bold tracking-tight">
+    <h2 className="scroll-m-20 text-2xl font-bold tracking-tight">
       {children}
     </h2>
   )

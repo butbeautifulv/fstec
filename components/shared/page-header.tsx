@@ -3,7 +3,7 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { MotionFadeIn } from "@/components/motion"
-import { TypographyH2, TypographyMuted } from "@/components/ui/typography"
+import { TypographyH2, TypographyMuted, pageHeaderHairlineClassName } from "@/components/ui/typography"
 import { cn } from "@/lib/utils"
 
 export function PageHeader({
@@ -28,7 +28,12 @@ export function PageHeader({
           ← {backLabel}
         </Link>
       )}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+      <div
+        className={cn(
+          "flex flex-col gap-3 pb-3 sm:flex-row sm:items-start sm:justify-between",
+          pageHeaderHairlineClassName
+        )}
+      >
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <TypographyH2>{title}</TypographyH2>
           {description && <TypographyMuted>{description}</TypographyMuted>}

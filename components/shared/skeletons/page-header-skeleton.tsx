@@ -1,4 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton"
+import { pageHeaderHairlineClassName } from "@/components/ui/typography"
 import { cn } from "@/lib/utils"
 
 export function PageHeaderSkeleton({
@@ -11,7 +12,7 @@ export function PageHeaderSkeleton({
   className?: string
 }) {
   return (
-    <div className={cn("flex min-h-[72px] flex-col gap-3 border-b pb-4", className)}>
+    <div className={cn("flex min-h-[72px] flex-col gap-3 pb-4", pageHeaderHairlineClassName, className)}>
       {showBack && <Skeleton className="h-4 w-24" />}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex min-w-0 flex-1 flex-col gap-2">

@@ -3,6 +3,10 @@
 import { motion, useReducedMotion } from "motion/react"
 import type { ReactNode } from "react"
 import { fadeIn, fadeInUp, staggerContainer, staggerItem } from "@/components/motion/motion-presets"
+import {
+  workflowStaggerContainer,
+  workflowStaggerItem,
+} from "@/components/motion/motion-workflow-presets"
 import { cn } from "@/lib/utils"
 
 export function MotionFadeIn({
@@ -66,11 +70,14 @@ export function MotionPageEnter({
 export function MotionStagger({
   children,
   className,
+  variant = "default",
 }: {
   children: ReactNode
   className?: string
+  variant?: "default" | "workflow"
 }) {
   const reduceMotion = useReducedMotion()
+  const container = variant === "workflow" ? workflowStaggerContainer : staggerContainer
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>
@@ -81,7 +88,7 @@ export function MotionStagger({
       className={className}
       initial="initial"
       animate="animate"
-      variants={staggerContainer}
+      variants={container}
     >
       {children}
     </motion.div>
@@ -91,18 +98,21 @@ export function MotionStagger({
 export function MotionStaggerItem({
   children,
   className,
+  variant = "default",
 }: {
   children: ReactNode
   className?: string
+  variant?: "default" | "workflow"
 }) {
   const reduceMotion = useReducedMotion()
+  const item = variant === "workflow" ? workflowStaggerItem : staggerItem
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>
   }
 
   return (
-    <motion.div className={cn(className)} variants={staggerItem}>
+    <motion.div className={cn(className)} variants={item}>
       {children}
     </motion.div>
   )

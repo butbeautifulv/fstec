@@ -11,6 +11,11 @@ import {
 import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { AttachmentGallery } from "@/components/shared/attachment-gallery"
 import { PageHeader } from "@/components/shared/page-header"
+import {
+  MotionActionButton,
+  MotionReviewPanel,
+  MotionStatusBadge,
+} from "@/components/motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -68,6 +73,7 @@ export function ResponseDetailClient({
   const [processing, setProcessing] = useState(false)
   const [rejectMode, setRejectMode] = useState(false)
   const [reviewNote, setReviewNote] = useState("")
+  const [statusPulseKey, setStatusPulseKey] = useState(0)
 
   const canReview = can(Permission.ordersWrite)
   const isPending = response.reviewStatus === ResponseReviewStatus.PENDING
@@ -119,6 +125,7 @@ export function ResponseDetailClient({
       }))
       setRejectMode(false)
       setReviewNote("")
+      setStatusPulseKey((key) => key + 1)
       router.refresh()
     } else {
       const data = await res.json().catch(() => null)
@@ -141,27 +148,33 @@ export function ResponseDetailClient({
               </Button>
             ) : (
               <div className="flex flex-wrap gap-2">
-                <Button disabled={processing} onClick={() => void reviewResponse("accept")}>
-                  Принять
-                </Button>
-                <Button
-                  variant="outline"
-                  disabled={processing}
-                  onClick={() => setRejectMode(true)}
-                >
-                  Не принять
-                </Button>
+                <MotionActionButton>
+                  <Button disabled={processing} onClick={() => void reviewResponse("accept")}>
+                    Принять
+                  </Button>
+                </MotionActionButton>
+                <MotionActionButton>
+                  <Button
+                    variant="outline"
+                    disabled={processing}
+                    onClick={() => setRejectMode(true)}
+                  >
+                    Не принять
+                  </Button>
+                </MotionActionButton>
               </div>
             )
           ) : (
-            <Badge variant={RESPONSE_REVIEW_STATUS_VARIANT[response.reviewStatus]}>
-              {RESPONSE_REVIEW_STATUS_LABELS[response.reviewStatus]}
-            </Badge>
+            <MotionStatusBadge statusKey={response.reviewStatus} pulse={statusPulseKey > 0}>
+              <Badge variant={RESPONSE_REVIEW_STATUS_VARIANT[response.reviewStatus]}>
+                {RESPONSE_REVIEW_STATUS_LABELS[response.reviewStatus]}
+              </Badge>
+            </MotionStatusBadge>
           )
         }
       />
 
-      {isPending && canReview && rejectMode && (
+      <MotionReviewPanel open={isPending && canReview && rejectMode}>
         <Card>
           <CardHeader>
             <CardTitle>Возврат на доработку</CardTitle>
@@ -176,16 +189,18 @@ export function ResponseDetailClient({
               onChange={(e) => setReviewNote(e.target.value)}
               rows={4}
             />
-            <Button
-              variant="destructive"
-              disabled={processing || !reviewNote.trim()}
-              onClick={() => void reviewResponse("reject")}
-            >
-              Вернуть на доработку
-            </Button>
+            <MotionActionButton>
+              <Button
+                variant="destructive"
+                disabled={processing || !reviewNote.trim()}
+                onClick={() => void reviewResponse("reject")}
+              >
+                Вернуть на доработку
+              </Button>
+            </MotionActionButton>
           </CardContent>
         </Card>
-      )}
+      </MotionReviewPanel>
 
       <Card>
         <CardHeader>
@@ -214,9 +229,14 @@ export function ResponseDetailClient({
           <CardContent className="flex flex-col gap-3 text-sm">
             <div className="flex justify-between gap-4">
               <span className="text-muted-foreground">Статус</span>
-              <Badge variant={RESPONSE_REVIEW_STATUS_VARIANT[response.reviewStatus]}>
-                {RESPONSE_REVIEW_STATUS_LABELS[response.reviewStatus]}
-              </Badge>
+              <MotionStatusBadge
+                statusKey={`${response.reviewStatus}-${statusPulseKey}`}
+                pulse={statusPulseKey > 0}
+              >
+                <Badge variant={RESPONSE_REVIEW_STATUS_VARIANT[response.reviewStatus]}>
+                  {RESPONSE_REVIEW_STATUS_LABELS[response.reviewStatus]}
+                </Badge>
+              </MotionStatusBadge>
             </div>
             {response.reviewedAt && (
               <div className="flex justify-between gap-4">

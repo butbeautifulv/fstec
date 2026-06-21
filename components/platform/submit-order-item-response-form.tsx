@@ -9,6 +9,7 @@ import {
 } from "@/components/shared/commentary-attachments-field"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
 import { FormCardLayout } from "@/components/shared/form-card-grid"
+import { MotionActionButton, MotionStagger, MotionStaggerItem } from "@/components/motion"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -71,10 +72,12 @@ export function SubmitOrderItemResponseForm({
             <Button variant="outline" asChild disabled={submitting}>
               <Link href={`/panel/orders/${orderId}`}>Отмена</Link>
             </Button>
-            <Button type="submit" disabled={!result.trim() || submitting}>
-              {submitting && <Spinner data-icon="inline-start" />}
-              {submitting ? "Отправка..." : "Отправить отчёт"}
-            </Button>
+            <MotionActionButton>
+              <Button type="submit" disabled={!result.trim() || submitting}>
+                {submitting && <Spinner data-icon="inline-start" />}
+                {submitting ? "Отправка..." : "Отправить отчёт"}
+              </Button>
+            </MotionActionButton>
           </FormActionsBar>
         }
       >
@@ -84,25 +87,31 @@ export function SubmitOrderItemResponseForm({
             <CardDescription>{item.measure.name}</CardDescription>
           </CardHeader>
           <CardContent>
-            <FieldGroup className="gap-4">
-              <Field>
-                <FieldLabel htmlFor="panel-result">Описание выполненных работ</FieldLabel>
-                <Textarea
-                  id="panel-result"
-                  placeholder="Опишите, что сделано по мере"
-                  value={result}
-                  onChange={(e) => setResult(e.target.value)}
-                  rows={5}
-                  className="min-h-32"
-                  required
-                />
-              </Field>
-              <CommentaryAttachmentsField
-                presignUrl={presignUrl}
-                value={commentaryState}
-                onChange={setCommentaryState}
-              />
-            </FieldGroup>
+            <MotionStagger variant="workflow">
+              <FieldGroup className="gap-4">
+                <MotionStaggerItem variant="workflow">
+                  <Field>
+                    <FieldLabel htmlFor="panel-result">Описание выполненных работ</FieldLabel>
+                    <Textarea
+                      id="panel-result"
+                      placeholder="Опишите, что сделано по мере"
+                      value={result}
+                      onChange={(e) => setResult(e.target.value)}
+                      rows={5}
+                      className="min-h-32"
+                      required
+                    />
+                  </Field>
+                </MotionStaggerItem>
+                <MotionStaggerItem variant="workflow">
+                  <CommentaryAttachmentsField
+                    presignUrl={presignUrl}
+                    value={commentaryState}
+                    onChange={setCommentaryState}
+                  />
+                </MotionStaggerItem>
+              </FieldGroup>
+            </MotionStagger>
           </CardContent>
         </Card>
       </FormCardLayout>

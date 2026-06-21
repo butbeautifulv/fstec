@@ -1,4 +1,7 @@
+"use client"
+
 import type { ReactNode } from "react"
+import { MotionFadeIn, MotionStagger, MotionStaggerItem } from "@/components/motion"
 import { ItemDetailHeaderActions } from "@/components/shared/item-detail/item-detail-header-actions"
 import { ItemDueStatusCard } from "@/components/shared/item-detail/item-due-status-card"
 import { ItemMeasureInfoCard } from "@/components/shared/item-detail/item-measure-info-card"
@@ -17,6 +20,8 @@ export function ItemDetailOverview({
   subdivisionName,
   dueAt,
   displayStatus,
+  workflowStatusName,
+  reportStatusLabel,
   isOverdue,
   statusVariant,
   dueStatusFooter,
@@ -35,6 +40,8 @@ export function ItemDetailOverview({
   subdivisionName: string | null
   dueAt: string
   displayStatus: string
+  workflowStatusName?: string
+  reportStatusLabel?: string | null
   isOverdue: boolean
   statusVariant: "default" | "secondary" | "destructive"
   dueStatusFooter?: ReactNode
@@ -57,25 +64,33 @@ export function ItemDetailOverview({
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ItemMeasureInfoCard
-          description={measureDescription}
-          organizationName={organizationName}
-          subdivisionName={subdivisionName}
-        />
+      <MotionStagger className="grid items-stretch gap-4 lg:grid-cols-2">
+        <MotionStaggerItem className="h-full">
+          <ItemMeasureInfoCard
+            className="h-full"
+            description={measureDescription}
+            organizationName={organizationName}
+            subdivisionName={subdivisionName}
+          />
+        </MotionStaggerItem>
 
-        <ItemDueStatusCard
-          dueAt={dueAt}
-          displayStatus={displayStatus}
-          isOverdue={isOverdue}
-          statusVariant={statusVariant}
-          footer={dueStatusFooter}
-        >
-          {dueStatusChildren}
-        </ItemDueStatusCard>
-      </div>
+        <MotionStaggerItem className="h-full">
+          <ItemDueStatusCard
+            className="h-full"
+            dueAt={dueAt}
+            displayStatus={displayStatus}
+            workflowStatusName={workflowStatusName ?? displayStatus}
+            reportStatusLabel={reportStatusLabel}
+            isOverdue={isOverdue}
+            statusVariant={statusVariant}
+            footer={dueStatusFooter}
+          >
+            {dueStatusChildren}
+          </ItemDueStatusCard>
+        </MotionStaggerItem>
+      </MotionStagger>
 
-      {children}
+      {children ? <MotionFadeIn>{children}</MotionFadeIn> : null}
     </div>
   )
 }

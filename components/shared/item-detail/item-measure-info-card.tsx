@@ -6,18 +6,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { cn } from "@/lib/utils"
 
 export function ItemMeasureInfoCard({
   description,
   organizationName,
   subdivisionName,
+  className,
 }: {
   description: string | null
   organizationName: string
   subdivisionName: string | null
+  className?: string
 }) {
   return (
-    <Card>
+    <Card className={cn(className)}>
       <CardHeader>
         <CardTitle className="text-base">О мере</CardTitle>
         <CardDescription>Описание и контекст поручения</CardDescription>

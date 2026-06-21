@@ -6,6 +6,7 @@ import { useState } from "react"
 import { format } from "date-fns"
 import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
 import { PageHeader } from "@/components/shared/page-header"
+import { MotionActionButton, MotionStatusBadge } from "@/components/motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -48,6 +49,7 @@ export function DelayRequestDetailClient({
   const router = useRouter()
   const [delay, setDelay] = useState(initialDelay)
   const [processing, setProcessing] = useState(false)
+  const [statusPulseKey, setStatusPulseKey] = useState(0)
 
   useAdminBreadcrumbLabel(delay.orderItem.measure.name)
 
@@ -73,6 +75,7 @@ export function DelayRequestDetailClient({
             : prev.orderItem,
       }))
       router.refresh()
+      setStatusPulseKey((key) => key + 1)
     } else {
       notify.error("Не удалось обработать запрос")
     }
@@ -88,21 +91,27 @@ export function DelayRequestDetailClient({
         actions={
           delay.status === DelayRequestStatus.PENDING ? (
             <div className="flex flex-wrap gap-2">
-              <Button disabled={processing} onClick={() => void reviewDelay("approve")}>
-                Одобрить
-              </Button>
-              <Button
-                variant="outline"
-                disabled={processing}
-                onClick={() => void reviewDelay("reject")}
-              >
-                Отклонить
-              </Button>
+              <MotionActionButton>
+                <Button disabled={processing} onClick={() => void reviewDelay("approve")}>
+                  Одобрить
+                </Button>
+              </MotionActionButton>
+              <MotionActionButton>
+                <Button
+                  variant="outline"
+                  disabled={processing}
+                  onClick={() => void reviewDelay("reject")}
+                >
+                  Отклонить
+                </Button>
+              </MotionActionButton>
             </div>
           ) : (
-            <Badge variant={DELAY_STATUS_VARIANT[delay.status]}>
-              {DELAY_STATUS_LABELS[delay.status]}
-            </Badge>
+            <MotionStatusBadge statusKey={`${delay.status}-${statusPulseKey}`} pulse={statusPulseKey > 0}>
+              <Badge variant={DELAY_STATUS_VARIANT[delay.status]}>
+                {DELAY_STATUS_LABELS[delay.status]}
+              </Badge>
+            </MotionStatusBadge>
           )
         }
       />

@@ -32,11 +32,21 @@ export function getItemDetailDisplayState(
     latestResponse?.reviewStatus === ResponseReviewStatus.REJECTED
   const canStart = isNotStarted(item.status.name)
   const canSubmitReport =
-    isInProgress(item.status.name) && !completed && !isPendingReview
-  const displayStatus = isPendingReview ? "На проверке" : getDisplayStatusName(item)
-  const statusVariant = getItemDetailStatusVariant({
+    isInProgress(item.status.name) &&
+    !completed &&
+    !isPendingReview &&
+    (!latestResponse || isRejected)
+  const reportStatusLabel = isPendingReview
+    ? "На проверке"
+    : isRejected
+      ? "Требует доработки"
+      : null
+  const workflowStatusName = getDisplayStatusName(item)
+  const displayStatus = reportStatusLabel ?? workflowStatusName
+  const workflowStatusVariant = getItemDetailStatusVariant({
     isOverdue,
-    isPendingReview,
+    isPendingReview: false,
+    isRejected: false,
     completed,
   })
 
@@ -47,7 +57,29 @@ export function getItemDetailDisplayState(
     isRejected,
     canStart,
     canSubmitReport,
+    workflowStatusName,
+    reportStatusLabel,
     displayStatus,
-    statusVariant,
+    statusVariant: workflowStatusVariant,
   }
+}
+
+export type ItemWorkflowPhase =
+  | "not_started"
+  | "in_progress_form"
+  | "pending_review"
+  | "rejected"
+  | "completed"
+
+export function getItemWorkflowPhase(
+  state: Pick<
+    ReturnType<typeof getItemDetailDisplayState>,
+    "completed" | "isPendingReview" | "isRejected" | "canSubmitReport"
+  >
+): ItemWorkflowPhase {
+  if (state.completed) return "completed"
+  if (state.isPendingReview) return "pending_review"
+  if (state.isRejected) return "rejected"
+  if (state.canSubmitReport) return "in_progress_form"
+  return "not_started"
 }
