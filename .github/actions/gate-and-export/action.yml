@@ -11,6 +11,10 @@ inputs:
   category:
     description: upload-sarif category
     required: true
+  tool_name:
+    description: SARIF tool.driver.name fallback for normalize step
+    required: false
+    default: scanner
   policy:
     description: Path to security-gate-policy.yaml
     required: false
@@ -31,15 +35,18 @@ runs:
       shell: bash
       run: |
         REPORT="${{ inputs.report }}"
-        if [ ! -f "$REPORT" ]; then
-          echo '{"runs":[{"results":[]}]}' > "$REPORT"
-        fi
+        mkdir -p "$(dirname "$REPORT")"
+        python scripts/normalize-sarif.py "$REPORT" "${{ inputs.tool_name }}"
     - name: Gate check
       shell: bash
       run: |
         python scripts/gate-check.py --control "${{ inputs.control }}" \
           --report "${{ inputs.report }}" \
           --policy "${{ inputs.policy }}"
+    - name: Normalize SARIF for upload
+      if: always()
+      shell: bash
+      run: python scripts/normalize-sarif.py "${{ inputs.report }}" "${{ inputs.tool_name }}"
     - name: ASPM export
       if: always() && inputs.defectdojo_url != ''
       shell: bash
