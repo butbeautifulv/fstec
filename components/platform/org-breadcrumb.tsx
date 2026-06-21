@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
-import { useAdminBreadcrumbMiddle } from "@/components/platform/platform-breadcrumb"
+import { usePlatformBreadcrumbMiddle } from "@/components/platform/platform-breadcrumb"
 
 export function OrgBreadcrumb({
   organizationId,
@@ -14,6 +14,6 @@ export function OrgBreadcrumb({
     () => [{ label: organizationName, href: `/panel/organizations/${organizationId}` }],
     [organizationId, organizationName]
   )
-  useAdminBreadcrumbMiddle(middleCrumbs)
+  usePlatformBreadcrumbMiddle(middleCrumbs)
   return null
 }

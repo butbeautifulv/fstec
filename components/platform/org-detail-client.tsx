@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
+import { usePlatformBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
 import { OrgContactsPanel } from "@/components/platform/org-contacts-panel"
 import { OrgLinksPanel } from "@/components/platform/org-links-panel"
 import { PageHeader } from "@/components/shared/page-header"
@@ -41,7 +41,7 @@ export function OrgDetailClient({
   initialLinks: LinkRow[]
   initialContacts: ContactRow[]
 }) {
-  useAdminBreadcrumbLabel(organizationName)
+  usePlatformBreadcrumbLabel(organizationName)
 
   return (
     <div className="flex flex-col gap-6">

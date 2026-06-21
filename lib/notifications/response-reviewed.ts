@@ -1,29 +1,9 @@
-import {
-  createOrganizationAccessLink,
-  createSubdivisionAccessLink,
-  getActiveOrgLink,
-  getActiveSubdivisionLink,
-} from "@/lib/access-links"
+import { sendToContacts } from "@/lib/notifications/send-to-contacts"
+import { ensurePortalLink } from "@/lib/access-links"
 import { resolveContactsForTarget } from "@/lib/contacts"
 import { getAppBaseUrl } from "@/lib/email/config"
-import { sendEmail } from "@/lib/email/send"
 import { responseReviewedTemplate } from "@/lib/email/templates"
 import { prisma } from "@/lib/db"
-
-async function ensurePortalLink(input: {
-  organizationId: number
-  subdivisionId: number | null
-}) {
-  if (input.subdivisionId != null) {
-    const existing = await getActiveSubdivisionLink(input.subdivisionId)
-    if (existing) return existing
-    return createSubdivisionAccessLink(input.subdivisionId)
-  }
-
-  const existing = await getActiveOrgLink(input.organizationId)
-  if (existing) return existing
-  return createOrganizationAccessLink(input.organizationId)
-}
 
 export async function notifyResponseReviewed(responseId: number) {
   const response = await prisma.response.findUnique({
@@ -69,18 +49,15 @@ export async function notifyResponseReviewed(responseId: number) {
     portalUrl,
   })
 
-  await Promise.all(
-    contacts.map((contact) =>
-      sendEmail({
-        to: contact.email,
-        subject: template.subject,
-        text: template.text,
-        html: template.html,
-        template: "response-reviewed",
-        relatedType: "response",
-        relatedId: responseId,
-        dedupeKey: `response-reviewed:${responseId}:${accepted ? "accepted" : "rejected"}:${contact.email.toLowerCase()}`,
-      })
-    )
+  await sendToContacts(
+    contacts,
+    () => template,
+    {
+      template: "response-reviewed",
+      relatedType: "response",
+      relatedId: responseId,
+      dedupeKey: (contact) =>
+        `response-reviewed:${responseId}:${accepted ? "accepted" : "rejected"}:${contact.email.toLowerCase()}`,
+    }
   )
 }

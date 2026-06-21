@@ -1,5 +1,5 @@
-import { TablePageSkeleton } from "@/components/shared/skeletons/table-page-skeleton"
+import { RouteSkeleton } from "@/components/shared/skeletons/route-skeleton"
 
-export default function MeasureImportsLoading() {
-  return <TablePageSkeleton />
+export default function Loading() {
+  return <RouteSkeleton variant="table" />
 }

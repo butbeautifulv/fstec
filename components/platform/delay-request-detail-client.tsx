@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { format } from "date-fns"
-import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
+import { usePlatformBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
 import { PageHeader } from "@/components/shared/page-header"
 import { MotionActionButton, MotionStatusBadge } from "@/components/motion"
 import { Badge } from "@/components/ui/badge"
@@ -51,7 +51,7 @@ export function DelayRequestDetailClient({
   const [processing, setProcessing] = useState(false)
   const [statusPulseKey, setStatusPulseKey] = useState(0)
 
-  useAdminBreadcrumbLabel(delay.orderItem.measure.name)
+  usePlatformBreadcrumbLabel(delay.orderItem.measure.name)
 
   async function reviewDelay(action: "approve" | "reject") {
     setProcessing(true)

@@ -2,7 +2,7 @@ import { handleApiError } from "@/lib/api/errors"
 import {
   assertOrderItemExists,
 } from "@/lib/attachments"
-import { handleAttachmentPresignRoute } from "@/lib/attachments/presign-handler"
+import { handleAttachmentPresign } from "@/lib/attachments/presign-handler"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 
@@ -17,7 +17,7 @@ export async function POST(request: Request, { params }: Params) {
 
     await assertOrderItemExists(orderId, orderItemId)
 
-    return handleAttachmentPresignRoute(request, orderItemId)
+    return handleAttachmentPresign(request, orderItemId)
   } catch (error) {
     return handleApiError(error)
   }

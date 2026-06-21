@@ -7,18 +7,31 @@ const ROLE_ORDER: Record<ContactRole, number> = {
   NOTIFY: 2,
 }
 
-export function listOrganizationContacts(organizationId: number) {
+export function getContactsListWhere(input: {
+  organizationId?: number
+  subdivisionId?: number | null
+}) {
+  return input.subdivisionId != null
+    ? { subdivisionId: input.subdivisionId }
+    : { organizationId: input.organizationId!, subdivisionId: null }
+}
+
+export function listContacts(input: {
+  organizationId?: number
+  subdivisionId?: number | null
+}) {
   return prisma.contactPerson.findMany({
-    where: { organizationId, subdivisionId: null },
+    where: getContactsListWhere(input),
     orderBy: [{ role: "asc" }, { fullName: "asc" }],
   })
 }
 
+export function listOrganizationContacts(organizationId: number) {
+  return listContacts({ organizationId })
+}
+
 export function listSubdivisionContacts(subdivisionId: number) {
-  return prisma.contactPerson.findMany({
-    where: { subdivisionId },
-    orderBy: [{ role: "asc" }, { fullName: "asc" }],
-  })
+  return listContacts({ subdivisionId })
 }
 
 export async function resolveContactsForTarget(input: {

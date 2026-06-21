@@ -1,11 +1,12 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { ColumnDef, Table } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { Button } from "@/components/ui/button"
+import { SelectableBulkActions } from "@/components/platform/selectable-bulk-actions"
 import { Checkbox } from "@/components/ui/checkbox"
 import { colMeta, textColumnMeta } from "@/lib/data-table/column-meta"
+import { toggleInSet } from "@/lib/data-table/selectable-table-helpers"
 import {
   selectableTargetKey,
   type SelectableBatchTargetRow,
@@ -17,18 +18,6 @@ type BatchTargetSelectTableProps = {
   onSelectionChange: (next: Set<string>) => void
 }
 
-function selectAllFiltered(
-  table: Table<SelectableBatchTargetRow>,
-  selectedKeys: Set<string>,
-  onSelectionChange: (next: Set<string>) => void
-) {
-  const next = new Set(selectedKeys)
-  for (const row of table.getFilteredRowModel().rows) {
-    next.add(selectableTargetKey(row.original))
-  }
-  onSelectionChange(next)
-}
-
 export function BatchTargetSelectTable({
   targets,
   selectedKeys,
@@ -36,10 +25,7 @@ export function BatchTargetSelectTable({
 }: BatchTargetSelectTableProps) {
   const toggleKey = useCallback(
     (key: string) => {
-      const next = new Set(selectedKeys)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      onSelectionChange(next)
+      onSelectionChange(toggleInSet(selectedKeys, key))
     },
     [selectedKeys, onSelectionChange]
   )
@@ -133,27 +119,13 @@ export function BatchTargetSelectTable({
         selectedKeys.has(selectableTargetKey(row)) ? "bg-muted/50" : undefined
       }
       renderFilters={(table) => (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => selectAllFiltered(table, selectedKeys, onSelectionChange)}
-          >
-            Выбрать все по фильтру
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => onSelectionChange(new Set())}
-          >
-            Снять все
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Выбрано: {selectedKeys.size}
-          </span>
-        </div>
+        <SelectableBulkActions
+          table={table}
+          selectedCount={selectedKeys.size}
+          getKey={(row) => selectableTargetKey(row)}
+          selectedKeys={selectedKeys}
+          onSelectionChange={(next) => onSelectionChange(next as Set<string>)}
+        />
       )}
     />
   )

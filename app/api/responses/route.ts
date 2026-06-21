@@ -7,6 +7,7 @@ import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
 import { countPendingResponses, listResponses } from "@/lib/responses"
+import { queueNotification } from "@/lib/notifications/queue"
 import { reviewResponse } from "@/lib/responses/review-response"
 
 const reviewSchema = z
@@ -64,11 +65,10 @@ export async function POST(request: Request) {
     })
     await invalidateKeys("panel:pending:responses")
 
-    void import("@/lib/notifications/response-reviewed").then(({ notifyResponseReviewed }) =>
-      notifyResponseReviewed(id).catch((error) => {
-        console.error("Review notification failed:", error)
-      })
-    )
+    queueNotification(async () => {
+      const { notifyResponseReviewed } = await import("@/lib/notifications/response-reviewed")
+      await notifyResponseReviewed(id)
+    })
 
     return jsonOk({ ok: true, response })
   } catch (error) {

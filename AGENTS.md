@@ -15,7 +15,7 @@ Three contexts — shared logic in `lib/` only:
 | `public` | `app/(public)/` | Token-based assignment pages (`/p/[token]`) |
 | `platform` | `app/(platform)/panel/` | Authenticated workspace for all roles (`/panel/*`) |
 | `api` | `app/api/` | Route Handlers |
-| `lib` | `lib/` | Domain: `measures`, `orders`, `organizations`, `public`, `auth`, `db`, `nav` |
+| `lib` | `lib/` | Domain: `measures`, `orders`, `organizations`, `public`, `auth`, `db`, `nav`, `contacts`, `email`, `notifications`, `measure-imports`, `mail-inbox`, `cron` |
 
 - Public pages call `/api/public/[token]` only (scoped by token).
 - Platform pages call `/api/*` with session cookie (SUPER_ADMIN / OPERATOR / VIEWER).
@@ -49,14 +49,17 @@ Client-side fetch >200ms must show the same variant skeleton (not empty div or t
 ```bash
 npm run typecheck
 npm run lint
+npm run test
 npm run build
 ```
+
+После `prisma migrate dev` — выполните `npm run db:generate` и перезапустите dev-сервер (иначе `prisma.contactPerson` может быть undefined при HMR).
 
 Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
 Production deploy: [docs/deployment.md](docs/deployment.md).
 
-Measure import (DOCX): `/panel/measures/imports`, parser test `npm run test:parse-docx`.
+Measure import (DOCX): `/panel/measures/imports`, tests: `npm run test:parse-docx`, `npm run test:batch-targets`, `npm run test:unit`.
 
 ## Multi-phase work
 

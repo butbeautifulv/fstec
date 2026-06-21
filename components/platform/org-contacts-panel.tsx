@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import type { ContactRole } from "@prisma/client"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
-import { DataTableShell } from "@/components/platform/data-table-shell"
+import { StaticCrudTable } from "@/components/platform/crud/static-crud-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,14 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { notify } from "@/lib/ui/feedback"
 import { CONTACT_ROLE_LABELS } from "@/lib/validations/contacts"
 import { Plus, Trash2 } from "lucide-react"
@@ -142,49 +134,29 @@ export function OrgContactsPanel({
         </Button>
       </form>
 
-      <DataTableShell>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>ФИО</TableHead>
-              <TableHead>Должность</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Роль</TableHead>
-              <TableHead className="w-16" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {contacts.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
-                  Контакты не добавлены
-                </TableCell>
-              </TableRow>
-            ) : (
-              contacts.map((contact) => (
-                <TableRow key={contact.id}>
-                  <TableCell>{contact.fullName}</TableCell>
-                  <TableCell>{contact.position ?? "—"}</TableCell>
-                  <TableCell>{contact.email}</TableCell>
-                  <TableCell>{CONTACT_ROLE_LABELS[contact.role]}</TableCell>
-                  <TableCell>
-                    <TableRowActions
-                      actions={[
-                        {
-                          label: "Удалить",
-                          icon: <Trash2 data-icon="inline-start" />,
-                          destructive: true,
-                          onClick: () => setDeleteId(contact.id),
-                        },
-                      ]}
-                    />
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </DataTableShell>
+      <StaticCrudTable
+        columns={[
+          { header: "ФИО", cell: (contact) => contact.fullName },
+          { header: "Должность", cell: (contact) => contact.position ?? "—" },
+          { header: "Email", cell: (contact) => contact.email },
+          { header: "Роль", cell: (contact) => CONTACT_ROLE_LABELS[contact.role] },
+        ]}
+        rows={contacts}
+        getRowKey={(contact) => contact.id}
+        emptyMessage="Контакты не добавлены"
+        actions={(contact) => (
+          <TableRowActions
+            actions={[
+              {
+                label: "Удалить",
+                icon: <Trash2 data-icon="inline-start" />,
+                destructive: true,
+                onClick: () => setDeleteId(contact.id),
+              },
+            ]}
+          />
+        )}
+      />
 
       <ConfirmDeleteAlert
         open={deleteId !== null}

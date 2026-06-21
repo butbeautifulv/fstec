@@ -4,7 +4,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
+import {
+  MeasureImportDetailHeader,
+  type ImportHeaderRecord,
+} from "@/components/platform/measure-import-detail-header"
 import { DataTable } from "@/components/data-table"
 import { FormActionsBar } from "@/components/shared/form-actions-bar"
 import { Badge } from "@/components/ui/badge"
@@ -15,8 +18,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { colMeta } from "@/lib/data-table/column-meta"
 import { notify } from "@/lib/ui/feedback"
-import { format } from "date-fns"
-import { Download, Plus, RefreshCw, Trash2 } from "lucide-react"
+import { Plus } from "lucide-react"
 
 type ImportItem = {
   id: number
@@ -27,16 +29,7 @@ type ImportItem = {
   measureId: number | null
 }
 
-type ImportDetail = {
-  id: number
-  kind: "LETTER" | "APPENDIX"
-  status: "UPLOADED" | "PARSED" | "IMPORTED" | "FAILED"
-  documentNumber: string | null
-  title: string | null
-  reportDueAt: string | null
-  originalName: string
-  parseError: string | null
-  ordersCount: number
+type ImportDetail = ImportHeaderRecord & {
   items: ImportItem[]
 }
 
@@ -48,28 +41,13 @@ export function MeasureImportDetailClient({
   const router = useRouter()
   const [record, setRecord] = useState(initialImport)
   const [items, setItems] = useState(initialImport.items)
-  const [parsing, setParsing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [committing, setCommitting] = useState(false)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   const includedCount = items.filter((item) => item.included).length
 
-  async function handleParse() {
-    setParsing(true)
-    const res = await fetch(`/api/measure-imports/${record.id}/parse`, { method: "POST" })
-    setParsing(false)
-    if (!res.ok) {
-      const data = await res.json()
-      notify.error(data.error ?? "Не удалось разобрать документ")
-      return
-    }
-    const data = await res.json()
-    setRecord(data)
-    setItems(data.items)
-    notify.success("Документ разобран")
-    router.refresh()
+  function handleRecordChange(next: ImportHeaderRecord) {
+    setRecord((prev) => ({ ...prev, ...next }))
   }
 
   async function handleSave() {
@@ -94,7 +72,7 @@ export function MeasureImportDetailClient({
       return
     }
     const data = await res.json()
-    setRecord(data)
+    setRecord((prev) => ({ ...prev, ...data, items: data.items }))
     setItems(data.items)
     notify.success("Изменения сохранены")
   }
@@ -110,7 +88,7 @@ export function MeasureImportDetailClient({
       return
     }
     const data = await res.json()
-    setRecord(data)
+    setRecord((prev) => ({ ...prev, ...data, items: data.items }))
     setItems(data.items)
     notify.success("Меры добавлены в каталог")
     router.push(`/panel/orders/new?importId=${record.id}`)
@@ -124,30 +102,9 @@ export function MeasureImportDetailClient({
       return
     }
     const data = await res.json()
-    setRecord(data.record)
+    setRecord((prev) => ({ ...prev, ...data.record, items: data.record.items }))
     setItems(data.record.items)
   }
-
-  async function handleDelete() {
-    setDeleting(true)
-    const res = await fetch(`/api/measure-imports/${record.id}`, { method: "DELETE" })
-    setDeleting(false)
-    if (!res.ok) {
-      const data = await res.json()
-      notify.error(data.error ?? "Не удалось удалить документ")
-      return
-    }
-    notify.success("Документ удалён")
-    router.push("/panel/measures/imports")
-    router.refresh()
-  }
-
-  const deleteDescription =
-    record.status === "IMPORTED"
-      ? "Документ будет удалён. Меры, уже добавленные в каталог, останутся."
-      : record.ordersCount > 0
-        ? "Документ будет удалён. Связанные поручения сохранятся, ссылка на импорт будет снята."
-        : "Документ и файл DOCX будут удалены без возможности восстановления."
 
   const showCatalog = items.some((item) => item.measureId != null)
 
@@ -270,41 +227,7 @@ export function MeasureImportDetailClient({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            <Badge>{record.kind === "LETTER" ? "Письмо" : "Приложение"}</Badge>
-            <Badge variant={record.status === "FAILED" ? "destructive" : "secondary"}>
-              {record.status}
-            </Badge>
-          </div>
-          {record.title && <p className="text-sm text-muted-foreground">{record.title}</p>}
-          {record.reportDueAt && (
-            <p className="text-sm">
-              Срок отчёта: {format(new Date(record.reportDueAt), "dd.MM.yyyy")}
-            </p>
-          )}
-          {record.parseError && (
-            <p className="text-sm text-destructive">{record.parseError}</p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" asChild>
-            <a href={`/api/measure-imports/${record.id}/download`}>
-              <Download className="size-4" />
-              Скачать DOCX
-            </a>
-          </Button>
-          <Button variant="outline" onClick={handleParse} disabled={parsing}>
-            {parsing ? <Spinner data-icon="inline-start" /> : <RefreshCw className="size-4" />}
-            Разобрать снова
-          </Button>
-          <Button variant="outline" onClick={() => setDeleteOpen(true)}>
-            <Trash2 data-icon="inline-start" />
-            Удалить
-          </Button>
-        </div>
-      </div>
+      <MeasureImportDetailHeader record={record} onRecordChange={handleRecordChange} />
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
@@ -338,15 +261,6 @@ export function MeasureImportDetailClient({
           </Button>
         )}
       </FormActionsBar>
-
-      <ConfirmDeleteAlert
-        open={deleteOpen}
-        onOpenChange={setDeleteOpen}
-        title="Удалить документ?"
-        description={deleteDescription}
-        onConfirm={handleDelete}
-        loading={deleting}
-      />
     </div>
   )
 }

@@ -70,7 +70,7 @@ flowchart LR
 | `report` | `app/(public)/report/` | token-scoped read | Глобальная сводка |
 | `lib` | `lib/` | — | Доменная логика |
 
-**Ключевые модули `lib/`:** `auth`, `measures`, `orders`, `organizations`, `responses`, `delays`, `dashboard`, `public`, `report-links`, `cache`, `storage`
+**Ключевые модули `lib/`:** `auth`, `measures`, `measure-imports`, `orders`, `organizations`, `contacts`, `responses`, `delays`, `dashboard`, `public`, `report-links`, `email`, `notifications`, `mail-inbox`, `cron`, `cache`, `storage`
 
 **Компоненты:** `components/platform/` · `components/public/` · `components/report/` · `components/shared/` · `components/dashboard/` · `components/ui/` (shadcn)
 
@@ -95,6 +95,7 @@ flowchart LR
 | Раздел | Путь | Описание |
 |--------|------|----------|
 | Сводка | `/panel` | KPI, графики, матрица организаций; report share для админов |
+| Письма | `/panel/measures/imports` | Импорт мер из DOCX |
 | Меры | `/panel/measures` | Каталог мер ФСТЭК |
 | Поручения | `/panel/orders` | Создание поручений, позиции, назначение мер |
 | Организации | `/panel/organizations` | Организации, подразделения, access links |
@@ -114,19 +115,23 @@ Read-only дашборд и детализация по организациям
 
 ## API (обзор)
 
-~33 route handler в `app/api/`:
+47 route handler в `app/api/`:
 
 | Группа | Endpoints | Защита |
 |--------|-----------|--------|
 | **Auth** | login, logout, me, change-password | session |
 | **Measures** | CRUD `/api/measures` | `requirePermission` |
-| **Orders** | CRUD + items, sidebar | `requirePermission` |
-| **Organizations** | CRUD + subdivisions + links | `requirePermission` |
+| **Measure imports** | upload, parse, commit, items, download `/api/measure-imports/*` | `requirePermission` |
+| **Orders** | CRUD + items, sidebar, batch, notify | `requirePermission` |
+| **Organizations** | CRUD + subdivisions + links + contacts | `requirePermission` |
+| **Subdivisions** | CRUD + links + contacts | `requirePermission` |
+| **Contacts** | PATCH/DELETE `/api/contacts/[contactId]` | `requirePermission` |
 | **Responses** | list, review accept/reject | `requirePermission` |
 | **Delays** | list, approve/reject | `requirePermission` |
 | **Users / Settings** | CRUD users, app settings, auth config | SUPER_ADMIN |
 | **Report links** | create, list, revoke | SUPER_ADMIN |
 | **Attachments** | presign upload, download | session / token |
+| **Cron** | due-reminders, mail-inbox | `CRON_SECRET` |
 | **Public** | status, responses, delays, attachments | token + rate limit |
 
 Platform API: session cookie + RBAC. Public API: только данные, доступные по токену; rate limiting — [`lib/public/rate-limit.ts`](lib/public/rate-limit.ts).
@@ -143,12 +148,15 @@ Node.js 20+, Docker (для Postgres, Redis, MinIO)
 
 ```bash
 cp .env.example .env.local
-docker compose up -d db redis minio
+docker compose up -d db redis minio mailpit
 npm install
 npm run db:migrate
+npm run db:generate
 npm run db:seed
 npm run dev
 ```
+
+После клонирования или pull с новыми миграциями: `npm run db:migrate && npm run db:generate` — затем перезапустить dev-сервер.
 
 | URL | Назначение |
 |-----|------------|
@@ -164,6 +172,7 @@ npm run dev
 ```bash
 npm run typecheck
 npm run lint
+npm run test
 npm run build
 ```
 
@@ -175,6 +184,8 @@ npm run build
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript |
 | `npm run lint` | ESLint |
+| `npm run test` | Unit + parse-docx + batch-targets |
+| `npm run test:unit` | Vitest (lib helpers) |
 | `npm run db:migrate` | Prisma migrate |
 | `npm run db:seed` | Seed: admin + статусы + dev mock (120 мер, 120 поручений) |
 | `npm run db:seed:mock` | Сброс mock-данных и повторный seed |
@@ -192,6 +203,10 @@ Production-деплой: см. [docs/deployment.md](docs/deployment.md)
 | `SESSION_SECRET` | Секрет iron-session (≥ 32 символов) |
 | `S3_*` | MinIO: endpoint, ключи, bucket |
 | `AUTH_PROVIDER` | `local` \| `active_directory` \| `keycloak` |
+| `APP_URL` | Base URL для ссылок в email |
+| `SMTP_*` | Mailpit локально (`localhost:1025`) |
+| `CRON_SECRET` | Секрет для `/api/cron/*` |
+| `INBOX_IMAP_*` | Автоимпорт DOCX из почты (опционально) |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Seed admin-пользователя |
 
 Полный список: [`.env.example`](.env.example)

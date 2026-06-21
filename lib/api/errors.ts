@@ -20,6 +20,12 @@ export function handleApiError(error: unknown) {
     if (error.message === "INVALID_TARGETS") {
       return jsonError("Некорректный список получателей поручения", 400)
     }
+    if (error.message === "TARGETS_CONFLICT") {
+      return jsonError(
+        "Нельзя выбрать организацию и её подразделение одновременно",
+        400
+      )
+    }
     if (error.message === "INVALID_MEASURES") {
       return jsonError("Одна или несколько мер не найдены", 400)
     }

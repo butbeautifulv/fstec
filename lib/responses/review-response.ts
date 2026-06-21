@@ -2,6 +2,25 @@ import { ResponseReviewStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { getCompletedStatusId, getInProgressStatusId } from "@/lib/statuses"
 
+const RESPONSE_REVIEW_INCLUDE = {
+  attachments: true,
+  reviewedBy: { select: { id: true, name: true } },
+  orderItem: {
+    include: {
+      status: true,
+      measure: true,
+      subdivision: { select: { id: true, name: true } },
+      order: {
+        select: {
+          id: true,
+          title: true,
+          organization: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const
+
 export async function reviewResponse(
   responseId: number,
   action: "accept" | "reject",
@@ -35,24 +54,7 @@ export async function reviewResponse(
           reviewedAt: now,
           reviewNote: null,
         },
-        include: {
-          attachments: true,
-          reviewedBy: { select: { id: true, name: true } },
-          orderItem: {
-            include: {
-              status: true,
-              measure: true,
-              subdivision: { select: { id: true, name: true } },
-              order: {
-                select: {
-                  id: true,
-                  title: true,
-                  organization: { select: { id: true, name: true } },
-                },
-              },
-            },
-          },
-        },
+        include: RESPONSE_REVIEW_INCLUDE,
       })
 
       await tx.orderItem.update({
@@ -74,24 +76,7 @@ export async function reviewResponse(
         reviewedAt: now,
         reviewNote: reviewNote!.trim(),
       },
-      include: {
-        attachments: true,
-        reviewedBy: { select: { id: true, name: true } },
-        orderItem: {
-          include: {
-            status: true,
-            measure: true,
-            subdivision: { select: { id: true, name: true } },
-            order: {
-              select: {
-                id: true,
-                title: true,
-                organization: { select: { id: true, name: true } },
-              },
-            },
-          },
-        },
-      },
+      include: RESPONSE_REVIEW_INCLUDE,
     })
 
     await tx.orderItem.update({

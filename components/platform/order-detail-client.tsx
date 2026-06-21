@@ -5,14 +5,14 @@ import { useRouter } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
-import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
+import { usePlatformBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
 import { EmptyTableState } from "@/components/platform/crud/empty-table-state"
 import { TableRowActions } from "@/components/platform/crud/table-row-actions"
 import { DataTable, DataTableColumnHeader, DataTableRowLink } from "@/components/data-table"
 import { colMeta, actionsColumnMeta } from "@/lib/data-table/column-meta"
 import { createDueAtColumn, createMatrixWorkflowStatusColumn } from "@/lib/data-table/columns"
 import { facetedFilter } from "@/lib/data-table/faceted-column"
-import { TruncatedCell } from "@/lib/data-table/truncated-cell"
+import { TruncatedCell } from "@/lib/data-table/text-cell"
 import { PageHeader } from "@/components/shared/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -84,7 +84,7 @@ export function OrderDetailClient({
   const [deleteItemId, setDeleteItemId] = useState<number | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  useAdminBreadcrumbLabel(order.title)
+  usePlatformBreadcrumbLabel(order.title)
 
   async function handleResendNotifications() {
     const res = await fetch(`/api/orders/${order.id}/notify`, { method: "POST" })

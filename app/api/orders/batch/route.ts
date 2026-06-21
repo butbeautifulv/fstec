@@ -5,7 +5,7 @@ import { parseJsonBody } from "@/lib/api/parse-body"
 import { revalidatePanelOrder } from "@/lib/api/revalidate-panel"
 import { batchCreateOrders, BatchCreateValidationError } from "@/lib/orders/batch-create"
 import { notifyOrderAssigned } from "@/lib/notifications/order-assigned"
-import { batchCreateOrdersSchema } from "@/lib/validations/measure-imports"
+import { batchCreateOrdersSchema } from "@/lib/validations/orders"
 
 export async function POST(request: Request) {
   try {

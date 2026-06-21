@@ -1,10 +1,5 @@
+import { ensurePortalLink } from "@/lib/access-links"
 import { resolveContactsForTarget } from "@/lib/contacts"
-import {
-  createOrganizationAccessLink,
-  createSubdivisionAccessLink,
-  getActiveOrgLink,
-  getActiveSubdivisionLink,
-} from "@/lib/access-links"
 import { getAppBaseUrl } from "@/lib/email/config"
 import { sendEmail } from "@/lib/email/send"
 import { dueReminderTemplate } from "@/lib/email/templates"
@@ -12,21 +7,6 @@ import { prisma } from "@/lib/db"
 import { isOrderItemOverdue } from "@/lib/statuses/workflow"
 
 const DUE_SOON_MS = 3 * 24 * 60 * 60 * 1000
-
-async function ensurePortalLink(input: {
-  organizationId: number
-  subdivisionId: number | null
-}) {
-  if (input.subdivisionId != null) {
-    const existing = await getActiveSubdivisionLink(input.subdivisionId)
-    if (existing) return existing
-    return createSubdivisionAccessLink(input.subdivisionId)
-  }
-
-  const existing = await getActiveOrgLink(input.organizationId)
-  if (existing) return existing
-  return createOrganizationAccessLink(input.organizationId)
-}
 
 export async function sendDueReminders() {
   const now = new Date()
@@ -79,7 +59,6 @@ export async function sendDueReminders() {
     })
 
     const kind = overdue ? "overdue" : "due-soon"
-
     const dayKey = now.toISOString().slice(0, 10)
 
     for (const contact of contacts) {

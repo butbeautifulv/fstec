@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { ResponseReviewStatus } from "@prisma/client"
 import {
-  useAdminBreadcrumbLabel,
-  useAdminBreadcrumbMiddle,
+  usePlatformBreadcrumbLabel,
+  usePlatformBreadcrumbMiddle,
 } from "@/components/platform/platform-breadcrumb"
 import { usePlatformUser } from "@/components/platform/use-platform-user"
 import { AttachmentGallery } from "@/components/shared/attachment-gallery"
@@ -91,8 +91,8 @@ export function ResponseDetailClient({
     [response]
   )
 
-  useAdminBreadcrumbMiddle(middleCrumbs)
-  useAdminBreadcrumbLabel("Отчёт")
+  usePlatformBreadcrumbMiddle(middleCrumbs)
+  usePlatformBreadcrumbLabel("Отчёт")
 
   async function reviewResponse(action: "accept" | "reject") {
     if (action === "reject" && !reviewNote.trim()) {

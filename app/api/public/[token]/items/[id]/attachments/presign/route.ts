@@ -1,20 +1,16 @@
 import { handleApiError } from "@/lib/api/errors"
-import { assertPublicRateLimit } from "@/lib/api/public-guard"
-import { handleAttachmentPresignRoute } from "@/lib/attachments/presign-handler"
-import { getPublicOrderItem } from "@/lib/public/validate-token"
+import { handleAttachmentPresign } from "@/lib/attachments/presign-handler"
+import { guardPublicOrderItemWrite } from "@/lib/public/guard-order-item-write"
 
 type Params = { params: Promise<{ token: string; id: string }> }
 
 export async function POST(request: Request, { params }: Params) {
   try {
     const { token, id } = await params
-    const rateLimited = await assertPublicRateLimit(request, token, "write")
-    if (rateLimited) return rateLimited
+    const guarded = await guardPublicOrderItemWrite(request, token, id)
+    if ("error" in guarded) return guarded.error
 
-    const orderItemId = Number(id)
-    await getPublicOrderItem(token, orderItemId)
-
-    return handleAttachmentPresignRoute(request, orderItemId)
+    return handleAttachmentPresign(request, guarded.orderItemId)
   } catch (error) {
     return handleApiError(error)
   }

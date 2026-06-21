@@ -1,10 +1,11 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import type { ColumnDef, Table } from "@tanstack/react-table"
+import type { ColumnDef } from "@tanstack/react-table"
 import { format } from "date-fns"
 import { DataTable, DataTableColumnHeader } from "@/components/data-table"
-import { Button } from "@/components/ui/button"
+import { SelectableBulkActions } from "@/components/platform/selectable-bulk-actions"
+import { toggleInSet } from "@/lib/data-table/selectable-table-helpers"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { OrderCreateMeasure } from "@/components/platform/order-create-draft"
 import { colMeta } from "@/lib/data-table/column-meta"
@@ -17,18 +18,6 @@ type MeasureSelectTableProps = {
   onSelectionChange: (next: Set<number>) => void
 }
 
-function selectAllFiltered(
-  table: Table<OrderCreateMeasure>,
-  selectedIds: Set<number>,
-  onSelectionChange: (next: Set<number>) => void
-) {
-  const next = new Set(selectedIds)
-  for (const row of table.getFilteredRowModel().rows) {
-    next.add(row.original.id)
-  }
-  onSelectionChange(next)
-}
-
 export function MeasureSelectTable({
   measures,
   selectedIds,
@@ -36,10 +25,7 @@ export function MeasureSelectTable({
 }: MeasureSelectTableProps) {
   const toggleId = useCallback(
     (id: number) => {
-      const next = new Set(selectedIds)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      onSelectionChange(next)
+      onSelectionChange(toggleInSet(selectedIds, id))
     },
     [selectedIds, onSelectionChange]
   )
@@ -126,27 +112,13 @@ export function MeasureSelectTable({
         selectedIds.has(row.id) ? "bg-muted/50" : undefined
       }
       renderFilters={(table) => (
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => selectAllFiltered(table, selectedIds, onSelectionChange)}
-          >
-            Выбрать все по фильтру
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={() => onSelectionChange(new Set())}
-          >
-            Снять все
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            Выбрано: {selectedIds.size}
-          </span>
-        </div>
+        <SelectableBulkActions
+          table={table}
+          selectedCount={selectedIds.size}
+          getKey={(row) => row.id}
+          selectedKeys={selectedIds}
+          onSelectionChange={(next) => onSelectionChange(next as Set<number>)}
+        />
       )}
     />
   )

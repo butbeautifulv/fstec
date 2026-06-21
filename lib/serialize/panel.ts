@@ -1,4 +1,9 @@
-import type { UserRole } from "@prisma/client"
+import type {
+  MeasureImportKind,
+  MeasureImportSource,
+  MeasureImportStatus,
+  UserRole,
+} from "@prisma/client"
 import type { OrderDetail } from "@/components/platform/order-detail-client"
 import type { DelayRequestTableRow } from "@/components/platform/delay-requests-table"
 import type { DelayRequestDetail } from "@/components/platform/delay-request-detail-client"
@@ -213,4 +218,72 @@ export function serializeResponseRows(rows: object[]): ResponseTableRow[] {
 
 export function serializeDelayRows(rows: object[]): DelayRequestTableRow[] {
   return rows.map((row) => serializeForClient(row) as DelayRequestTableRow)
+}
+
+export function serializeMeasureImports(
+  imports: {
+    id: number
+    kind: MeasureImportKind
+    status: MeasureImportStatus
+    uploadedVia: MeasureImportSource
+    documentNumber: string | null
+    originalName: string
+    title: string | null
+    reportDueAt: Date | null
+    createdAt: Date
+    _count: { items: number; measures: number; orders: number; appendices: number }
+  }[]
+) {
+  return imports.map((item) => ({
+    id: item.id,
+    kind: item.kind,
+    status: item.status,
+    uploadedVia: item.uploadedVia,
+    documentNumber: item.documentNumber,
+    originalName: item.originalName,
+    title: item.title,
+    reportDueAt: toIso(item.reportDueAt),
+    createdAt: toIso(item.createdAt)!,
+    _count: item._count,
+  }))
+}
+
+export function serializeMeasureImportDetail(record: {
+  id: number
+  kind: MeasureImportKind
+  status: MeasureImportStatus
+  documentNumber: string | null
+  title: string | null
+  reportDueAt: Date | null
+  originalName: string
+  parseError: string | null
+  _count: { orders: number }
+  items: {
+    id: number
+    code: string | null
+    name: string
+    description: string | null
+    included: boolean
+    measureId: number | null
+  }[]
+}) {
+  return {
+    id: record.id,
+    kind: record.kind,
+    status: record.status,
+    documentNumber: record.documentNumber,
+    title: record.title,
+    reportDueAt: toIso(record.reportDueAt),
+    originalName: record.originalName,
+    parseError: record.parseError,
+    ordersCount: record._count.orders,
+    items: record.items.map((item) => ({
+      id: item.id,
+      code: item.code,
+      name: item.name,
+      description: item.description,
+      included: item.included,
+      measureId: item.measureId,
+    })),
+  }
 }

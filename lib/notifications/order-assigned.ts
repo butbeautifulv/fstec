@@ -1,29 +1,9 @@
-import {
-  createOrganizationAccessLink,
-  createSubdivisionAccessLink,
-  getActiveOrgLink,
-  getActiveSubdivisionLink,
-} from "@/lib/access-links"
+import { sendToContacts } from "@/lib/notifications/send-to-contacts"
+import { ensurePortalLink } from "@/lib/access-links"
 import { getAppBaseUrl } from "@/lib/email/config"
-import { sendEmail } from "@/lib/email/send"
 import { orderAssignedTemplate } from "@/lib/email/templates"
 import { resolveContactsForTarget } from "@/lib/contacts"
 import { prisma } from "@/lib/db"
-
-async function ensurePortalLink(input: {
-  organizationId: number
-  subdivisionId: number | null
-}) {
-  if (input.subdivisionId != null) {
-    const existing = await getActiveSubdivisionLink(input.subdivisionId)
-    if (existing) return existing
-    return createSubdivisionAccessLink(input.subdivisionId)
-  }
-
-  const existing = await getActiveOrgLink(input.organizationId)
-  if (existing) return existing
-  return createOrganizationAccessLink(input.organizationId)
-}
 
 export async function notifyOrderAssigned(orderId: number) {
   const order = await prisma.order.findUnique({
@@ -64,18 +44,14 @@ export async function notifyOrderAssigned(orderId: number) {
     portalUrl,
   })
 
-  await Promise.all(
-    contacts.map((contact) =>
-      sendEmail({
-        to: contact.email,
-        subject: template.subject,
-        text: template.text,
-        html: template.html,
-        template: "order-assigned",
-        relatedType: "order",
-        relatedId: orderId,
-        dedupeKey: `order-assigned:${orderId}:${contact.email.toLowerCase()}`,
-      })
-    )
+  await sendToContacts(
+    contacts,
+    () => template,
+    {
+      template: "order-assigned",
+      relatedType: "order",
+      relatedId: orderId,
+      dedupeKey: (contact) => `order-assigned:${orderId}:${contact.email.toLowerCase()}`,
+    }
   )
 }

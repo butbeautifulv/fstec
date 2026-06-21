@@ -14,3 +14,4 @@ export { DetailTableSkeleton } from "@/components/shared/skeletons/detail-table-
 export { SettingsHubSkeleton } from "@/components/shared/skeletons/settings-hub-skeleton"
 export { PublicDetailSkeleton } from "@/components/shared/skeletons/public-detail-skeleton"
 export { RouteSkeleton, type RouteSkeletonVariant, type RouteSkeletonProps } from "@/components/shared/skeletons/route-skeleton"
+export { TableOnlySkeleton } from "@/components/shared/skeletons/table-only-skeleton"

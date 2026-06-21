@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import type { OrderCreateMeasure } from "@/components/platform/order-create-draft"
 import { colMeta, textColumnMeta } from "@/lib/data-table/column-meta"
 import { dateSortFn } from "@/lib/data-table/sort-helpers"
-import { TruncatedCell } from "@/lib/data-table/truncated-cell"
+import { TruncatedCell } from "@/lib/data-table/text-cell"
 
 export function SelectedMeasuresTable({
   measures,

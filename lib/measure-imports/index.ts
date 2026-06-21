@@ -13,6 +13,7 @@ import {
   composeMeasureItemName,
 } from "@/lib/measure-imports/extract-metadata"
 import { getCommittedMeasureIds } from "@/lib/measure-imports/commit"
+import { assertImportEditableStatus } from "@/lib/measure-imports/status"
 
 export function listMeasureImports() {
   return prisma.measureImport.findMany({
@@ -162,9 +163,7 @@ export async function updateMeasureImportItems(
 ) {
   const record = await prisma.measureImport.findUnique({ where: { id: importId } })
   if (!record) throw new Error("NOT_FOUND")
-  if (record.status !== "PARSED" && record.status !== "IMPORTED") {
-    throw new Error("IMPORT_INVALID_STATUS")
-  }
+  assertImportEditableStatus(record.status)
 
   await prisma.$transaction(
     items.map((item) =>

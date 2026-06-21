@@ -101,3 +101,5 @@ export async function getActiveSubdivisionLink(subdivisionId: number) {
     orderBy: { createdAt: "desc" },
   })
 }
+
+export { ensurePortalLink } from "@/lib/access-links/ensure-portal-link"

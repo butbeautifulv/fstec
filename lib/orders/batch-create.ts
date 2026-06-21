@@ -5,7 +5,8 @@ import {
   hasOrgSubdivisionConflict,
   type BatchTarget,
 } from "@/lib/orders/batch-targets"
-import type { BatchCreateOrdersInput } from "@/lib/validations/measure-imports"
+import type { BatchCreateOrdersInput } from "@/lib/validations/orders"
+import { buildOrderItemsCreate } from "@/lib/orders/build-order-items"
 
 export class BatchCreateValidationError extends Error {
   constructor(message: string) {
@@ -92,12 +93,12 @@ export async function batchCreateOrders(
           sourceImportId: input.sourceImportId ?? null,
           defaultDueAt: dueAt,
           items: {
-            create: input.measureIds.map((measureId) => ({
-              measureId,
+            create: buildOrderItemsCreate({
+              measureIds: input.measureIds,
               dueAt,
               statusId: defaultStatusId,
               subdivisionId: target.subdivisionId ?? null,
-            })),
+            }),
           },
         },
         include: {

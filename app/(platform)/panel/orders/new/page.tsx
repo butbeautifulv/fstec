@@ -1,5 +1,6 @@
 import { OrderCreateClient } from "@/components/platform/order-create-client"
 import { PageHeader } from "@/components/shared/page-header"
+import { parseOptionalIntParam } from "@/lib/api/route-handler"
 import { loadOrderCreateContext } from "@/lib/orders/order-create-context"
 
 export default async function NewOrderPage({
@@ -8,10 +9,7 @@ export default async function NewOrderPage({
   searchParams: Promise<{ importId?: string }>
 }) {
   const { importId: importIdRaw } = await searchParams
-  const importId =
-    importIdRaw != null && !Number.isNaN(Number(importIdRaw))
-      ? Number(importIdRaw)
-      : undefined
+  const importId = parseOptionalIntParam(importIdRaw)
 
   const context = await loadOrderCreateContext({ importId })
 

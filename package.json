@@ -14,6 +14,8 @@
     "generate:favicons": "node scripts/generate-favicons.mjs",
     "test:parse-docx": "tsx lib/measure-imports/__tests__/parse-docx.test.ts",
     "test:batch-targets": "tsx lib/orders/__tests__/batch-targets.test.ts",
+    "test:unit": "vitest run",
+    "test": "npm run test:unit && npm run test:parse-docx && npm run test:batch-targets",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
@@ -68,6 +70,7 @@
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.6"
   }
 }

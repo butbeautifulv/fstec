@@ -4,6 +4,7 @@ import { revalidatePanelOrderMutation } from "@/lib/api/revalidate-panel"
 import { assertOrderItemExists } from "@/lib/attachments"
 import { Permission } from "@/lib/auth/permissions"
 import { requirePermission } from "@/lib/auth/session"
+import { queueNotification } from "@/lib/notifications/queue"
 import { handleSubmitOrderItemResponse } from "@/lib/responses/handle-submit-response"
 
 type Params = { params: Promise<{ id: string; itemId: string }> }
@@ -23,11 +24,10 @@ export async function POST(request: Request, { params }: Params) {
     await revalidatePanelOrderMutation(orderId, { responses: true })
     await invalidateKeys("panel:pending:responses")
 
-    void import("@/lib/notifications/response-submitted").then(({ notifyResponseSubmitted }) =>
-      notifyResponseSubmitted(result.data.response.id).catch((error) => {
-        console.error("Response notification failed:", error)
-      })
-    )
+    queueNotification(async () => {
+      const { notifyResponseSubmitted } = await import("@/lib/notifications/response-submitted")
+      await notifyResponseSubmitted(result.data.response.id)
+    })
 
     return jsonOk(result.data, { status: 201 })
   } catch (error) {

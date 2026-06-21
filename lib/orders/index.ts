@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db"
 import { getDefaultStatusId } from "@/lib/statuses"
+import { findOrderItem } from "@/lib/orders/find-order-item"
 import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { CreateOrderInput } from "@/lib/validations/orders"
@@ -47,49 +48,37 @@ export async function getOrderForEdit(id: number) {
 }
 
 export async function getOrderItemContext(orderId: number, itemId: number) {
-  const item = await prisma.orderItem.findFirst({
-    where: { id: itemId, orderId },
-    include: {
-      measure: { select: { id: true, name: true } },
-      status: true,
-      subdivision: true,
-      order: {
-        select: {
-          id: true,
-          title: true,
-          organization: {
-            select: {
-              subdivisions: { select: { id: true, name: true }, orderBy: { name: "asc" } },
-            },
+  return findOrderItem(orderId, itemId, {
+    measure: { select: { id: true, name: true } },
+    status: true,
+    subdivision: true,
+    order: {
+      select: {
+        id: true,
+        title: true,
+        organization: {
+          select: {
+            subdivisions: { select: { id: true, name: true }, orderBy: { name: "asc" } },
           },
         },
       },
     },
   })
-  return item
 }
 
 export async function getOrderItemDelayRequests(orderId: number, itemId: number) {
-  const item = await prisma.orderItem.findFirst({
-    where: { id: itemId, orderId },
-    include: {
-      measure: { select: { id: true, name: true } },
-      order: { select: { id: true, title: true } },
-      delayRequests: { orderBy: { createdAt: "desc" } },
-    },
+  return findOrderItem(orderId, itemId, {
+    measure: { select: { id: true, name: true } },
+    order: { select: { id: true, title: true } },
+    delayRequests: { orderBy: { createdAt: "desc" } },
   })
-  return item
 }
 
 export async function getOrderItemForResponse(orderId: number, itemId: number) {
-  const item = await prisma.orderItem.findFirst({
-    where: { id: itemId, orderId },
-    include: {
-      measure: { select: { id: true, name: true } },
-      order: { select: { id: true, title: true } },
-    },
+  return findOrderItem(orderId, itemId, {
+    measure: { select: { id: true, name: true } },
+    order: { select: { id: true, title: true } },
   })
-  return item
 }
 
 export async function createOrder(input: CreateOrderInput, createdById: number) {

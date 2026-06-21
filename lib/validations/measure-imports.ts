@@ -11,18 +11,3 @@ export const measureImportItemUpdateSchema = z.object({
 export const updateMeasureImportItemsSchema = z.object({
   items: z.array(measureImportItemUpdateSchema).min(1),
 })
-
-export const batchOrderTargetSchema = z.object({
-  organizationId: z.number().int().positive(),
-  subdivisionId: z.number().int().positive().nullable().optional(),
-})
-
-export const batchCreateOrdersSchema = z.object({
-  title: z.string().min(1).max(500),
-  defaultDueAt: z.coerce.date(),
-  measureIds: z.array(z.number().int().positive()).min(1),
-  sourceImportId: z.number().int().positive().optional().nullable(),
-  targets: z.array(batchOrderTargetSchema).min(1),
-})
-
-export type BatchCreateOrdersInput = z.infer<typeof batchCreateOrdersSchema>
