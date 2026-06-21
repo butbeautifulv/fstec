@@ -54,6 +54,8 @@ npm run build
 
 Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
+Production deploy: [docs/deployment.md](docs/deployment.md).
+
 ## Multi-phase work
 
 1. Master plan: `docs/plans/fstec_master.plan.md`
