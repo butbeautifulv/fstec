@@ -210,4 +210,4 @@ Production-деплой: см. [docs/deployment.md](docs/deployment.md)
 
 ## Лицензия
 
-Private project.
+[MIT](LICENSE)
