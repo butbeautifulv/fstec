@@ -131,32 +131,53 @@ deploy, sign, sbom-upload, Ruff linters, conftest, mcp-scan, CodeQL в security-
 
 ---
 
-## 4. Текущий статус (после fix #6, ожидает push)
+### Run 6 — ✅ SUCCESS (8/8 + verify)
 
-### Commits (security CI)
+| | |
+|---|---|
+| **Commit** | `1d62713` |
+| **Run** | [27914512996](https://github.com/butbeautifulv/fstec/actions/runs/27914512996) |
+| **verify** | ✅ ~1m35s |
+| **secrets (Gitleaks)** | ✅ scan + SARIF upload |
+| **sast (Semgrep)** | ✅ **4 findings (4 blocking rules)**, gate warn → CI green |
+| **osa (Trivy)** | ✅ package-lock.json CVE scan |
+| **iac (Checkov)** | ✅ docker-compose + Dockerfiles |
+| **dockerfile (Hadolint)** | ✅ DL3018 warnings ×3, SARIF upload OK |
+| **forbidden-files** | ✅ clean |
+| **skill-scan** | ✅ clean |
+| **dependency-review** | skipped (push event) |
+| **Параллельно** | CodeQL ✅, SCA (Trivy image) ✅ |
+
+**Semgrep реально сканирует:** Rules run: 46, Findings: 4. Gate: `[sast] ok (findings=4, mode=warn)`.
+
+---
+
+## 4. Финальный статус CI
+
+**CI полностью зелёный на push.** Все security scanners запускаются, генерируют SARIF, upload в GitHub Security tab работает.
+
+| Job | Статус | Сканирует |
+|-----|--------|-----------|
+| verify | ✅ | typecheck, lint, test:coverage, build |
+| secrets | ✅ | Gitleaks git history |
+| sast | ✅ | Semgrep p/ci (4 findings, warn) |
+| osa | ✅ | Trivy npm lockfile |
+| iac | ✅ | Checkov IaC |
+| dockerfile | ✅ | Hadolint 3 Dockerfiles |
+| forbidden-files | ✅ | suspicious file patterns |
+| skill-scan | ✅ | `.agents/skills/` |
+| dependency-review | ⏭ push | работает на PR |
+
+### Commits (security CI, финал)
 
 ```
-771ba71  feat: observability + initial security-gates (nested paths — broken)
-25b5653  fix: inline security-gates jobs
-4c37155  fix: composite action vars/secrets
-081e096  fix: normalize-sarif.py
-1192d57  fix: docker -u + sast warn
-<next>   fix: hadolint SARIF locations, semgrep HOME=/tmp, normalize locations
+771ba71  initial security-gates (nested paths — broken)
+25b5653  inline security-gates jobs
+4c37155  composite action vars/secrets → inputs
+081e096  normalize-sarif.py
+1192d57  docker -u + sast warn (7/8)
+1d62713  hadolint locations, semgrep HOME=/tmp → ALL GREEN
 ```
-
-### Ожидаемый результат Run 6
-
-| Job | Ожидание |
-|-----|----------|
-| verify | ✅ |
-| secrets (Gitleaks) | ✅ scan + SARIF upload |
-| sast (Semgrep) | ✅ реальный scan (4 findings → warn, не блок) |
-| osa (Trivy) | ✅ CVE report в Security tab |
-| iac (Checkov) | ✅ docker-compose + Dockerfile |
-| dockerfile (Hadolint) | ✅ warn + valid SARIF upload |
-| forbidden-files | ✅ |
-| skill-scan | ✅ |
-| dependency-review | skipped на push; ✅ на PR |
 
 ---
 
@@ -272,7 +293,7 @@ npm ci → typecheck → lint → test:coverage → build
 | 18:59 | Push 4c37155 — gate-and-export inputs fix |
 | 19:01 | Push 081e096 — normalize-sarif; PermissionError root SARIF |
 | 19:04 | Push 1192d57 — docker -u, sast warn; 7/8 green, Hadolint upload fail |
-| 19:0x | Push fix #6 — hadolint locations, semgrep HOME=/tmp, normalize locations |
+| 19:07 | Push 1d62713 — **CI ALL GREEN** Run [27914512996](https://github.com/butbeautifulv/fstec/actions/runs/27914512996) |
 
 ---
 
@@ -284,6 +305,7 @@ npm ci → typecheck → lint → test:coverage → build
 | 2 | 4c37155 | fail upload SARIF | https://github.com/butbeautifulv/fstec/actions/runs/27914303079 |
 | 3 | 081e096 | fail PermissionError | https://github.com/butbeautifulv/fstec/actions/runs/27914371411 |
 | 4 | 1192d57 | 7/8 pass | https://github.com/butbeautifulv/fstec/actions/runs/27914433923 |
+| 5 | 1d62713 | **ALL GREEN** | https://github.com/butbeautifulv/fstec/actions/runs/27914512996 |
 
 ---
 
