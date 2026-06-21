@@ -198,6 +198,21 @@ Production-деплой: см. [docs/deployment.md](docs/deployment.md)
 
 ---
 
+## Импорт мер из DOCX
+
+Оператор может загрузить письмо ФСТЭК (`.docx`) через раздел **Письма** в сайдбаре, система извлечёт нумерованные меры, сохранит оригинал в S3 и позволит импортировать их в каталог. После commit — автопереход к пакетному созданию поручений. Без документа поручения создаются вручную: **Поручения → Создать поручение**.
+
+| Шаг | UI |
+|-----|-----|
+| Письма (список) | `/panel/measures/imports` |
+| Загрузка DOCX | `/panel/measures/imports/new` |
+| Preview и commit | `/panel/measures/imports/{id}` |
+| Поручения (из документа или вручную) | `/panel/orders/new` или `/panel/orders/new?importId={id}` |
+
+Тесты: `npm run test:parse-docx`, `npm run test:batch-targets` (файлы в `.external/docx_examples/`).
+
+---
+
 ## Документация
 
 | Документ | Содержание |

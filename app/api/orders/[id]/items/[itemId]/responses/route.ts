@@ -23,6 +23,12 @@ export async function POST(request: Request, { params }: Params) {
     await revalidatePanelOrderMutation(orderId, { responses: true })
     await invalidateKeys("panel:pending:responses")
 
+    void import("@/lib/notifications/response-submitted").then(({ notifyResponseSubmitted }) =>
+      notifyResponseSubmitted(result.data.response.id).catch((error) => {
+        console.error("Response notification failed:", error)
+      })
+    )
+
     return jsonOk(result.data, { status: 201 })
   } catch (error) {
     return handleApiError(error)

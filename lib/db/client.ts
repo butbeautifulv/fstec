@@ -18,6 +18,9 @@ const REQUIRED_PRISMA_DELEGATES = [
   "appSettings",
   "reportLink",
   "responseAttachment",
+  "measureImport",
+  "emailDelivery",
+  "contactPerson",
 ] as const
 
 function isStaleClient(client: PrismaClient) {

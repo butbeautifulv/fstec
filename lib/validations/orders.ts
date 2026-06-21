@@ -11,6 +11,7 @@ export const createOrderSchema = z.object({
   title: z.string().min(1).max(500),
   organizationId: z.number().int().positive(),
   defaultDueAt: z.coerce.date().optional().nullable(),
+  sourceImportId: z.number().int().positive().optional().nullable(),
   items: z.array(orderItemInputSchema).min(1),
 })
 

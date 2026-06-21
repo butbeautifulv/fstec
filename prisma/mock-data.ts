@@ -173,6 +173,26 @@ async function seedOrganization(
     subdivisions.set(name, sub.id)
   }
 
+  await prisma.contactPerson.deleteMany({ where: { organizationId: organization.id } })
+  await prisma.contactPerson.createMany({
+    data: [
+      {
+        organizationId: organization.id,
+        fullName: `Главный ответственный ${org.shortCode}`,
+        position: "Начальник отдела ИБ",
+        email: `${org.shortCode.toLowerCase()}.primary@example.local`,
+        role: "PRIMARY",
+      },
+      {
+        organizationId: organization.id,
+        fullName: `Ответственный ${org.shortCode}`,
+        position: "Специалист по ИБ",
+        email: `${org.shortCode.toLowerCase()}.resp@example.local`,
+        role: "RESPONSIBLE",
+      },
+    ],
+  })
+
   const tokenPrefix = orgAccessToken(org.shortCode)
   await prisma.accessLink.deleteMany({
     where: { token: { startsWith: tokenPrefix } },

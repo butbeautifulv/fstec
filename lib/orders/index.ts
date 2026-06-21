@@ -4,8 +4,9 @@ import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { CreateOrderInput } from "@/lib/validations/orders"
 
-export async function listOrders() {
+export async function listOrders(options?: { sourceImportId?: number }) {
   return prisma.order.findMany({
+    where: options?.sourceImportId ? { sourceImportId: options.sourceImportId } : undefined,
     orderBy: { issuedAt: "desc" },
     include: {
       organization: true,
@@ -99,6 +100,7 @@ export async function createOrder(input: CreateOrderInput, createdById: number) 
       title: input.title,
       organizationId: input.organizationId,
       createdById,
+      sourceImportId: input.sourceImportId ?? null,
       defaultDueAt: input.defaultDueAt ?? null,
       items: {
         create: input.items.map((item) => ({

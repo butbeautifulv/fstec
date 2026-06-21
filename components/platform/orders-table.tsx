@@ -23,7 +23,13 @@ type Order = {
   _count: { items: number }
 }
 
-export function OrdersTable({ initialOrders }: { initialOrders: Order[] }) {
+export function OrdersTable({
+  initialOrders,
+  sourceImportId = null,
+}: {
+  initialOrders: Order[]
+  sourceImportId?: number | null
+}) {
   const [orders, setOrders] = useState(initialOrders)
   const { deleteId, deleting, requestDelete, confirmDelete, cancelDelete } =
     useResourceDelete({

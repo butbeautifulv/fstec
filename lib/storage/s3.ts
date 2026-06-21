@@ -79,6 +79,37 @@ export async function ensureStorageReady(): Promise<void> {
   await ensureBucketCors()
 }
 
+export async function putObjectBuffer(
+  storageKey: string,
+  body: Buffer,
+  mimeType: string
+): Promise<void> {
+  await ensureStorageReady()
+  const config = getS3Config()
+  await getClient().send(
+    new PutObjectCommand({
+      Bucket: config.bucket,
+      Key: storageKey,
+      Body: body,
+      ContentType: mimeType,
+    })
+  )
+}
+
+export async function getObjectBuffer(storageKey: string): Promise<Buffer> {
+  await ensureStorageReady()
+  const config = getS3Config()
+  const response = await getClient().send(
+    new GetObjectCommand({
+      Bucket: config.bucket,
+      Key: storageKey,
+    })
+  )
+  if (!response.Body) throw new Error("NOT_FOUND")
+  const bytes = await response.Body.transformToByteArray()
+  return Buffer.from(bytes)
+}
+
 export async function createPutPresignedUrl(
   storageKey: string,
   mimeType: AllowedImageMimeType,

@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useAdminBreadcrumbLabel } from "@/components/platform/platform-breadcrumb"
+import { OrgContactsPanel } from "@/components/platform/org-contacts-panel"
 import { OrgLinksPanel } from "@/components/platform/org-links-panel"
 import { PageHeader } from "@/components/shared/page-header"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { labels } from "@/lib/ui/branding"
 import { Pencil } from "lucide-react"
@@ -18,16 +20,26 @@ type LinkRow = {
   subdivision: { id: number; name: string } | null
 }
 
+type ContactRow = {
+  id: number
+  fullName: string
+  position: string | null
+  email: string
+  role: "PRIMARY" | "RESPONSIBLE" | "NOTIFY"
+}
+
 export function OrgDetailClient({
   organizationId,
   organizationName,
   initialSubdivisions,
   initialLinks,
+  initialContacts,
 }: {
   organizationId: number
   organizationName: string
   initialSubdivisions: Subdivision[]
   initialLinks: LinkRow[]
+  initialContacts: ContactRow[]
 }) {
   useAdminBreadcrumbLabel(organizationName)
 
@@ -47,6 +59,19 @@ export function OrgDetailClient({
           </Button>
         }
       />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Контакты для оповещений</CardTitle>
+          <CardDescription>ФИО, должность, email и роль ответственного</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OrgContactsPanel
+            organizationId={organizationId}
+            initialContacts={initialContacts}
+          />
+        </CardContent>
+      </Card>
 
       <OrgLinksPanel
         organizationId={organizationId}

@@ -23,6 +23,7 @@ export type OrderCreateDraft = {
   bulkSubdivisionId: string
   selectedMeasureIds: number[]
   measuresCache: OrderCreateMeasure[]
+  sourceImportId: number | null
 }
 
 const STORAGE_KEY = "fstec:order-create-draft"
@@ -34,6 +35,7 @@ export const EMPTY_DRAFT: OrderCreateDraft = {
   bulkSubdivisionId: "none",
   selectedMeasureIds: [],
   measuresCache: [],
+  sourceImportId: null,
 }
 
 function parseDraft(raw: string | null): OrderCreateDraft {
@@ -47,6 +49,8 @@ function parseDraft(raw: string | null): OrderCreateDraft {
         ? parsed.selectedMeasureIds
         : [],
       measuresCache: Array.isArray(parsed.measuresCache) ? parsed.measuresCache : [],
+      sourceImportId:
+        typeof parsed.sourceImportId === "number" ? parsed.sourceImportId : null,
     }
   } catch {
     return EMPTY_DRAFT

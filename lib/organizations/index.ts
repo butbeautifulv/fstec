@@ -1,9 +1,21 @@
 import { prisma } from "@/lib/db"
+import { getHeadOrganizationId } from "@/lib/settings"
 import type { OrganizationInput } from "@/lib/validations/organizations"
 
 export function listOrganizations() {
   return prisma.organization.findMany({
     include: { subdivisions: true, _count: { select: { orders: true } } },
+    orderBy: { name: "asc" },
+  })
+}
+
+export async function listSupervisedOrganizations() {
+  const headOrganizationId = await getHeadOrganizationId()
+  return prisma.organization.findMany({
+    where: headOrganizationId != null ? { id: { not: headOrganizationId } } : undefined,
+    include: {
+      subdivisions: { orderBy: { name: "asc" } },
+    },
     orderBy: { name: "asc" },
   })
 }

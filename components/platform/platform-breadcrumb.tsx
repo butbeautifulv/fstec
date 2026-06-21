@@ -38,6 +38,15 @@ function buildPlatformCrumbs(
   }
 
   if (pathname.startsWith("/panel/measures")) {
+    if (pathname.startsWith("/panel/measures/imports")) {
+      crumbs.push({ label: "Письма", href: "/panel/measures/imports" })
+      if (pathname === "/panel/measures/imports/new") {
+        crumbs.push({ label: "Загрузка документа" })
+      } else if (pathname !== "/panel/measures/imports") {
+        crumbs.push({ label: dynamicLabel ?? "Документ" })
+      }
+      return crumbs
+    }
     crumbs.push({ label: "Меры", href: "/panel/measures" })
     if (pathname === "/panel/measures/new") crumbs.push({ label: "Новая мера" })
     else if (pathname.endsWith("/edit")) crumbs.push({ label: "Редактирование" })
@@ -48,6 +57,9 @@ function buildPlatformCrumbs(
     crumbs.push({ label: "Поручения", href: "/panel/orders" })
     if (pathname === "/panel/orders/new") {
       crumbs.push({ label: "Создание" })
+    } else if (pathname === "/panel/orders/new/measures") {
+      crumbs.push({ label: "Создание", href: "/panel/orders/new" })
+      crumbs.push({ label: "Выбор мер" })
     } else if (pathname.match(/^\/panel\/orders\/\d+\/edit$/)) {
       crumbs.push(...middleCrumbs)
       crumbs.push({ label: "Редактирование" })

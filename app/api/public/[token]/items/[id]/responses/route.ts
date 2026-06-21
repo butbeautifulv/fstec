@@ -20,6 +20,11 @@ export async function POST(request: Request, { params }: Params) {
     if ("error" in body) return body.error
 
     const result = await submitOrderItemResponse(orderItemId, body.data)
+    void import("@/lib/notifications/response-submitted").then(({ notifyResponseSubmitted }) =>
+      notifyResponseSubmitted(result.response.id).catch((error) => {
+        console.error("Response notification failed:", error)
+      })
+    )
     return jsonOk(result, { status: 201 })
   } catch (error) {
     return handleApiError(error)

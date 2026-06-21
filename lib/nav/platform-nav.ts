@@ -5,6 +5,7 @@ import {
   ClipboardListIcon,
   FileTextIcon,
   LayoutDashboardIcon,
+  MailIcon,
   ShieldIcon,
 } from "lucide-react"
 import type { ShellNavMainItem } from "@/components/shell/shell-nav-main"
@@ -31,7 +32,16 @@ const NAV_DEFS: NavDef[] = [
     title: "Меры",
     href: "/panel/measures",
     icon: ShieldIcon,
-    match: (p) => p === "/panel/measures" || p.startsWith("/panel/measures/"),
+    match: (p) =>
+      p === "/panel/measures" ||
+      (p.startsWith("/panel/measures/") && !p.startsWith("/panel/measures/imports")),
+    permission: Permission.measuresRead,
+  },
+  {
+    title: "Письма",
+    href: "/panel/measures/imports",
+    icon: MailIcon,
+    match: (p) => p.startsWith("/panel/measures/imports"),
     permission: Permission.measuresRead,
   },
   {
@@ -84,9 +94,9 @@ export function filterNavByPermission<T extends { permission?: PermissionType }>
 }
 
 export const PLATFORM_PRIMARY_ACTION = {
-  href: "/panel/orders/new",
-  label: "Создать поручение",
-  permission: Permission.ordersWrite,
+  href: "/panel/measures/imports/new",
+  label: "Импортировать меры из DOCX",
+  permission: Permission.measuresWrite,
 } as const
 
 export const PLATFORM_BRAND_HREF = "/panel"

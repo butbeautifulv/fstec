@@ -17,6 +17,15 @@ export function handleApiError(error: unknown) {
     if (error.message === "NOT_FOUND") {
       return jsonError("Not found", 404)
     }
+    if (error.message === "INVALID_TARGETS") {
+      return jsonError("Некорректный список получателей поручения", 400)
+    }
+    if (error.message === "INVALID_MEASURES") {
+      return jsonError("Одна или несколько мер не найдены", 400)
+    }
+    if (error.message === "PRIMARY_CONTACT_EXISTS") {
+      return jsonError("Главный ответственный уже назначен в этой области", 409)
+    }
     if (error.message === "FORBIDDEN") {
       return jsonError("Forbidden", 403)
     }
@@ -47,8 +56,23 @@ export function handleApiError(error: unknown) {
     if (error.message === "INVALID_MIME_TYPE") {
       return jsonError("Недопустимый тип файла. Разрешены JPEG, PNG, WebP, GIF", 400)
     }
+    if (error.message === "INVALID_DOCX") {
+      return jsonError("Разрешены только файлы .docx", 400)
+    }
+    if (error.message === "INVALID_FILE") {
+      return jsonError("Файл не передан", 400)
+    }
+    if (error.message === "INVALID_PARENT_IMPORT") {
+      return jsonError("Некорректный родительский документ", 400)
+    }
+    if (error.message === "IMPORT_INVALID_STATUS") {
+      return jsonError("Недопустимый статус документа для операции", 400)
+    }
+    if (error.message === "NO_ITEMS" || error.message === "NO_ITEMS_FOUND") {
+      return jsonError("Не удалось извлечь меры из документа", 400)
+    }
     if (error.message === "INVALID_FILE_SIZE") {
-      return jsonError("Размер файла должен быть от 1 байта до 5 МБ", 400)
+      return jsonError("Размер файла должен быть от 1 байта до 20 МБ", 400)
     }
     if (error.message === "TOO_MANY_ATTACHMENTS") {
       return jsonError("Максимум 10 вложений на отчёт", 400)

@@ -64,6 +64,12 @@ export async function POST(request: Request) {
     })
     await invalidateKeys("panel:pending:responses")
 
+    void import("@/lib/notifications/response-reviewed").then(({ notifyResponseReviewed }) =>
+      notifyResponseReviewed(id).catch((error) => {
+        console.error("Review notification failed:", error)
+      })
+    )
+
     return jsonOk({ ok: true, response })
   } catch (error) {
     return handleApiError(error)

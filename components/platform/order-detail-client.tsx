@@ -36,7 +36,7 @@ import {
 } from "@/lib/statuses/workflow"
 import { format } from "date-fns"
 import { ResponseReviewStatus } from "@prisma/client"
-import { ClipboardList, Pencil, Trash2 } from "lucide-react"
+import { ClipboardList, Mail, Pencil, Trash2 } from "lucide-react"
 
 type Subdivision = { id: number; name: string }
 
@@ -85,6 +85,16 @@ export function OrderDetailClient({
   const [deleting, setDeleting] = useState(false)
 
   useAdminBreadcrumbLabel(order.title)
+
+  async function handleResendNotifications() {
+    const res = await fetch(`/api/orders/${order.id}/notify`, { method: "POST" })
+    if (!res.ok) {
+      const data = await res.json()
+      notify.error(data.error ?? "Не удалось отправить уведомления")
+      return
+    }
+    notify.success("Уведомления отправлены")
+  }
 
   const pendingCount = (item: OrderItem) =>
     item.delayRequests.filter((d) => d.status === "PENDING").length
@@ -307,6 +317,10 @@ export function OrderDetailClient({
               <Link href={`/panel/organizations/${order.organization.id}`}>
                 Ссылки {labels.orgGenitive}
               </Link>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleResendNotifications}>
+              <Mail data-icon="inline-start" />
+              Отправить уведомления
             </Button>
           </div>
         }

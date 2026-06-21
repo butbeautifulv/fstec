@@ -1,35 +1,53 @@
-import { listOrganizations } from "@/lib/organizations"
-import { getHeadOrganizationId } from "@/lib/settings"
-import { OrderCreateForm } from "@/components/platform/order-create-form"
+import { OrderCreateClient } from "@/components/platform/order-create-client"
 import { PageHeader } from "@/components/shared/page-header"
-import { labels } from "@/lib/ui/branding"
+import { loadOrderCreateContext } from "@/lib/orders/order-create-context"
 
-export default async function NewOrderPage() {
-  const [organizations, headOrganizationId] = await Promise.all([
-    listOrganizations(),
-    getHeadOrganizationId(),
-  ])
+export default async function NewOrderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ importId?: string }>
+}) {
+  const { importId: importIdRaw } = await searchParams
+  const importId =
+    importIdRaw != null && !Number.isNaN(Number(importIdRaw))
+      ? Number(importIdRaw)
+      : undefined
 
-  const initialOrganizations = organizations.map((org) => ({
-    id: org.id,
-    name: org.name,
-    subdivisions: org.subdivisions.map((subdivision) => ({
-      id: subdivision.id,
-      name: subdivision.name,
-    })),
-  }))
+  const context = await loadOrderCreateContext({ importId })
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Новое поручение"
-        description={`Назначение мер ${labels.orgGenitive}`}
-        backHref="/panel/orders"
-        backLabel="Поручения"
+        description={
+          context.importRecord
+            ? `Меры из документа ${context.importRecord.documentNumber ?? context.importRecord.originalName}`
+            : "Пакетное назначение мер подведомственным организациям"
+        }
+        backHref={
+          context.importRecord
+            ? `/panel/measures/imports/${context.importRecord.id}`
+            : "/panel/orders"
+        }
+        backLabel={context.importRecord ? "Письмо" : "Поручения"}
       />
-      <OrderCreateForm
-        initialOrganizations={initialOrganizations}
-        initialHeadOrganizationId={headOrganizationId}
+      <OrderCreateClient
+        organizations={context.organizations}
+        defaultDue={context.defaultDue}
+        initialImport={
+          context.importRecord
+            ? {
+                id: context.importRecord.id,
+                documentNumber: context.importRecord.documentNumber,
+                title: context.importRecord.title,
+                originalName: context.importRecord.originalName,
+                defaultTitle: context.defaultTitle,
+                defaultDue: context.defaultDue,
+                measureIds: context.measureIds,
+                measures: context.measures,
+              }
+            : undefined
+        }
       />
     </div>
   )

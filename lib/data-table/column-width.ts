@@ -1,10 +1,14 @@
 import { isActionsColumn } from "@/lib/data-table/column-meta"
 
 const TAILWIND_WIDTH_PX: Record<string, number> = {
+  "w-10": 40,
+  "w-12": 48,
   "w-16": 64,
   "w-24": 96,
   "w-28": 112,
   "w-32": 128,
+  "w-40": 160,
+  "w-48": 192,
 }
 
 const ACTIONS_COLUMN_WIDTH_PX = 64

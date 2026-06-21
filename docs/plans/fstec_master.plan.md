@@ -46,6 +46,13 @@ Full-stack Next.js app for FSTEC security measures tracking across subsidiaries 
 | 28-nav-rbac | fstec/phase-28-nav-rbac | done |
 | 29-panel-urls | fstec/phase-29-panel-urls | done |
 | 30-platform-rename | fstec/phase-30-platform-rename | done |
+| 31-measure-import-data | fstec/phase-31-measure-import-data | done |
+| 32-docx-parser | fstec/phase-32-docx-parser | done |
+| 33-measure-import-ui | fstec/phase-33-measure-import-ui | done |
+| 34-import-preview-commit | fstec/phase-34-import-preview-commit | done |
+| 35-order-import-prefill | fstec/phase-35-order-import-prefill | done |
+| 36-batch-orders | fstec/phase-36-batch-orders | done |
+| 37-import-polish | fstec/phase-37-import-polish | done |
 
 ## RBAC
 

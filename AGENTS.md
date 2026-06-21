@@ -56,6 +56,8 @@ Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
 Production deploy: [docs/deployment.md](docs/deployment.md).
 
+Measure import (DOCX): `/panel/measures/imports`, parser test `npm run test:parse-docx`.
+
 ## Multi-phase work
 
 1. Master plan: `docs/plans/fstec_master.plan.md`
