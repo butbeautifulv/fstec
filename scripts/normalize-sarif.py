@@ -6,14 +6,21 @@ import json
 import sys
 from pathlib import Path
 
+DEFAULT_LOCATION = {
+    "physicalLocation": {
+        "artifactLocation": {"uri": "Dockerfile", "uriBaseId": "%SRCROOT%"},
+        "region": {"startLine": 1},
+    }
+}
 
-def is_valid(data: dict) -> bool:
-    if not isinstance(data, dict) or not data.get("version"):
-        return False
-    runs = data.get("runs")
-    if not isinstance(runs, list) or not runs:
-        return False
-    return all(isinstance(run, dict) and run.get("tool") for run in runs)
+
+def ensure_locations(run: dict) -> None:
+    for result in run.get("results", []):
+        if not isinstance(result, dict):
+            continue
+        locations = result.get("locations")
+        if not isinstance(locations, list) or not locations:
+            result["locations"] = [DEFAULT_LOCATION.copy()]
 
 
 def normalize(path: Path, tool_name: str = "scanner") -> None:
@@ -24,9 +31,6 @@ def normalize(path: Path, tool_name: str = "scanner") -> None:
             data = {}
     else:
         data = {}
-
-    if is_valid(data):
-        return
 
     data.setdefault("version", "2.1.0")
     runs = data.get("runs")
@@ -41,6 +45,7 @@ def normalize(path: Path, tool_name: str = "scanner") -> None:
             run["tool"] = {"driver": {"name": tool_name}}
         elif not tool["driver"].get("name"):
             tool["driver"]["name"] = tool_name
+        ensure_locations(run)
     data["runs"] = runs
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2), encoding="utf-8")
