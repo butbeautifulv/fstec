@@ -18,10 +18,7 @@ async function OrdersTableSection({
     sourceImportId != null ? { sourceImportId } : undefined
   )
   return (
-    <OrdersTable
-      initialOrders={serializeOrders(orders)}
-      sourceImportId={sourceImportId ?? null}
-    />
+    <OrdersTable initialOrders={serializeOrders(orders)} />
   )
 }
 

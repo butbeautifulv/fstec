@@ -5,10 +5,20 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["lib/**/__tests__/**/*.test.ts"],
-    exclude: [
-      "lib/measure-imports/__tests__/parse-docx.test.ts",
-      "lib/orders/__tests__/batch-targets.test.ts",
-    ],
+    setupFiles: ["lib/__tests__/helpers/vitest.setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["lib/**/*.ts"],
+      exclude: [
+        "lib/**/__tests__/**",
+        "lib/**/types.ts",
+        "lib/measures/table-types.ts",
+      ],
+      thresholds: {
+        lines: 97,
+        branches: 90,
+      },
+    },
   },
   resolve: {
     alias: {

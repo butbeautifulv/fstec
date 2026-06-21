@@ -1,61 +1,11 @@
 import { prisma } from "@/lib/db"
 import { getDefaultStatusId } from "@/lib/statuses"
-import {
-  dedupeBatchTargets,
-  hasOrgSubdivisionConflict,
-  type BatchTarget,
-} from "@/lib/orders/batch-targets"
 import type { BatchCreateOrdersInput } from "@/lib/validations/orders"
 import { buildOrderItemsCreate } from "@/lib/orders/build-order-items"
+import { BatchCreateValidationError } from "@/lib/orders/batch-create-errors"
+import { validateBatchTargets } from "@/lib/orders/validate-batch-targets"
 
-export class BatchCreateValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "BatchCreateValidationError"
-  }
-}
-
-async function validateBatchTargets(targets: BatchTarget[], measureIds: number[]) {
-  const uniqueTargets = dedupeBatchTargets(targets)
-  if (uniqueTargets.length === 0) {
-    throw new BatchCreateValidationError("INVALID_TARGETS")
-  }
-
-  if (hasOrgSubdivisionConflict(uniqueTargets)) {
-    throw new BatchCreateValidationError("TARGETS_CONFLICT")
-  }
-
-  const measures = await prisma.measure.findMany({
-    where: { id: { in: measureIds } },
-    select: { id: true },
-  })
-  if (measures.length !== measureIds.length) {
-    throw new BatchCreateValidationError("INVALID_MEASURES")
-  }
-
-  const orgIds = [...new Set(uniqueTargets.map((target) => target.organizationId))]
-  const orgs = await prisma.organization.findMany({
-    where: { id: { in: orgIds } },
-    include: { subdivisions: { select: { id: true } } },
-  })
-  if (orgs.length !== orgIds.length) {
-    throw new BatchCreateValidationError("INVALID_TARGETS")
-  }
-
-  const subdivisionsByOrg = new Map(
-    orgs.map((org) => [org.id, new Set(org.subdivisions.map((sub) => sub.id))])
-  )
-
-  for (const target of uniqueTargets) {
-    if (target.subdivisionId == null) continue
-    const allowed = subdivisionsByOrg.get(target.organizationId)
-    if (!allowed?.has(target.subdivisionId)) {
-      throw new BatchCreateValidationError("INVALID_TARGETS")
-    }
-  }
-
-  return uniqueTargets
-}
+export { BatchCreateValidationError } from "@/lib/orders/batch-create-errors"
 
 export async function batchCreateOrders(
   input: BatchCreateOrdersInput,
@@ -64,6 +14,7 @@ export async function batchCreateOrders(
   const defaultStatusId = await getDefaultStatusId()
   const dueAt = input.defaultDueAt
   const targets = await validateBatchTargets(
+    prisma,
     input.targets.map((target) => ({
       organizationId: target.organizationId,
       subdivisionId: target.subdivisionId ?? null,

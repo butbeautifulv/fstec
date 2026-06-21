@@ -130,6 +130,8 @@ export function DataTable<TData>({
     return () => media.removeEventListener("change", sync)
   }, [hideOnMobileColumnIds, columnIds])
 
+  // TanStack Table returns unstable function references by design.
+  // eslint-disable-next-line react-hooks/incompatible-library -- useReactTable
   const table = useReactTable({
     data,
     columns,
@@ -172,7 +174,7 @@ export function DataTable<TData>({
         meta: header.column.columnDef.meta,
       }))
     )
-  }, [table, columnVisibility])
+  }, [table])
 
   const visibleHeaders =
     table.getHeaderGroups()[0]?.headers.filter((header) => header.column.getIsVisible()) ??

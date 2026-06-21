@@ -1,30 +1,9 @@
 import { PrismaClient } from "@prisma/client"
+import { createPrismaClient, isStaleClient } from "@/lib/db/prisma-factory"
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   prismaRead: PrismaClient | undefined
-}
-
-function createPrismaClient(databaseUrl?: string) {
-  return new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-    ...(databaseUrl
-      ? { datasources: { db: { url: databaseUrl } } }
-      : {}),
-  })
-}
-
-const REQUIRED_PRISMA_DELEGATES = [
-  "appSettings",
-  "reportLink",
-  "responseAttachment",
-  "measureImport",
-  "emailDelivery",
-  "contactPerson",
-] as const
-
-function isStaleClient(client: PrismaClient) {
-  return REQUIRED_PRISMA_DELEGATES.some((delegate) => !(delegate in client))
 }
 
 function getPrismaClient() {

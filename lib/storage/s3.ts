@@ -113,7 +113,7 @@ export async function getObjectBuffer(storageKey: string): Promise<Buffer> {
 export async function createPutPresignedUrl(
   storageKey: string,
   mimeType: AllowedImageMimeType,
-  _sizeBytes: number
+  sizeBytes: number
 ): Promise<string> {
   await ensureStorageReady()
   const config = getS3Config()
@@ -121,6 +121,7 @@ export async function createPutPresignedUrl(
     Bucket: config.bucket,
     Key: storageKey,
     ContentType: mimeType,
+    ContentLength: sizeBytes,
   })
   return getSignedUrl(getClient(), command, {
     expiresIn: PRESIGNED_URL_EXPIRY_SECONDS,

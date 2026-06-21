@@ -48,7 +48,7 @@ export function OverflowText({
     if (overflows) {
       setMarqueeDuration(Math.max(4, Math.min(16, textWidth / 28)))
     }
-  }, [children])
+  }, [])
 
   useLayoutEffect(() => {
     measure()

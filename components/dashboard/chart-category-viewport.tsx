@@ -199,34 +199,19 @@ export function ChartCategoryViewport({
   )
   const showControls = categoryCount > DENSE_CATEGORY_THRESHOLD && maxZoom > ZOOM_MIN
 
-  const chartWidth = Math.round(effectiveWidth * (zoom / 100))
+  const clampedZoom = Math.min(zoom, maxZoom)
+  const chartWidth = Math.round(effectiveWidth * (clampedZoom / 100))
   const maxPan = Math.max(0, chartWidth - effectiveWidth)
-  const panPx = Math.round((panPercent / 100) * maxPan)
-  const needsPan = showControls && zoom > ZOOM_MIN && maxPan > 0
-
-  useEffect(() => {
-    if (zoom > maxZoom) {
-      setZoom(maxZoom)
-    }
-  }, [maxZoom, zoom])
-
-  useEffect(() => {
-    if (zoom === ZOOM_MIN) {
-      setPanPercent(0)
-    }
-  }, [zoom])
-
-  useEffect(() => {
-    if (panPercent > 0 && maxPan === 0) {
-      setPanPercent(0)
-    }
-  }, [maxPan, panPercent])
+  const effectivePanPercent =
+    clampedZoom === ZOOM_MIN || maxPan === 0 ? 0 : panPercent
+  const panPx = Math.round((effectivePanPercent / 100) * maxPan)
+  const needsPan = showControls && clampedZoom > ZOOM_MIN && maxPan > 0
 
   const layout = categoryBarChartLayout(
     categoryCount,
     size,
     effectiveWidth,
-    showControls ? zoom : ZOOM_MIN,
+    showControls ? clampedZoom : ZOOM_MIN,
     plotAreaInsets,
     variant
   )
@@ -242,18 +227,21 @@ export function ChartCategoryViewport({
         >
           <ChartRangeControl
             label="Масштаб"
-            value={zoom}
+            value={clampedZoom}
             min={ZOOM_MIN}
             max={maxZoom}
             step={5}
-            valueLabel={`${zoom}%`}
-            onChange={setZoom}
+            valueLabel={`${clampedZoom}%`}
+            onChange={(value) => {
+              setZoom(value)
+              if (value === ZOOM_MIN) setPanPercent(0)
+            }}
             compact={size === "card"}
           />
           {needsPan ? (
             <ChartRangeControl
               label="Позиция"
-              value={panPercent}
+              value={effectivePanPercent}
               min={0}
               max={100}
               step={1}

@@ -1,11 +1,8 @@
 import type { ContactRole } from "@prisma/client"
 import { prisma } from "@/lib/db"
+import { dedupeAndSortContacts } from "@/lib/contacts/dedupe-contacts"
 
-const ROLE_ORDER: Record<ContactRole, number> = {
-  PRIMARY: 0,
-  RESPONSIBLE: 1,
-  NOTIFY: 2,
-}
+export { dedupeAndSortContacts } from "@/lib/contacts/dedupe-contacts"
 
 export function getContactsListWhere(input: {
   organizationId?: number
@@ -61,17 +58,7 @@ export async function resolveContactsForTarget(input: {
 
   const contacts = subdivisionContacts.length > 0 ? subdivisionContacts : orgContacts
 
-  const deduped = new Map<string, (typeof contacts)[number]>()
-  for (const contact of contacts) {
-    const key = contact.email.trim().toLowerCase()
-    if (!deduped.has(key)) {
-      deduped.set(key, contact)
-    }
-  }
-
-  return [...deduped.values()].sort(
-    (a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role] || a.fullName.localeCompare(b.fullName)
-  )
+  return dedupeAndSortContacts(contacts)
 }
 
 async function assertPrimaryUnique(input: {

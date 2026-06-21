@@ -62,7 +62,9 @@ function prefixedKey(key) {
  * use app-level `invalidateKeys` for domain caches until tag indexing is added.
  */
 export default class CacheHandler {
-  constructor(_options) {}
+  constructor(options) {
+    void options
+  }
 
   async get(key) {
     const redis = getRedis()
@@ -93,7 +95,8 @@ export default class CacheHandler {
     }
   }
 
-  async revalidateTag(_tag) {
+  async revalidateTag(tag) {
+    void tag
     // No-op: full tag invalidation needs a reverse index (planned follow-up).
   }
 

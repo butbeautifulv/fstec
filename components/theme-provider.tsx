@@ -7,7 +7,7 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react"
 import { useServerInsertedHTML } from "next/navigation"
@@ -21,19 +21,46 @@ type Theme = "light" | "dark" | "system"
 type ResolvedTheme = "light" | "dark"
 
 type ThemeContextValue = {
-  theme: Theme | undefined
-  resolvedTheme: ResolvedTheme | undefined
+  theme: Theme
+  resolvedTheme: ResolvedTheme
   setTheme: (theme: Theme) => void
 }
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-function resolveTheme(theme: Theme): ResolvedTheme {
-  if (theme === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light"
+const themeListeners = new Set<() => void>()
+
+function subscribeTheme(onStoreChange: () => void) {
+  themeListeners.add(onStoreChange)
+  return () => {
+    themeListeners.delete(onStoreChange)
   }
+}
+
+function subscribeSystemTheme(onStoreChange: () => void) {
+  if (typeof window === "undefined") return () => {}
+
+  const media = window.matchMedia("(prefers-color-scheme: dark)")
+  media.addEventListener("change", onStoreChange)
+  return () => media.removeEventListener("change", onStoreChange)
+}
+
+function getStoredTheme(): Theme {
+  return (localStorage.getItem(THEME_STORAGE_KEY) as Theme | null) ?? "system"
+}
+
+function getSystemResolvedTheme(): ResolvedTheme {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light"
+}
+
+function notifyThemeListeners() {
+  themeListeners.forEach((listener) => listener())
+}
+
+function resolveTheme(theme: Theme): ResolvedTheme {
+  if (theme === "system") return getSystemResolvedTheme()
   return theme
 }
 
@@ -59,34 +86,29 @@ function ThemeProvider({ children }: { children: ReactNode }) {
     )
   })
 
-  const [theme, setThemeState] = useState<Theme | undefined>(undefined)
-  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme | undefined>(
-    undefined
+  const theme = useSyncExternalStore(
+    subscribeTheme,
+    getStoredTheme,
+    () => "system" as Theme
   )
 
-  useEffect(() => {
-    const stored =
-      (localStorage.getItem(THEME_STORAGE_KEY) as Theme | null) ?? "system"
-    setThemeState(stored)
-    setResolvedTheme(applyThemeToDocument(stored))
-  }, [])
+  const systemResolvedTheme = useSyncExternalStore(
+    subscribeSystemTheme,
+    getSystemResolvedTheme,
+    () => "light" as ResolvedTheme
+  )
+
+  const resolvedTheme: ResolvedTheme =
+    theme === "system" ? systemResolvedTheme : theme
 
   useEffect(() => {
-    if (theme !== "system") return
-
-    const media = window.matchMedia("(prefers-color-scheme: dark)")
-    function onChange() {
-      setResolvedTheme(applyThemeToDocument("system"))
-    }
-
-    media.addEventListener("change", onChange)
-    return () => media.removeEventListener("change", onChange)
-  }, [theme])
+    applyThemeToDocument(theme)
+  }, [theme, resolvedTheme])
 
   const setTheme = useCallback((next: Theme) => {
     localStorage.setItem(THEME_STORAGE_KEY, next)
-    setThemeState(next)
-    setResolvedTheme(applyThemeToDocument(next))
+    notifyThemeListeners()
+    applyThemeToDocument(next)
   }, [])
 
   const value = useMemo(

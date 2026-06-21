@@ -184,8 +184,10 @@ npm run build
 | `npm run build` | Production build |
 | `npm run typecheck` | TypeScript |
 | `npm run lint` | ESLint |
-| `npm run test` | Unit + parse-docx + batch-targets |
-| `npm run test:unit` | Vitest (lib helpers) |
+| `npm run test` | Unit-тесты lib/ **батчами** (6 файлов/процесс, меньше RAM) |
+| `npm run test:unit` | То же, что `npm run test` |
+| `npm run test:unit:all` | Все тесты одним vitest-процессом (быстрее, больше RAM) |
+| `npm run test:coverage` | Coverage одним процессом (порог 97% lines / 90% branches) |
 | `npm run db:migrate` | Prisma migrate |
 | `npm run db:seed` | Seed: admin + статусы + dev mock (120 мер, 120 поручений) |
 | `npm run db:seed:mock` | Сброс mock-данных и повторный seed |
@@ -224,7 +226,7 @@ Production-деплой: см. [docs/deployment.md](docs/deployment.md)
 | Preview и commit | `/panel/measures/imports/{id}` |
 | Поручения (из документа или вручную) | `/panel/orders/new` или `/panel/orders/new?importId={id}` |
 
-Тесты: `npm run test:parse-docx`, `npm run test:batch-targets` (файлы в `.external/docx_examples/`).
+Тесты: `npm run test` (батчи по 6 файлов; `TEST_BATCH_SIZE=4 npm run test` для меньших порций). Coverage: `npm run test:coverage`.
 
 ---
 

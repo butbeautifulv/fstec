@@ -59,7 +59,7 @@ Plus smokes from phase plan (curl platform API, open `/p/{token}`).
 
 Production deploy: [docs/deployment.md](docs/deployment.md).
 
-Measure import (DOCX): `/panel/measures/imports`, tests: `npm run test:parse-docx`, `npm run test:batch-targets`, `npm run test:unit`.
+Measure import (DOCX): `/panel/measures/imports`, tests: `npm run test` (batched vitest via `scripts/test-batch.mjs`).
 
 ## Multi-phase work
 

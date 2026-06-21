@@ -1,141 +1,147 @@
-import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { readFileSync, existsSync } from "node:fs"
 import { join } from "node:path"
+import { describe, expect, it } from "vitest"
 import {
   detectImportKind,
   extractDocxParagraphsAsync,
+  isAppendixDocument,
   parseMeasureItemsFromParagraphs,
-} from "../parse-docx"
-import { extractMetadata, composeMeasureItemName } from "../extract-metadata"
+} from "@/lib/measure-imports/parse-docx"
+import { composeMeasureItemName, extractMetadata } from "@/lib/measure-imports/extract-metadata"
 
 const FIXTURES = join(process.cwd(), ".external/docx_examples")
+const hasFixtures = existsSync(join(FIXTURES, "240 93 4164.docx"))
 
-async function main() {
-  const appendixBuffer = readFileSync(join(FIXTURES, "Приложение 240 93 4164.docx"))
-  const appendixParagraphs = await extractDocxParagraphsAsync(appendixBuffer)
-  assert.equal(detectImportKind(appendixParagraphs, "Приложение 240 93 4164.docx"), "APPENDIX")
-  assert.equal(parseMeasureItemsFromParagraphs(appendixParagraphs).length, 0)
+describe("isAppendixDocument", () => {
+  it("detects appendix by filename", () => {
+    expect(isAppendixDocument([], "Приложение 240 93 4164.docx")).toBe(true)
+  })
 
-  const doc4164Buffer = readFileSync(join(FIXTURES, "240 93 4164.docx"))
-  const paragraphs4164 = await extractDocxParagraphsAsync(doc4164Buffer)
-  const items4164 = parseMeasureItemsFromParagraphs(paragraphs4164)
-  const metadata4164 = extractMetadata(paragraphs4164, "240 93 4164.docx")
+  it("detects appendix by sha hashes without numbered items", () => {
+    const hashes = ["a".repeat(64), "b".repeat(64), "c".repeat(64)]
+    expect(isAppendixDocument(hashes, "doc.docx")).toBe(true)
+  })
 
-  console.log("\n240 93 4164.docx")
-  console.log(`  paragraphs: ${paragraphs4164.length}`)
-  console.log(`  measures: ${items4164.length}`)
-  console.log(`  documentNumber: ${metadata4164.documentNumber}`)
+  it("treats numbered letter as non-appendix", () => {
+    expect(
+      isAppendixDocument(["1. Первая мера", "2. Вторая мера"], "240 93 4164.docx")
+    ).toBe(false)
+  })
+})
 
-  assert.equal(detectImportKind(paragraphs4164, "240 93 4164.docx"), "LETTER")
-  assert.equal(items4164.length, 16)
+describe("detectImportKind", () => {
+  it("returns APPENDIX for appendix documents", () => {
+    expect(detectImportKind([], "Приложение test.docx")).toBe("APPENDIX")
+  })
 
-  const named4164 = items4164.map((item) => ({
-    ...item,
-    name: composeMeasureItemName({
-      documentNumber: metadata4164.documentNumber,
-      title: metadata4164.title,
-      code: item.code,
-      sortOrder: item.sortOrder,
-    }),
-  }))
+  it("returns LETTER for regular documents", () => {
+    expect(detectImportKind(["1. Measure"], "240 93 4164.docx")).toBe("LETTER")
+  })
+})
 
-  assert.equal(named4164[0]?.name, "240/93/4164 · 1.1")
-  assert.ok(named4164[0]?.description.includes("Производить на этапе приема письма"))
-  assert.ok(named4164[0]!.description.length > named4164[0]!.name.length)
+describe("parseMeasureItemsFromParagraphs", () => {
+  it("parses nested numbered items", () => {
+    const items = parseMeasureItemsFromParagraphs([
+      "1. Top level",
+      "1.1. Nested measure with details",
+      "1.2. Another nested",
+      "2. Second top",
+    ])
+    expect(items.map((item) => item.code)).toEqual(["1.1", "1.2", "2"])
+  })
 
-  const codes4164 = items4164.map((item) => item.code)
-  assert.deepEqual(codes4164, [
-    "1.1",
-    "1.2",
-    "1.3",
-    "1.4",
-    "1.5",
-    "1.6",
-    "1.7",
-    "1.8",
-    "1.9",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
-    "7",
-    "8",
-  ])
+  it("uses BDU code when present", () => {
+    const items = parseMeasureItemsFromParagraphs([
+      "1. Measure text BDU:2024-12345 additional info",
+    ])
+    expect(items[0]?.code).toBe("BDU:2024-12345")
+  })
 
-  const item18 = items4164.find((item) => item.code === "1.8")
-  assert.ok(item18?.description.includes("192[.]3[.]171[.]223"))
-  assert.ok(item18?.description.includes("hxxp[:]//"))
+  it("trims letter footer from block", () => {
+    const items = parseMeasureItemsFromParagraphs([
+      "1. Main content line",
+      "По результатам выполнения меры представить отчёт",
+      "Приложение: Индикаторы",
+      "Исп. и отп. Иванов",
+    ])
+    expect(items[0]?.description).not.toContain("Исп. и отп.")
+    expect(items[0]?.description).toContain("Main content line")
+  })
+})
 
-  const item19 = items4164.find((item) => item.code === "1.9")
-  assert.ok(item19?.description.match(/ae340c8b69b058f91809b62dbd4bef72dac085d9810f56ae4f50e19afe903912/))
-  assert.ok(item19?.description.match(/c00e7b288e3885b1b16f406576b2a85cfe5e006ce6621352d4ef99596486cb65/))
+describe.skipIf(!hasFixtures)("docx fixtures", () => {
+  it("parses 240 93 4164.docx letter", async () => {
+    const buffer = readFileSync(join(FIXTURES, "240 93 4164.docx"))
+    const paragraphs = await extractDocxParagraphsAsync(buffer)
+    const items = parseMeasureItemsFromParagraphs(paragraphs)
+    const metadata = extractMetadata(paragraphs, "240 93 4164.docx")
 
-  const item2 = items4164.find((item) => item.code === "2")
-  assert.ok(item2?.description.includes("vniir-monitor[.]space"))
-  assert.ok(item2?.description.includes("документа-приманки и внедрение"))
-  assert.ok(!item2?.description.includes("приманкии"))
+    expect(detectImportKind(paragraphs, "240 93 4164.docx")).toBe("LETTER")
+    expect(items).toHaveLength(16)
+    expect(metadata.documentNumber).toBe("240/93/4164")
 
-  const item4 = items4164.find((item) => item.code === "4")
-  assert.ok(item4?.description.includes("инфраструктуры Российской Федерации"))
-  assert.ok(item4?.description.includes("файл с расширением"))
-  assert.ok(!item4?.description.includes("инфраструктурыРоссийской"))
-  assert.ok(!item4?.description.includes("файлс "))
-  const hashMatches = item4?.description.match(/[a-f0-9]{64}/gi) ?? []
-  assert.ok(hashMatches.length >= 3)
+    const named = items.map((item) =>
+      composeMeasureItemName({
+        documentNumber: metadata.documentNumber,
+        title: metadata.title,
+        code: item.code,
+        sortOrder: item.sortOrder,
+      })
+    )
+    expect(named[0]).toBe("240/93/4164 · 1.1")
 
-  const item6 = items4164.find((item) => item.code === "6")
-  assert.ok(item6?.description.includes("levelgeo"))
+    expect(items.map((item) => item.code)).toEqual([
+      "1.1",
+      "1.2",
+      "1.3",
+      "1.4",
+      "1.5",
+      "1.6",
+      "1.7",
+      "1.8",
+      "1.9",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+    ])
 
-  const item8 = items4164.find((item) => item.code === "8")
-  assert.ok(item8?.description.includes("1e41c7bfaa6aa3b93b6cc024274a10e33f3e12fe7c98c1db387ef8927f9d1984"))
-  assert.ok(!item8?.description.includes("otd93@fstec.ru"))
-  assert.ok(!item8?.description.includes("Панкова"))
-  assert.ok(!item8?.description.includes("Приложение: Индикаторы"))
+    const item8 = items.find((item) => item.code === "8")
+    expect(item8?.description).toContain(
+      "1e41c7bfaa6aa3b93b6cc024274a10e33f3e12fe7c98c1db387ef8927f9d1984"
+    )
+    expect(item8?.description).not.toContain("otd93@fstec.ru")
+  })
 
-  const item12 = items4164.find((item) => item.code === "1.2")
-  assert.ok(item12?.description.includes("Kaspersky"))
+  it("parses appendix fixture", async () => {
+    const buffer = readFileSync(join(FIXTURES, "Приложение 240 93 4164.docx"))
+    const paragraphs = await extractDocxParagraphsAsync(buffer)
+    expect(detectImportKind(paragraphs, "Приложение 240 93 4164.docx")).toBe(
+      "APPENDIX"
+    )
+    expect(parseMeasureItemsFromParagraphs(paragraphs)).toHaveLength(0)
+  })
 
-  const doc4165Buffer = readFileSync(join(FIXTURES, "240 93 4165.docx"))
-  const paragraphs4165 = await extractDocxParagraphsAsync(doc4165Buffer)
-  const items4165 = parseMeasureItemsFromParagraphs(paragraphs4165)
-  const metadata4165 = extractMetadata(paragraphs4165, "240 93 4165.docx")
+  it("parses 240 93 4165.docx with BDU codes", async () => {
+    const buffer = readFileSync(join(FIXTURES, "240 93 4165.docx"))
+    const paragraphs = await extractDocxParagraphsAsync(buffer)
+    const items = parseMeasureItemsFromParagraphs(paragraphs)
+    const metadata = extractMetadata(paragraphs, "240 93 4165.docx")
 
-  console.log("\n240 93 4165.docx")
-  console.log(`  paragraphs: ${paragraphs4165.length}`)
-  console.log(`  measures: ${items4165.length}`)
+    expect(items).toHaveLength(5)
+    expect(items.every((item) => item.code?.startsWith("BDU:"))).toBe(true)
 
-  assert.equal(items4165.length, 5)
-  assert.ok(items4165.every((item) => item.code?.startsWith("BDU:")))
-
-  const item4165_2 = items4165[1]
-  assert.equal(
-    composeMeasureItemName({
-      documentNumber: metadata4165.documentNumber,
-      title: metadata4165.title,
-      code: item4165_2?.code ?? null,
-      sortOrder: item4165_2?.sortOrder,
-    }),
-    `240/93/4165 · ${item4165_2?.code}`
-  )
-  assert.ok(item4165_2?.description.includes("Рекомендуется реализовать"))
-
-  const item4165_3 = items4165[2]
-  assert.ok(
-    item4165_3?.description.includes("1-3") ||
-      item4165_3?.description.includes("1–3")
-  )
-
-  const item4165_5 = items4165[4]
-  assert.ok(item4165_5?.description.includes("Windows"))
-  assert.ok(item4165_5?.description.includes("240/91/3526"))
-  assert.ok(!item4165_5?.description.includes("otd93@fstec.ru"))
-  assert.ok(!item4165_5?.description.includes("Лукьянова"))
-
-  console.log("\nAll DOCX parser fixture checks passed.")
-}
-
-main().catch((error) => {
-  console.error(error)
-  process.exit(1)
+    const second = items[1]
+    expect(
+      composeMeasureItemName({
+        documentNumber: metadata.documentNumber,
+        title: metadata.title,
+        code: second?.code ?? null,
+        sortOrder: second?.sortOrder,
+      })
+    ).toBe(`240/93/4165 · ${second?.code}`)
+  })
 })

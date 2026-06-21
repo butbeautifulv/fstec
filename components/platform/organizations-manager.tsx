@@ -135,7 +135,7 @@ export function OrganizationsManager({
         ),
       },
     ],
-    [headOrganizationId]
+    [headOrganizationId, requestDelete]
   )
 
   return (

@@ -10,7 +10,8 @@ export const activeDirectoryAuthProvider: AuthProvider = {
   id: "active_directory",
   label: "Active Directory",
 
-  async authenticate(_credentials: AuthCredentials): Promise<AuthResult> {
+  async authenticate(credentials: AuthCredentials): Promise<AuthResult> {
+    void credentials
     if (!isConfigured()) {
       return {
         ok: false,

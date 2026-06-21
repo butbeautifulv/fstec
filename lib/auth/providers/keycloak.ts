@@ -14,7 +14,8 @@ export const keycloakAuthProvider: AuthProvider = {
   id: "keycloak",
   label: "Keycloak",
 
-  async authenticate(_credentials: AuthCredentials): Promise<AuthResult> {
+  async authenticate(credentials: AuthCredentials): Promise<AuthResult> {
+    void credentials
     if (!isConfigured()) {
       return {
         ok: false,

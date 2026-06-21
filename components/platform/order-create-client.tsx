@@ -64,10 +64,15 @@ export function OrderCreateClient({
     selectedIds,
   } = useOrderCreateDraft()
 
-  const [title, setTitle] = useState(initialImport?.defaultTitle ?? "")
-  const [due, setDue] = useState(initialImport?.defaultDue ?? defaultDue)
+  const [titleOverride, setTitleOverride] = useState<string | null>(null)
+  const [dueOverride, setDueOverride] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const importPrefillApplied = useRef(false)
+
+  const title =
+    titleOverride ?? initialImport?.defaultTitle ?? draft.title ?? ""
+  const due =
+    dueOverride ?? initialImport?.defaultDue ?? draft.defaultDue ?? defaultDue
 
   const selectableTargets = useMemo(
     () => listSelectableBatchTargets(organizations),
@@ -90,16 +95,8 @@ export function OrderCreateClient({
       measuresCache: initialImport.measures,
       sourceImportId: initialImport.id,
     })
-    setTitle(initialImport.defaultTitle)
-    setDue(initialImport.defaultDue)
     importPrefillApplied.current = true
   }, [hydrated, initialImport, updateDraft])
-
-  useEffect(() => {
-    if (!hydrated || initialImport) return
-    if (draft.title) setTitle(draft.title)
-    if (draft.defaultDue) setDue(draft.defaultDue)
-  }, [hydrated, initialImport, draft.title, draft.defaultDue])
 
   useEffect(() => {
     if (!hydrated || draft.measuresCache.length > 0) return
@@ -205,7 +202,7 @@ export function OrderCreateClient({
                 <Input
                   id="title"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => setTitleOverride(e.target.value)}
                   className="w-full"
                   required
                 />
@@ -216,7 +213,7 @@ export function OrderCreateClient({
                   id="due"
                   type="datetime-local"
                   value={due}
-                  onChange={(e) => setDue(e.target.value)}
+                  onChange={(e) => setDueOverride(e.target.value)}
                   className="w-full"
                   required
                 />
