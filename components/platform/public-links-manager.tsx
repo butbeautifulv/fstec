@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { DataTable } from "@/components/data-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
@@ -20,7 +20,13 @@ const KIND_LABELS: Record<LinkScopeRow["kind"], string> = {
   subdivision: "Подразделение",
 }
 
-export function PublicLinksManager({ initialScopes }: { initialScopes: LinkScopeRow[] }) {
+function scopeListSignature(scopes: LinkScopeRow[]) {
+  return scopes
+    .map((scope) => `${scope.key}:${scope.activeLink?.token ?? ""}:${scope.reportPath ?? ""}`)
+    .join("\0")
+}
+
+function PublicLinksManagerInner({ initialScopes }: { initialScopes: LinkScopeRow[] }) {
   const [scopes, setScopes] = useState(initialScopes)
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(false)
@@ -37,10 +43,6 @@ export function PublicLinksManager({ initialScopes }: { initialScopes: LinkScope
     setScopes(data.scopes)
     setSelectedKeys(new Set())
   }, [])
-
-  useEffect(() => {
-    setScopes(initialScopes)
-  }, [initialScopes])
 
   async function regenerate(keys?: string[], allActive = false) {
     setLoading(true)
@@ -255,5 +257,14 @@ export function PublicLinksManager({ initialScopes }: { initialScopes: LinkScope
         }
       />
     </div>
+  )
+}
+
+export function PublicLinksManager({ initialScopes }: { initialScopes: LinkScopeRow[] }) {
+  return (
+    <PublicLinksManagerInner
+      key={scopeListSignature(initialScopes)}
+      initialScopes={initialScopes}
+    />
   )
 }

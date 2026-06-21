@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { createMockRedis } from "@/lib/__tests__/helpers/mock-redis"
 
 vi.mock("@/lib/cache/redis", () => ({
   getRedis: vi.fn(),

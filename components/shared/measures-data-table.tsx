@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
 import {
   DataTable,
-  DataTableColumnHeader,
   DataTableRowLink,
 } from "@/components/data-table"
 import { actionsColumnMeta } from "@/lib/data-table/column-meta"
@@ -16,7 +15,6 @@ import {
   createWorkflowStatusColumn,
 } from "@/lib/data-table/columns"
 import { createSubdivisionColumn } from "@/lib/data-table/columns/subdivision-column"
-import { TextCell } from "@/lib/data-table/text-cell"
 import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
 import type {
   MeasuresTableItem,

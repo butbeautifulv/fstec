@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
 const DENSE_CATEGORY_THRESHOLD = 5
@@ -184,9 +184,8 @@ export function ChartCategoryViewport({
   children: (layout: BarChartLayout, chartWidth: number | undefined) => ReactNode
 }) {
   const viewportRef = useRef<HTMLDivElement>(null)
-  const autoZoomAppliedRef = useRef(false)
   const [containerWidth, setContainerWidth] = useState(0)
-  const [zoom, setZoom] = useState(ZOOM_MIN)
+  const [userZoom, setUserZoom] = useState<number | null>(null)
   const [panPercent, setPanPercent] = useState(0)
 
   useEffect(() => {
@@ -209,21 +208,13 @@ export function ChartCategoryViewport({
   )
   const showControls = categoryCount > DENSE_CATEGORY_THRESHOLD && maxZoom > ZOOM_MIN
 
-  useEffect(() => {
-    if (
-      autoZoomAppliedRef.current ||
-      containerWidth === 0 ||
-      categoryCount <= DENSE_CATEGORY_THRESHOLD
-    ) {
-      return
-    }
-
+  const autoZoom = useMemo(() => {
+    if (containerWidth === 0 || categoryCount <= DENSE_CATEGORY_THRESHOLD) return ZOOM_MIN
     const targetZoom = Math.min(maxZoom, Math.ceil((comfortableWidth / containerWidth) * 100))
-    if (targetZoom > ZOOM_MIN) {
-      setZoom(targetZoom)
-      autoZoomAppliedRef.current = true
-    }
+    return targetZoom > ZOOM_MIN ? targetZoom : ZOOM_MIN
   }, [categoryCount, containerWidth, comfortableWidth, maxZoom])
+
+  const zoom = userZoom ?? autoZoom
 
   const clampedZoom = Math.min(zoom, maxZoom)
   const chartWidth = Math.round(effectiveWidth * (clampedZoom / 100))
@@ -259,7 +250,7 @@ export function ChartCategoryViewport({
             step={5}
             valueLabel={`${clampedZoom}%`}
             onChange={(value) => {
-              setZoom(value)
+              setUserZoom(value)
               if (value === ZOOM_MIN) setPanPercent(0)
             }}
             compact={size === "card"}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { ContactRole } from "@prisma/client"
 import {
   ContactFormFields,
@@ -33,44 +33,35 @@ export type EditableContact = {
   subdivision: Subdivision | null
 }
 
-export function ContactEditDialog({
+function contactFormValues(contact: EditableContact): ContactFormValues {
+  return {
+    fullName: contact.fullName,
+    position: contact.position ?? "",
+    email: contact.email,
+    role: contact.role,
+    subdivisionScope: subdivisionScopeFromContact(contact),
+  }
+}
+
+function ContactEditDialogContent({
   contact,
   subdivisions,
   contacts,
-  open,
   onOpenChange,
   onSaved,
 }: {
-  contact: EditableContact | null
+  contact: EditableContact
   subdivisions: Subdivision[]
   contacts: EditableContact[]
-  open: boolean
   onOpenChange: (open: boolean) => void
   onSaved: (contact: EditableContact) => void
 }) {
-  const [values, setValues] = useState<ContactFormValues>({
-    fullName: "",
-    position: "",
-    email: "",
-    role: "RESPONSIBLE",
-    subdivisionScope: ORG_SCOPE_VALUE,
-  })
+  const [values, setValues] = useState<ContactFormValues>(() => contactFormValues(contact))
   const [saving, setSaving] = useState(false)
-
-  useEffect(() => {
-    if (!contact) return
-    setValues({
-      fullName: contact.fullName,
-      position: contact.position ?? "",
-      email: contact.email,
-      role: contact.role,
-      subdivisionScope: subdivisionScopeFromContact(contact),
-    })
-  }, [contact])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!contact || !values.fullName.trim() || !values.email.trim()) return
+    if (!values.fullName.trim() || !values.email.trim()) return
 
     setSaving(true)
     const subdivisionId =
@@ -115,34 +106,65 @@ export function ContactEditDialog({
   }
 
   return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Изменить контакт</DialogTitle>
+        <DialogDescription>
+          Получатель email-оповещений по поручениям и мерам
+        </DialogDescription>
+      </DialogHeader>
+      <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
+        <FieldGroup>
+          <ContactFormFields
+            idPrefix="edit-contact"
+            subdivisions={subdivisions}
+            values={values}
+            onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
+            contacts={contacts}
+            excludeContactId={contact.id}
+          />
+        </FieldGroup>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Отмена
+          </Button>
+          <Button type="submit" disabled={saving}>
+            {saving ? <Spinner className="size-4" /> : "Сохранить"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
+  )
+}
+
+export function ContactEditDialog({
+  contact,
+  subdivisions,
+  contacts,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  contact: EditableContact | null
+  subdivisions: Subdivision[]
+  contacts: EditableContact[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSaved: (contact: EditableContact) => void
+}) {
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Изменить контакт</DialogTitle>
-          <DialogDescription>
-            Получатель email-оповещений по поручениям и мерам
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={(e) => void handleSubmit(e)} className="flex flex-col gap-4">
-          <FieldGroup>
-            <ContactFormFields
-              idPrefix="edit-contact"
-              subdivisions={subdivisions}
-              values={values}
-              onChange={(patch) => setValues((prev) => ({ ...prev, ...patch }))}
-              contacts={contacts}
-              excludeContactId={contact?.id}
-            />
-          </FieldGroup>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Отмена
-            </Button>
-            <Button type="submit" disabled={saving || !contact}>
-              {saving ? <Spinner className="size-4" /> : "Сохранить"}
-            </Button>
-          </DialogFooter>
-        </form>
+        {contact ? (
+          <ContactEditDialogContent
+            key={contact.id}
+            contact={contact}
+            subdivisions={subdivisions}
+            contacts={contacts}
+            onOpenChange={onOpenChange}
+            onSaved={onSaved}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   )
