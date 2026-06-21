@@ -1,0 +1,47 @@
+name: Gate check and ASPM export
+description: SARIF fallback, gate-check.py, optional DefectDojo export, upload-sarif
+
+inputs:
+  control:
+    description: Policy control id (sast, secrets, iac, ...)
+    required: true
+  report:
+    description: Path to SARIF or SBOM report file
+    required: true
+  category:
+    description: upload-sarif category
+    required: true
+  policy:
+    description: Path to security-gate-policy.yaml
+    required: false
+    default: config/security-gate-policy.yaml
+
+runs:
+  using: composite
+  steps:
+    - name: Ensure report exists
+      shell: bash
+      run: |
+        REPORT="${{ inputs.report }}"
+        if [ ! -f "$REPORT" ]; then
+          echo '{"runs":[{"results":[]}]}' > "$REPORT"
+        fi
+    - name: Gate check
+      shell: bash
+      run: |
+        python scripts/gate-check.py --control "${{ inputs.control }}" \
+          --report "${{ inputs.report }}" \
+          --policy "${{ inputs.policy }}"
+    - name: ASPM export
+      if: always() && vars.DEFECTDOJO_URL != ''
+      shell: bash
+      env:
+        DEFECTDOJO_URL: ${{ vars.DEFECTDOJO_URL }}
+        DEFECTDOJO_API_TOKEN: ${{ secrets.DEFECTDOJO_API_TOKEN }}
+      run: python scripts/aspm-export.py --control "${{ inputs.control }}" --report "${{ inputs.report }}" || true
+    - name: Upload SARIF
+      if: always()
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.report }}
+        category: ${{ inputs.category }}

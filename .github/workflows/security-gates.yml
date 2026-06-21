@@ -1,0 +1,34 @@
+name: Security Gates
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+env:
+  OSS_GITLEAKS_IMAGE: ghcr.io/gitleaks/gitleaks:v8.22.1
+  OSS_SEMGREP_IMAGE: returntocorp/semgrep:1.117.0
+  OSS_TRIVY_IMAGE: aquasec/trivy:0.63.0
+  OSS_HADOLINT_IMAGE: hadolint/hadolint:v2.12.0-alpine
+  OSS_CHECKOV_VERSION: "3.2.449"
+
+jobs:
+  secrets:
+    uses: ./.github/workflows/jobs/oss/gitleaks.yml
+  sast:
+    uses: ./.github/workflows/jobs/oss/semgrep-sast.yml
+  osa:
+    uses: ./.github/workflows/jobs/oss/trivy-osa.yml
+  dependency-review:
+    uses: ./.github/workflows/jobs/oss/dependency-review.yml
+  iac:
+    uses: ./.github/workflows/jobs/oss/checkov-iac.yml
+  dockerfile:
+    uses: ./.github/workflows/jobs/oss/dockerfile-lint.yml
+  forbidden-files:
+    uses: ./.github/workflows/jobs/oss/forbidden-files.yml
+  skill-scan:
+    uses: ./.github/workflows/jobs/oss/skill-scan.yml

@@ -1,0 +1,27 @@
+name: OSS Gitleaks
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan
+        run: |
+          IMAGE="${OSS_GITLEAKS_IMAGE:-ghcr.io/gitleaks/gitleaks:v8.22.1}"
+          docker run --rm -v "$PWD:/repo" -w /repo "$IMAGE" \
+            detect --source . --report-format sarif --report-path gitleaks.sarif || true
+      - uses: ./.github/actions/gate-and-export
+        if: always()
+        with:
+          control: secrets
+          report: gitleaks.sarif
+          category: secrets

@@ -1,0 +1,25 @@
+name: OSS Skill Scanner
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  skill-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Scan agent skills
+        run: python scripts/ai-ml-scan.py skill_scan --report skill-scan.sarif
+      - uses: ./.github/actions/gate-and-export
+        if: always()
+        with:
+          control: skill_scan
+          report: skill-scan.sarif
+          category: skill-scan

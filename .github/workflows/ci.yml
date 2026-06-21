@@ -4,6 +4,11 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -27,3 +32,10 @@ jobs:
           S3_BUCKET: ci
           S3_REGION: us-east-1
           S3_FORCE_PATH_STYLE: "true"
+
+  security-gates:
+    uses: ./.github/workflows/security-gates.yml
+    permissions:
+      contents: read
+      security-events: write
+      pull-requests: read

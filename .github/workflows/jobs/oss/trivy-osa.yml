@@ -1,0 +1,26 @@
+name: OSS Trivy OSA
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  trivy-osa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan npm lockfile
+        run: |
+          IMAGE="${OSS_TRIVY_IMAGE:-aquasec/trivy:0.63.0}"
+          docker run --rm -v "$PWD:/work" -w /work "$IMAGE" \
+            fs package-lock.json --scanners vuln --severity CRITICAL,HIGH,MEDIUM \
+            --format sarif --output osa.sarif || true
+      - uses: ./.github/actions/gate-and-export
+        if: always()
+        with:
+          control: osa
+          report: osa.sarif
+          category: osa

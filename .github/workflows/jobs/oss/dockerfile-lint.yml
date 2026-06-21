@@ -1,0 +1,32 @@
+name: OSS Dockerfile Lint
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hadolint
+        run: |
+          IMAGE="${OSS_HADOLINT_IMAGE:-hadolint/hadolint:v2.12.0-alpine}"
+          echo '{"runs":[{"results":[]}]}' > hadolint.sarif
+          FAILED=0
+          while IFS= read -r f; do
+            echo "Linting $f"
+            docker run --rm -i "$IMAGE" < "$f" || FAILED=1
+          done < <(find . \( -name 'Dockerfile' -o -name 'Dockerfile.*' \) ! -path './.git/*')
+          if [ "$FAILED" -eq 1 ]; then
+            echo '{"runs":[{"results":[{"level":"error","message":{"text":"hadolint findings"}}]}]}' > hadolint.sarif
+          fi
+      - uses: ./.github/actions/gate-and-export
+        if: always()
+        with:
+          control: dockerfile
+          report: hadolint.sarif
+          category: dockerfile
