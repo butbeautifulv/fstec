@@ -191,7 +191,7 @@ describe("fetchInboxDocxImports", () => {
             },
           ],
         },
-      }
+      } as never
     })
 
     const result = await fetchInboxDocxImports()
