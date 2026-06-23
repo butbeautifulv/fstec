@@ -1,6 +1,21 @@
 .external/*
 !.external/docx_examples/
-!.external/docx_examples/**
+!.external/docx_examples/README.md
+!.external/seed/
+.external/seed/*
+!.external/seed/orgs.example.json
+
+# Sensitive local corpus — never commit
+.external/240 93 6837/
+.external/docx_examples/**/*.docx
+.external/docx_examples/corpus/
+
+# Local seed artifacts
+corpus-gap-report.json
+corpus-triage.json
+corpus-history.jsonl
+corpus-history-reconcile.json
+prisma/seed-manifest.generated.json
 
 # dependencies
 /node_modules
@@ -39,6 +54,10 @@ pnpm-debug.log*
 
 # local data
 /data/
+labels-dataset.jsonl
+audit-report.json
+routing-model.cbm
+lib/measure-imports/routing-profiles.generated.json
 
 # typescript
 *.tsbuildinfo

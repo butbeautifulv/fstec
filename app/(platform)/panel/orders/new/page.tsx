@@ -31,6 +31,7 @@ export default async function NewOrderPage({
       />
       <OrderCreateClient
         organizations={context.organizations}
+        headOrganizationId={context.headOrganizationId}
         defaultDue={context.defaultDue}
         initialImport={
           context.importRecord

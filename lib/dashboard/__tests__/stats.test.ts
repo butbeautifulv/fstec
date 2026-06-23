@@ -28,7 +28,7 @@ function makeItem(
     subdivisionId: overrides.subdivisionId ?? null,
     status: {
       id: 1,
-      name: overrides.statusName ?? WORKFLOW_STATUS.NOT_STARTED,
+      name: overrides.statusName ?? WORKFLOW_STATUS.IN_PROGRESS,
       isTerminal: overrides.isTerminal ?? false,
     },
     measure: {
@@ -72,7 +72,7 @@ describe("buildScopedStatsFromItems", () => {
         makeItem({
           id: 3,
           orgName: "Org B",
-          statusName: WORKFLOW_STATUS.NOT_STARTED,
+          statusName: WORKFLOW_STATUS.IN_PROGRESS,
         }),
       ]
 
@@ -95,10 +95,13 @@ describe("buildScopedStatsFromItems", () => {
       expect(orgAStatus?.[OVERDUE_LABEL]).toBe(1)
 
       expect(stats.statusDistribution.map((d) => d.status)).toEqual([
-        WORKFLOW_STATUS.NOT_STARTED,
+        WORKFLOW_STATUS.IN_PROGRESS,
         WORKFLOW_STATUS.COMPLETED,
         OVERDUE_LABEL,
       ])
+      expect(
+        stats.statusDistribution.find((d) => d.status === WORKFLOW_STATUS.IN_PROGRESS)?.count
+      ).toBe(1)
     })
 
     it("includes unknown statuses as extras in distribution", () => {
@@ -110,7 +113,7 @@ describe("buildScopedStatsFromItems", () => {
         }),
         makeItem({
           id: 2,
-          statusName: WORKFLOW_STATUS.NOT_STARTED,
+          statusName: WORKFLOW_STATUS.IN_PROGRESS,
         }),
       ]
 
@@ -135,7 +138,7 @@ describe("buildScopedStatsFromItems", () => {
         makeItem({
           id: 2,
           subName: null,
-          statusName: WORKFLOW_STATUS.NOT_STARTED,
+          statusName: WORKFLOW_STATUS.IN_PROGRESS,
         }),
       ]
 

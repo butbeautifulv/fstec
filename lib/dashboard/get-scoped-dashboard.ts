@@ -1,7 +1,7 @@
 import { cache } from "react"
 import { buildMatrixFromItems } from "@/lib/dashboard/build-matrix"
 import { fetchScopedItems } from "@/lib/dashboard/fetch-scoped-items"
-import { serializeDashboardScope } from "@/lib/dashboard/scope-key"
+import { deserializeDashboardScope, serializeDashboardScope } from "@/lib/dashboard/scope-key"
 import {
   buildScopedStatsFromItems,
   type DashboardScope,
@@ -26,23 +26,4 @@ const loadScopedDashboard = cache(async (scopeKey: string): Promise<ScopedDashbo
 
 export function getScopedDashboard(scope: DashboardScope): Promise<ScopedDashboardData> {
   return loadScopedDashboard(serializeDashboardScope(scope))
-}
-
-function deserializeDashboardScope(scopeKey: string): DashboardScope {
-  if (scopeKey === "global") return { type: "global" }
-  if (scopeKey.startsWith("organization:")) {
-    return {
-      type: "organization",
-      organizationId: Number(scopeKey.slice("organization:".length)),
-    }
-  }
-  if (scopeKey.startsWith("subdivision:")) {
-    const [, organizationId, subdivisionId] = scopeKey.split(":")
-    return {
-      type: "subdivision",
-      organizationId: Number(organizationId),
-      subdivisionId: Number(subdivisionId),
-    }
-  }
-  return { type: "global" }
 }

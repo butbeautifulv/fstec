@@ -5,6 +5,8 @@ import {
 } from "@/lib/orders/batch-targets"
 import { BatchCreateValidationError } from "@/lib/orders/batch-create-errors"
 
+export type ValidateBatchTarget = BatchTarget & { measureIds: number[] }
+
 type ValidateBatchTargetsPrisma = {
   measure: {
     findMany(args: {
@@ -22,12 +24,33 @@ type ValidateBatchTargetsPrisma = {
   }
 }
 
+function dedupeTargetsWithMeasures(targets: ValidateBatchTarget[]): ValidateBatchTarget[] {
+  const byKey = new Map<string, ValidateBatchTarget>()
+  for (const target of targets) {
+    const key = `${target.organizationId}:${target.subdivisionId ?? "null"}`
+    const existing = byKey.get(key)
+    if (existing) {
+      existing.measureIds = [...new Set([...existing.measureIds, ...target.measureIds])]
+    } else {
+      byKey.set(key, { ...target, measureIds: [...target.measureIds] })
+    }
+  }
+  return [...byKey.values()]
+}
+
 export async function validateBatchTargets(
   db: ValidateBatchTargetsPrisma,
-  targets: BatchTarget[],
-  measureIds: number[]
-): Promise<BatchTarget[]> {
-  const uniqueTargets = dedupeBatchTargets(targets)
+  targets: ValidateBatchTarget[],
+  globalMeasureIds: number[]
+): Promise<ValidateBatchTarget[]> {
+  const withMeasures = targets.map((target) => ({
+    ...target,
+    measureIds:
+      target.measureIds.length > 0 ? target.measureIds : globalMeasureIds,
+  }))
+
+  const uniqueTargets = dedupeTargetsWithMeasures(withMeasures)
+
   if (uniqueTargets.length === 0) {
     throw new BatchCreateValidationError("INVALID_TARGETS")
   }
@@ -36,11 +59,17 @@ export async function validateBatchTargets(
     throw new BatchCreateValidationError("TARGETS_CONFLICT")
   }
 
+  const allMeasureIds = [...new Set(uniqueTargets.flatMap((t) => t.measureIds))]
+
+  if (allMeasureIds.length === 0) {
+    throw new BatchCreateValidationError("INVALID_MEASURES")
+  }
+
   const measures = await db.measure.findMany({
-    where: { id: { in: measureIds } },
+    where: { id: { in: allMeasureIds } },
     select: { id: true },
   })
-  if (measures.length !== measureIds.length) {
+  if (measures.length !== allMeasureIds.length) {
     throw new BatchCreateValidationError("INVALID_MEASURES")
   }
 

@@ -14,7 +14,7 @@ import { MotionStagger, MotionStaggerItem } from "@/components/motion"
 import { cn } from "@/lib/utils"
 import {
   OVERDUE_LABEL,
-  STATUS_DISPLAY_ORDER,
+  DASHBOARD_STATUS_ORDER,
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
 import {
@@ -43,15 +43,9 @@ type CardMeta = {
   badgeVariant?: "default" | "secondary" | "destructive" | "outline" | "ghost" | "link"
 }
 
-const CARD_META: Record<(typeof STATUS_DISPLAY_ORDER)[number], CardMeta> = {
-  [WORKFLOW_STATUS.NOT_STARTED]: {
-    hint: "Ожидают начала работы",
-    icon: ClockIcon,
-    badge: formatPercentBadge,
-    badgeVariant: "outline",
-  },
+const CARD_META: Record<(typeof DASHBOARD_STATUS_ORDER)[number], CardMeta> = {
   [WORKFLOW_STATUS.IN_PROGRESS]: {
-    hint: "Активное исполнение",
+    hint: "Активные меры",
     icon: LoaderIcon,
     badge: formatPercentBadge,
     badgeVariant: "outline",
@@ -81,7 +75,7 @@ export function DashboardStatCards({
 }) {
   const total = stats.statusDistribution.reduce((sum, row) => sum + row.count, 0)
 
-  const cards = STATUS_DISPLAY_ORDER.map((status) => {
+  const cards = DASHBOARD_STATUS_ORDER.map((status) => {
     const value = countForStatus(stats.statusDistribution, status)
     const meta = CARD_META[status]
     const Icon = meta.icon
@@ -91,7 +85,7 @@ export function DashboardStatCards({
   })
 
   return (
-    <MotionStagger className="grid grid-cols-1 gap-4 @2xl/main:grid-cols-2 @4xl/main:grid-cols-4">
+    <MotionStagger className="grid grid-cols-1 gap-4 @2xl/main:grid-cols-2 @4xl/main:grid-cols-3">
       {cards.map((card) => {
         const interactive = Boolean(onStatusClick)
         const isActive = interactive && activeStatus === card.status

@@ -31,7 +31,7 @@ const matrixItem = {
     issuedAt: new Date("2024-01-01T00:00:00.000Z"),
     organization: { id: 2, name: "Org" },
   },
-  status: { id: 1, name: WORKFLOW_STATUS.NOT_STARTED, isTerminal: false },
+  status: { id: 1, name: WORKFLOW_STATUS.IN_PROGRESS, isTerminal: false },
   subdivision: { id: 3, name: "Sub" },
 }
 
@@ -51,7 +51,7 @@ describe("serializeDashboardDto", () => {
           issuedAt: "2024-01-01T00:00:00.000Z",
           organization: { id: 2, name: "Org" },
         },
-        status: { id: 1, name: WORKFLOW_STATUS.NOT_STARTED, isTerminal: false },
+        status: { id: 1, name: WORKFLOW_STATUS.IN_PROGRESS, isTerminal: false },
         subdivision: { id: 3, name: "Sub" },
       },
     ])
@@ -141,12 +141,12 @@ describe("toDashboardInteractiveProps", () => {
       orderId: 1,
       dueAt: "2024-01-01T00:00:00.000Z",
       measure: { name: "M", code: null, description: null },
-      status: { id: 1, name: "К исполнению", isTerminal: false },
+      status: { id: 1, name: "В работе", isTerminal: false },
       orderTitle: "O",
       orderIssuedAt: "2024-01-01T00:00:00.000Z",
       subdivisionName: null,
     }
-    const statuses = [{ id: 1, name: "К исполнению", isTerminal: false }]
+    const statuses = [{ id: 1, name: "В работе", isTerminal: false }]
 
     const props = toDashboardInteractiveProps(
       {
@@ -176,19 +176,11 @@ describe("toDashboardInteractiveProps", () => {
 })
 
 describe("dashboardShowsEmptyInteractive", () => {
-  it("returns true for public variant regardless of count", () => {
+  it("always returns true so filters stay visible with empty data", () => {
     expect(dashboardShowsEmptyInteractive("public", 0)).toBe(true)
     expect(dashboardShowsEmptyInteractive("public", 5)).toBe(true)
-  })
-
-  it("returns true for platform/report when items exist", () => {
-    expect(dashboardShowsEmptyInteractive("platform", 1)).toBe(true)
-    expect(dashboardShowsEmptyInteractive("report", 3)).toBe(true)
-  })
-
-  it("returns false for platform/report with zero items", () => {
-    expect(dashboardShowsEmptyInteractive("platform", 0)).toBe(false)
-    expect(dashboardShowsEmptyInteractive("report", 0)).toBe(false)
+    expect(dashboardShowsEmptyInteractive("platform", 0)).toBe(true)
+    expect(dashboardShowsEmptyInteractive("report", 0)).toBe(true)
   })
 })
 

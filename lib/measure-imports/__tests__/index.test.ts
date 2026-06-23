@@ -18,13 +18,19 @@ vi.mock("@/lib/regulatory-docs/storage", () => ({
   downloadRegulatoryDocBuffer,
 }))
 vi.mock("@/lib/measure-imports/commit", () => ({ getCommittedMeasureIds }))
+const isRecommendationsAppendix = vi.hoisted(() => vi.fn())
+const tagMeasure = vi.hoisted(() => vi.fn())
+
 vi.mock("@/lib/measure-imports/parse-docx", () => ({
   extractDocxParagraphsAsync,
   detectImportKind,
   parseMeasureItemsFromParagraphs,
+  isRecommendationsAppendix,
 }))
+vi.mock("@/lib/measure-imports/tag-measure", () => ({ tagMeasure }))
 vi.mock("@/lib/measure-imports/extract-metadata", () => ({
   extractMetadata,
+  extractDocumentNumber: vi.fn(() => null),
   appendixMeasureName,
   composeMeasureItemName,
 }))
@@ -53,10 +59,13 @@ describe("measure-imports index", () => {
       documentNumber: "123",
       title: "Title",
       reportDueAt: new Date("2026-12-31"),
+      needsAppendix: false,
     })
     detectImportKind.mockReturnValue("LETTER")
+    isRecommendationsAppendix.mockReturnValue(false)
+    tagMeasure.mockReturnValue(["network"])
     parseMeasureItemsFromParagraphs.mockReturnValue([
-      { code: "1.1", name: "Item", description: "Desc", sortOrder: 0 },
+      { code: "1.1", description: "Desc", sortOrder: 0 },
     ])
     composeMeasureItemName.mockReturnValue("Composed Item")
     appendixMeasureName.mockReturnValue("Appendix Name")
@@ -217,13 +226,41 @@ describe("measure-imports index", () => {
       )
     })
 
-    it("parses APPENDIX import with single item", async () => {
+    it("parses RECOMMENDATIONS appendix with multiple items", async () => {
+      isRecommendationsAppendix.mockReturnValue(true)
+      parseMeasureItemsFromParagraphs.mockReturnValue([
+        { code: "1.1", description: "A", sortOrder: 0 },
+        { code: "1.2", description: "B", sortOrder: 1 },
+      ])
+      mockPrisma.measureImport.findUnique
+        .mockResolvedValueOnce({
+          id: 2,
+          storageKey: "key",
+          originalName: "Приложение 240 93 1409.docx",
+          parentImportId: 5,
+        })
+        .mockResolvedValueOnce({ id: 2, status: "PARSED" })
+
+      await parseMeasureImport(2)
+      expect(mockPrisma.measureImportItem.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({ code: "1.1" }),
+            expect.objectContaining({ code: "1.2" }),
+          ]),
+        })
+      )
+    })
+
+    it("parses IOC appendix import with single item", async () => {
+      isRecommendationsAppendix.mockReturnValue(false)
+      detectImportKind.mockReturnValue("APPENDIX")
       mockPrisma.measureImport.findUnique
         .mockResolvedValueOnce({
           id: 2,
           storageKey: "key",
           originalName: "appendix.docx",
-          parentImportId: 5,
+          parentImportId: null,
         })
         .mockResolvedValueOnce({ id: 2, status: "PARSED" })
 

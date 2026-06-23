@@ -50,7 +50,7 @@ describe("submitOrderItemResponse", () => {
   it("throws INVALID_STATUS when not in progress", async () => {
     mockPrisma.orderItem.findUnique.mockResolvedValue({
       id: 10,
-      status: { name: WORKFLOW_STATUS.NOT_STARTED, isTerminal: false },
+      status: { name: "Архив", isTerminal: false },
     })
     await expect(
       submitOrderItemResponse(10, { result: "Done" })

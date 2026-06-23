@@ -1,6 +1,9 @@
 import type { ColumnFiltersState } from "@tanstack/react-table"
 import type { DashboardScope } from "@/lib/dashboard/stats"
-import { OVERDUE_LABEL, WORKFLOW_STATUS } from "@/lib/statuses/workflow"
+import {
+  OVERDUE_LABEL,
+  WORKFLOW_STATUS,
+} from "@/lib/statuses/workflow"
 
 export type ChartFilterScope = DashboardScope["type"]
 
@@ -19,16 +22,17 @@ export function overdueInitialFilters(): ColumnFiltersState {
   return [{ id: "status", value: [OVERDUE_LABEL] }]
 }
 
-export const NON_OVERDUE_STATUSES = [
-  WORKFLOW_STATUS.NOT_STARTED,
-  WORKFLOW_STATUS.IN_PROGRESS,
-  WORKFLOW_STATUS.COMPLETED,
-] as const
-
-export type OverdueChartSegment = "overdue" | "nonOverdue"
+export type OverdueChartSegment = "overdue" | "inProgress" | "completed"
 
 function overdueSegmentStatuses(segment: OverdueChartSegment): string[] {
-  return segment === "overdue" ? [OVERDUE_LABEL] : [...NON_OVERDUE_STATUSES]
+  switch (segment) {
+    case "overdue":
+      return [OVERDUE_LABEL]
+    case "inProgress":
+      return [WORKFLOW_STATUS.IN_PROGRESS]
+    case "completed":
+      return [WORKFLOW_STATUS.COMPLETED]
+  }
 }
 
 function statusFilterMatches(
@@ -60,6 +64,35 @@ function arraysEqual(a: string[], b: string[]): boolean {
   const sortedA = [...a].sort()
   const sortedB = [...b].sort()
   return sortedA.every((v, i) => v === sortedB[i])
+}
+
+export function dashboardStatusFilterValues(status: string): string[] {
+  return [status]
+}
+
+export function isDashboardStatusFilterActive(
+  filters: ColumnFiltersState,
+  displayStatus: string
+): boolean {
+  return statusFilterMatches(filters, dashboardStatusFilterValues(displayStatus))
+}
+
+export function toggleDashboardStatusFilter(
+  filters: ColumnFiltersState,
+  displayStatus: string
+): ColumnFiltersState {
+  const values = dashboardStatusFilterValues(displayStatus)
+  const current = filterValues(filters, "status")
+  if (arraysEqual([...current].sort(), [...values].sort())) {
+    return setFilter(filters, "status", undefined)
+  }
+  const withoutBreakdown = filters.filter(
+    (f) =>
+      f.id !== "organization" &&
+      f.id !== "subdivisionName" &&
+      f.id !== "orderTitle"
+  )
+  return setFilter(withoutBreakdown, "status", values)
 }
 
 export function toggleStatusFilter(
@@ -116,33 +149,6 @@ export function toggleOverdueSegmentFilter(
   ]
 }
 
-export function toggleOverdueLegendFilter(
-  filters: ColumnFiltersState,
-  segment: OverdueChartSegment
-): ColumnFiltersState {
-  const statusValues = overdueSegmentStatuses(segment)
-  const hasOnlySegmentStatus =
-    statusFilterMatches(filters, statusValues) &&
-    !filters.some(
-      (f) =>
-        f.id === "organization" ||
-        f.id === "subdivisionName" ||
-        f.id === "orderTitle"
-    )
-
-  if (hasOnlySegmentStatus) {
-    return filters.filter((f) => f.id !== "status")
-  }
-
-  const withoutBreakdown = filters.filter(
-    (f) =>
-      f.id !== "organization" &&
-      f.id !== "subdivisionName" &&
-      f.id !== "orderTitle"
-  )
-  return setFilter(withoutBreakdown, "status", statusValues)
-}
-
 export function toggleBreakdownFilter(
   filters: ColumnFiltersState,
   scope: ChartFilterScope,
@@ -195,7 +201,7 @@ export function toggleCompletionSegmentFilter(
   const statusValues =
     segment === "completed"
       ? [WORKFLOW_STATUS.COMPLETED]
-      : [WORKFLOW_STATUS.NOT_STARTED, WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
+      : [WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
 
   const breakdownCurrent = filterValues(filters, columnId)
   const statusCurrent = filterValues(filters, "status")
@@ -251,21 +257,6 @@ export function isOverdueSegmentHighlighted(
   return false
 }
 
-export function isOverdueLegendActive(
-  filters: ColumnFiltersState,
-  segment: OverdueChartSegment
-): boolean {
-  return (
-    statusFilterMatches(filters, overdueSegmentStatuses(segment)) &&
-    !filters.some(
-      (f) =>
-        f.id === "organization" ||
-        f.id === "subdivisionName" ||
-        f.id === "orderTitle"
-    )
-  )
-}
-
 export function isStatusBreakdownActive(
   filters: ColumnFiltersState,
   scope: ChartFilterScope,
@@ -306,7 +297,7 @@ export function isCompletionSegmentActive(
   const statusValues =
     segment === "completed"
       ? [WORKFLOW_STATUS.COMPLETED]
-      : [WORKFLOW_STATUS.NOT_STARTED, WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
+      : [WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
 
   return (
     isBreakdownFilterActive(filters, scope, label) &&

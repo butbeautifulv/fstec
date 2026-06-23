@@ -4,6 +4,13 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { BatchTargetSelectTable } from "@/components/platform/batch-target-select-table"
+import {
+  buildSelectionFromSuggestions,
+  DzoTargetsSummary,
+  MeasureRoutingMatrix,
+  type RoutingSuggestionRow,
+  type TargetMeasureSelection,
+} from "@/components/platform/measure-routing-matrix"
 import { SelectedMeasuresTable } from "@/components/platform/selected-measures-table"
 import {
   useOrderCreateDraft,
@@ -25,6 +32,9 @@ import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import {
   expandBatchTargets,
+  expandDzoTargets,
+  expandHeadSubdivisionTargets,
+  expandImportDefaultTargets,
   listSelectableBatchTargets,
   targetKey,
   type SupervisedOrg,
@@ -35,6 +45,7 @@ import { ListChecks } from "lucide-react"
 
 type OrderCreateClientProps = {
   organizations: SupervisedOrg[]
+  headOrganizationId: number | null
   defaultDue: string
   initialImport?: {
     id: number
@@ -50,6 +61,7 @@ type OrderCreateClientProps = {
 
 export function OrderCreateClient({
   organizations,
+  headOrganizationId,
   defaultDue,
   initialImport,
 }: OrderCreateClientProps) {
@@ -68,6 +80,11 @@ export function OrderCreateClient({
   const [dueOverride, setDueOverride] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const importPrefillApplied = useRef(false)
+  const [targetMeasureSelection, setTargetMeasureSelection] =
+    useState<TargetMeasureSelection>(new Map())
+  const [routingSuggestions, setRoutingSuggestions] = useState<RoutingSuggestionRow[]>(
+    []
+  )
 
   const title =
     titleOverride ?? initialImport?.defaultTitle ?? draft.title ?? ""
@@ -79,9 +96,14 @@ export function OrderCreateClient({
     [organizations]
   )
 
+  const defaultImportTargets = useMemo(
+    () => expandImportDefaultTargets(organizations, headOrganizationId),
+    [organizations, headOrganizationId]
+  )
+
   const [selectedTargetKeys, setSelectedTargetKeys] = useState<Set<string>>(() => {
     if (initialImport) {
-      return new Set(expandBatchTargets(organizations).map(targetKey))
+      return new Set(defaultImportTargets.map(targetKey))
     }
     return new Set()
   })
@@ -126,16 +148,57 @@ export function OrderCreateClient({
     [selectableTargets, selectedTargetKeys]
   )
 
-  function selectSupervisedTargets() {
-    setSelectedTargetKeys(
-      new Set(expandBatchTargets(organizations).map(targetKey))
+  const headSubdivisionTargets = useMemo(
+    () =>
+      selectedTargets.filter(
+        (t) =>
+          headOrganizationId != null &&
+          t.organizationId === headOrganizationId &&
+          t.subdivisionId != null
+      ),
+    [selectedTargets, headOrganizationId]
+  )
+
+  useEffect(() => {
+    if (!initialImport || headOrganizationId == null) return
+    if (headSubdivisionTargets.length === 0) return
+
+    fetch(
+      `/api/measure-imports/${initialImport.id}/routing-suggestions?organizationId=${headOrganizationId}`
     )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data?.suggestions) return
+        const suggestions = data.suggestions as RoutingSuggestionRow[]
+        setRoutingSuggestions(suggestions)
+        const built = buildSelectionFromSuggestions(
+          selectedTargets,
+          initialImport.measures,
+          suggestions
+        )
+        setTargetMeasureSelection(built)
+      })
+      .catch(() => {})
+  }, [initialImport, headOrganizationId, headSubdivisionTargets.length, selectedTargets])
+
+  function selectImportDefaults() {
+    setSelectedTargetKeys(new Set(defaultImportTargets.map(targetKey)))
+  }
+
+  function selectHeadTargets() {
+    const keys = expandHeadSubdivisionTargets(organizations, headOrganizationId).map(
+      targetKey
+    )
+    setSelectedTargetKeys((prev) => new Set([...prev, ...keys]))
+  }
+
+  function selectDzoTargets() {
+    const keys = expandDzoTargets(organizations, headOrganizationId).map(targetKey)
+    setSelectedTargetKeys((prev) => new Set([...prev, ...keys]))
   }
 
   function selectAllTargets() {
-    setSelectedTargetKeys(
-      new Set(selectableTargets.map((target) => targetKey(target)))
-    )
+    setSelectedTargetKeys(new Set(selectableTargets.map((target) => targetKey(target))))
   }
 
   function handleRemoveMeasure(id: number) {
@@ -157,10 +220,16 @@ export function OrderCreateClient({
         defaultDueAt: new Date(due).toISOString(),
         measureIds: [...selectedIds],
         sourceImportId: initialImport?.id ?? draft.sourceImportId,
-        targets: selectedTargets.map((target) => ({
-          organizationId: target.organizationId,
-          subdivisionId: target.subdivisionId,
-        })),
+        targets: selectedTargets.map((target) => {
+          const key = targetKey(target)
+          const perTarget = targetMeasureSelection.get(key)
+          return {
+            organizationId: target.organizationId,
+            subdivisionId: target.subdivisionId,
+            measureIds:
+              perTarget && perTarget.size > 0 ? [...perTarget] : [...selectedIds],
+          }
+        }),
       }),
     })
     setLoading(false)
@@ -262,12 +331,20 @@ export function OrderCreateClient({
           <div>
             <CardTitle>Кому назначить</CardTitle>
             <CardDescription>
-              Подведомственные {labels.orgs.toLowerCase()} и подразделения
+              Головная организация (подразделения) и подведомственные {labels.orgs.toLowerCase()}
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={selectSupervisedTargets}>
-              Подведомственные + подразделения
+            {initialImport && (
+              <Button type="button" variant="outline" size="sm" onClick={selectImportDefaults}>
+                МАШ + все ДЗО
+              </Button>
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={selectHeadTargets}>
+              Только МАШ
+            </Button>
+            <Button type="button" variant="outline" size="sm" onClick={selectDzoTargets}>
+              Все ДЗО
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={selectAllTargets}>
               Выбрать всех
@@ -288,6 +365,22 @@ export function OrderCreateClient({
             selectedKeys={selectedTargetKeys}
             onSelectionChange={setSelectedTargetKeys}
           />
+          {initialImport && selectedTargets.length > 0 && (
+            <div className="mt-6 flex flex-col gap-6">
+              <MeasureRoutingMatrix
+                targets={selectedTargets}
+                measures={initialImport.measures}
+                selection={targetMeasureSelection}
+                suggestions={routingSuggestions}
+                onSelectionChange={setTargetMeasureSelection}
+              />
+              <DzoTargetsSummary
+                targets={selectedTargets}
+                measures={initialImport.measures}
+                selection={targetMeasureSelection}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

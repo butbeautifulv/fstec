@@ -12,7 +12,7 @@ vi.mock("react", async () => {
 
 vi.mock("@/lib/cache/json-cache", () => ({
   getCachedJson: mockGetCachedJson,
-  invalidateKeys: mockInvalidateKeys,
+  invalidateKeysByPrefix: mockInvalidateKeys,
 }))
 
 vi.mock("@/lib/cache/redis", () => ({
@@ -106,17 +106,14 @@ describe("invalidateDashboardCache", () => {
     mockInvalidateKeys.mockResolvedValue(undefined)
   })
 
-  it("invalidates global dashboard key by default", async () => {
+  it("invalidates all dashboard cache keys by prefix", async () => {
     await invalidateDashboardCache()
-    expect(mockInvalidateKeys).toHaveBeenCalledWith("dashboard:global")
+    expect(mockInvalidateKeys).toHaveBeenCalledWith("dashboard:")
   })
 
-  it("invalidates scoped key when scope provided", async () => {
+  it("invalidates all dashboard keys when scope provided", async () => {
     await invalidateDashboardCache({ type: "organization", organizationId: 5 })
-    expect(mockInvalidateKeys).toHaveBeenCalledWith(
-      "dashboard:global",
-      "dashboard:org:5"
-    )
+    expect(mockInvalidateKeys).toHaveBeenCalledWith("dashboard:")
   })
 })
 
@@ -124,9 +121,6 @@ describe("invalidateDashboardOnMutation", () => {
   it("delegates to invalidateDashboardCache", async () => {
     mockInvalidateKeys.mockResolvedValue(undefined)
     await invalidateDashboardOnMutation({ type: "subdivision", organizationId: 1, subdivisionId: 2 })
-    expect(mockInvalidateKeys).toHaveBeenCalledWith(
-      "dashboard:global",
-      "dashboard:sub:1:2"
-    )
+    expect(mockInvalidateKeys).toHaveBeenCalledWith("dashboard:")
   })
 })

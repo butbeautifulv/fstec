@@ -1,21 +1,19 @@
 export const WORKFLOW_STATUS = {
-  NOT_STARTED: "К исполнению",
   IN_PROGRESS: "В работе",
   COMPLETED: "Выполнено",
 } as const
 
 export const OVERDUE_LABEL = "Просрочено"
 
-export const LEGACY_NOT_STARTED_STATUS = "Не начато"
-
 export const LEGACY_OVERDUE_STATUS = "Просрочено"
 
-export const STATUS_DISPLAY_ORDER = [
-  WORKFLOW_STATUS.NOT_STARTED,
+export const DASHBOARD_STATUS_ORDER = [
   WORKFLOW_STATUS.IN_PROGRESS,
   WORKFLOW_STATUS.COMPLETED,
   OVERDUE_LABEL,
 ] as const
+
+export type DashboardStatusName = (typeof DASHBOARD_STATUS_ORDER)[number]
 
 export type WorkflowStatusName =
   (typeof WORKFLOW_STATUS)[keyof typeof WORKFLOW_STATUS]
@@ -42,28 +40,30 @@ export function getDisplayStatusName(
   return item.status.name
 }
 
-export function isSelectableWorkflowStatus(name: string): boolean {
-  return (
-    name === WORKFLOW_STATUS.NOT_STARTED ||
-    name === WORKFLOW_STATUS.IN_PROGRESS ||
-    name === WORKFLOW_STATUS.COMPLETED
-  )
+export function getDashboardDisplayStatusName(
+  item: OrderItemStatusLike,
+  now: Date = new Date()
+): string {
+  return getDisplayStatusName(item, now)
 }
 
-export function isNotStarted(statusName: string): boolean {
+export function isSelectableWorkflowStatus(name: string): boolean {
   return (
-    statusName === WORKFLOW_STATUS.NOT_STARTED ||
-    statusName === LEGACY_NOT_STARTED_STATUS
+    name === WORKFLOW_STATUS.IN_PROGRESS || name === WORKFLOW_STATUS.COMPLETED
   )
 }
 
 export function isInProgress(statusName: string): boolean {
-  return (
-    statusName === WORKFLOW_STATUS.IN_PROGRESS ||
-    statusName === LEGACY_OVERDUE_STATUS
-  )
+  return statusName === WORKFLOW_STATUS.IN_PROGRESS
 }
 
 export function isCompleted(status: { isTerminal: boolean; name?: string }): boolean {
   return status.isTerminal || status.name === WORKFLOW_STATUS.COMPLETED
+}
+
+export function canSubmitOrderItemReport(status: {
+  name: string
+  isTerminal: boolean
+}): boolean {
+  return isInProgress(status.name) && !isCompleted(status)
 }

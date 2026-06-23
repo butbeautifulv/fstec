@@ -62,7 +62,7 @@ describe("serializeOrderItemEditContext", () => {
       serializeOrderItemEditContext({
         id: 10,
         dueAt,
-        status: { id: 1, name: "К исполнению", isTerminal: false },
+        status: { id: 1, name: "В работе", isTerminal: false },
         subdivision: { id: 2, name: "IT" },
         measure: { id: 3, name: "Measure" },
         order: {
@@ -79,7 +79,7 @@ describe("serializeOrderItemEditContext", () => {
       item: {
         id: 10,
         dueAt: "2024-07-01T00:00:00.000Z",
-        status: { id: 1, name: "К исполнению", isTerminal: false },
+        status: { id: 1, name: "В работе", isTerminal: false },
         subdivision: { id: 2, name: "IT" },
         measure: { id: 3, name: "Measure" },
       },
@@ -204,6 +204,7 @@ describe("serializeMeasureImports", () => {
           originalName: "doc.docx",
           title: "Title",
           reportDueAt,
+          needsAppendix: false,
           createdAt,
           _count: { items: 2, measures: 1, orders: 0, appendices: 0 },
         },
@@ -218,6 +219,7 @@ describe("serializeMeasureImports", () => {
         originalName: "doc.docx",
         title: "Title",
         reportDueAt: "2024-07-01T00:00:00.000Z",
+        needsAppendix: false,
         createdAt: "2024-06-01T00:00:00.000Z",
         _count: { items: 2, measures: 1, orders: 0, appendices: 0 },
       },

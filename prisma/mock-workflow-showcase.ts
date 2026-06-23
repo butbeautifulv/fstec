@@ -5,7 +5,6 @@ import {
 } from "@prisma/client"
 
 type StatusIds = {
-  notStarted: number
   inProgress: number
   completed: number
 }
@@ -33,8 +32,8 @@ type ShowcaseScenario = {
 
 const SHOWCASE_SCENARIOS: ShowcaseScenario[] = [
   {
-    label: "К исполнению",
-    statusKey: "notStarted",
+    label: "В работе — отчёт не приложен",
+    statusKey: "inProgress",
     dueDaysOffset: 21,
   },
   {

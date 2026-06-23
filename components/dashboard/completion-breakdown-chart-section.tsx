@@ -27,35 +27,47 @@ import { MotionFadeIn } from "@/components/motion"
 import type { StatusBreakdownRow, StatusDistribution } from "@/lib/dashboard/stats"
 import {
   isBreakdownFilterActive,
+  isStatusFilterActive,
   isStatusSegmentHighlighted,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
-import { STATUS_DISPLAY_ORDER } from "@/lib/statuses/workflow"
+import {
+  isChartStatusVisible,
+  sumVisibleBreakdownRows,
+  visibleBreakdownGrandTotal,
+  visibleStatusesInOrder,
+} from "@/lib/dashboard/chart-visibility"
+import { DASHBOARD_STATUS_ORDER } from "@/lib/statuses/workflow"
 
 export function CompletionBreakdownChartSection({
   scope,
   statusDistribution,
   statusBreakdown,
   columnFilters = [],
+  visibleChartStatuses,
   onOverdueBarClick,
   onStatusBreakdownClick,
-  onCompletionLegendClick,
   size = "card",
 }: {
   scope: ChartFilterScope
   statusDistribution: StatusDistribution[]
   statusBreakdown: StatusBreakdownRow[]
   columnFilters?: ColumnFiltersState
+  visibleChartStatuses: ReadonlySet<string>
   onOverdueBarClick?: (label: string) => void
   onStatusBreakdownClick?: (label: string, status: string) => void
-  onCompletionLegendClick?: (status: string) => void
   size?: ChartSize
 }) {
   const statusColorMap = Object.fromEntries(
     statusDistribution.map((d) => [d.status, d.fill])
   )
 
-  const statusBreakdownConfig = STATUS_DISPLAY_ORDER.reduce<ChartConfig>((acc, status) => {
+  const visibleStatuses = visibleStatusesInOrder(
+    DASHBOARD_STATUS_ORDER,
+    visibleChartStatuses
+  )
+
+  const statusBreakdownConfig = DASHBOARD_STATUS_ORDER.reduce<ChartConfig>((acc, status) => {
     acc[status] = {
       label: status,
       color: statusColorMap[status] ?? "var(--chart-1)",
@@ -66,26 +78,30 @@ export function CompletionBreakdownChartSection({
   const breakdownFilterActive = hasBreakdownFilter(columnFilters, scope)
   const statusFilterActive = hasStatusFilter(columnFilters)
 
-  const completionStatusTotals = Object.fromEntries(
-    STATUS_DISPLAY_ORDER.map((status) => [
-      status,
-      statusBreakdown.reduce((sum, row) => sum + row[status], 0),
-    ])
-  ) as Record<(typeof STATUS_DISPLAY_ORDER)[number], number>
-
-  const completionGrandTotal = STATUS_DISPLAY_ORDER.reduce(
-    (sum, status) => sum + completionStatusTotals[status],
-    0
+  const completionStatusTotals = sumVisibleBreakdownRows(
+    statusBreakdown,
+    visibleChartStatuses,
+    DASHBOARD_STATUS_ORDER
   )
 
-  const completionLegendItems = STATUS_DISPLAY_ORDER.map((status) => ({
+  const completionGrandTotal = visibleBreakdownGrandTotal(
+    statusBreakdown,
+    visibleChartStatuses,
+    DASHBOARD_STATUS_ORDER
+  )
+
+  const completionLegendItems = DASHBOARD_STATUS_ORDER.map((status) => ({
     key: status,
     label: formatChartLegendLabel(
       status,
-      completionStatusTotals[status],
+      isChartStatusVisible(visibleChartStatuses, status)
+        ? completionStatusTotals[status]
+        : 0,
       completionGrandTotal
     ),
     color: statusColorMap[status] ?? "var(--chart-1)",
+    visible: isChartStatusVisible(visibleChartStatuses, status),
+    active: isStatusFilterActive(columnFilters, status),
   }))
 
   const categoryCount = statusBreakdown.length
@@ -145,16 +161,22 @@ export function CompletionBreakdownChartSection({
             />
             <YAxis tickLine={false} axisLine={false} />
             <ChartTooltip content={<ChartTooltipContent />} />
-            {STATUS_DISPLAY_ORDER.map((status, index) => {
-              const isLast = index === STATUS_DISPLAY_ORDER.length - 1
+            {visibleStatuses.map((status, index) => {
+              const isLast = index === visibleStatuses.length - 1
               const isFirst = index === 0
+              const statusIndex = DASHBOARD_STATUS_ORDER.indexOf(
+                status as (typeof DASHBOARD_STATUS_ORDER)[number]
+              )
               return (
                 <Bar
                   key={status}
                   dataKey={status}
                   stackId="status"
                   minPointSize={categoryCount > 5 ? 0 : 8}
-                  fill={statusColorMap[status] ?? `var(--chart-${index + 1})`}
+                  fill={
+                    statusColorMap[status] ??
+                    `var(--chart-${statusIndex + 1})`
+                  }
                   radius={isLast ? [4, 4, 0, 0] : isFirst ? [0, 0, 0, 0] : [0, 0, 0, 0]}
                   className="cursor-pointer"
                   onClick={(data) => {
@@ -207,12 +229,7 @@ export function CompletionBreakdownChartSection({
       <DashboardChartLayout
         size={size}
         chart={chart}
-        legend={
-          <DashboardChartLegend
-            items={completionLegendItems}
-            onItemClick={onCompletionLegendClick}
-          />
-        }
+        legend={<DashboardChartLegend items={completionLegendItems} />}
       />
     </MotionFadeIn>
   )

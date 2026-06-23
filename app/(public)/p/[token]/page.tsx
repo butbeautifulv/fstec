@@ -2,6 +2,8 @@ import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { PublicReportsRevisionBanner } from "@/components/public/public-reports-revision-banner"
 import { buildDashboardPageProps } from "@/lib/dashboard/build-dashboard-page-props"
+import { getOrderIssuedAtBounds } from "@/lib/dashboard/period-bounds"
+import { resolveDashboardSearch } from "@/lib/dashboard/resolve-dashboard-search"
 import { scopeFromAccessLink } from "@/lib/dashboard/stats"
 import { countPublicReportsNeedingRevision } from "@/lib/public/reports"
 import { serializePublicStatuses } from "@/lib/public/serialize-public"
@@ -15,20 +17,26 @@ export default async function PublicLinkPage({
   searchParams,
 }: {
   params: Params["params"]
-  searchParams: Promise<{ overdue?: string }>
+  searchParams: Promise<{
+    overdue?: string
+    from?: string
+    to?: string
+    period?: string
+  }>
 }) {
   const { token } = await params
-  const { overdue: overdueParam } = await searchParams
-  const overdueOnly = overdueParam === "1"
+  const query = await searchParams
 
-  const [linkCtx, statuses, needsRevisionCount] = await Promise.all([
+  const [linkCtx, statuses, needsRevisionCount, bounds] = await Promise.all([
     validateAccessLink(token),
     getWorkflowStatuses(),
     countPublicReportsNeedingRevision(token),
+    getOrderIssuedAtBounds(),
   ])
   if (!linkCtx) notFound()
 
-  const scope = scopeFromAccessLink(linkCtx.link)
+  const baseScope = scopeFromAccessLink(linkCtx.link)
+  const { overdueOnly, scope } = resolveDashboardSearch(baseScope, query, bounds)
 
   return (
     <ScopedDashboardPageShell
@@ -43,6 +51,7 @@ export default async function PublicLinkPage({
             ? `Подразделение: ${linkCtx.subdivision.name}`
             : "Все меры организации",
         overdueOnly,
+        periodBounds: bounds,
         emptyMessage: "Нет мер для отображения.",
         beforeContent:
           needsRevisionCount > 0 ? (

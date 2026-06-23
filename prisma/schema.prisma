@@ -275,6 +275,7 @@ model MeasureImport {
   uploadedById   Int                 @map("uploaded_by_id")
   importedAt     DateTime?           @map("imported_at") @db.Timestamptz()
   parseError     String?             @map("parse_error")
+  needsAppendix  Boolean             @default(false) @map("needs_appendix")
   uploadedVia    MeasureImportSource @default(MANUAL) @map("uploaded_via")
   createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt      DateTime            @updatedAt @map("updated_at") @db.Timestamptz()
@@ -296,6 +297,7 @@ model MeasureImportItem {
   code        String?
   name        String
   description String?
+  tags        String[]       @default([])
   sortOrder   Int            @default(0) @map("sort_order")
   included    Boolean        @default(true)
   measureId   Int?           @map("measure_id")

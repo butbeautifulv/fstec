@@ -46,7 +46,7 @@ const sampleItem = {
   orderId: 10,
   dueAt: new Date("2099-01-01T00:00:00.000Z"),
   subdivisionId: null,
-  status: { id: 1, name: WORKFLOW_STATUS.NOT_STARTED, isTerminal: false },
+  status: { id: 1, name: WORKFLOW_STATUS.IN_PROGRESS, isTerminal: false },
   measure: { id: 1, name: "Measure", code: null, description: null },
   subdivision: null,
   order: {

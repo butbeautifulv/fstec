@@ -9,6 +9,45 @@ export type SupervisedOrg = {
   subdivisions: { id: number; name: string }[]
 }
 
+export function expandHeadSubdivisionTargets(
+  orgs: SupervisedOrg[],
+  headOrganizationId: number | null
+): BatchTarget[] {
+  if (headOrganizationId == null) return []
+  const head = orgs.find((org) => org.id === headOrganizationId)
+  if (!head || head.subdivisions.length === 0) return []
+  return head.subdivisions.map((sub) => ({
+    organizationId: head.id,
+    subdivisionId: sub.id,
+  }))
+}
+
+export function expandDzoTargets(
+  orgs: SupervisedOrg[],
+  headOrganizationId: number | null
+): BatchTarget[] {
+  return orgs
+    .filter((org) => org.id !== headOrganizationId)
+    .flatMap((org) =>
+      org.subdivisions.length > 0
+        ? org.subdivisions.map((sub) => ({
+            organizationId: org.id,
+            subdivisionId: sub.id,
+          }))
+        : [{ organizationId: org.id, subdivisionId: null }]
+    )
+}
+
+export function expandImportDefaultTargets(
+  orgs: SupervisedOrg[],
+  headOrganizationId: number | null
+): BatchTarget[] {
+  return [
+    ...expandHeadSubdivisionTargets(orgs, headOrganizationId),
+    ...expandDzoTargets(orgs, headOrganizationId),
+  ]
+}
+
 export function expandBatchTargets(
   orgs: SupervisedOrg[],
   strategy: "perSubdivisionIfAny" = "perSubdivisionIfAny"

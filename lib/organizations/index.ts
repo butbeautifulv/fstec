@@ -20,6 +20,26 @@ export async function listSupervisedOrganizations() {
   })
 }
 
+export async function listBatchOrganizations() {
+  const headOrganizationId = await getHeadOrganizationId()
+  const organizations = await prisma.organization.findMany({
+    include: {
+      subdivisions: { orderBy: { name: "asc" } },
+    },
+    orderBy: { name: "asc" },
+  })
+
+  if (headOrganizationId != null) {
+    organizations.sort((a, b) => {
+      if (a.id === headOrganizationId) return -1
+      if (b.id === headOrganizationId) return 1
+      return a.name.localeCompare(b.name)
+    })
+  }
+
+  return { headOrganizationId, organizations }
+}
+
 export function getOrganization(id: number) {
   return prisma.organization.findUnique({
     where: { id },

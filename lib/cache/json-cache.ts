@@ -41,3 +41,15 @@ export async function invalidateKeys(...keys: string[]): Promise<void> {
     // Ignore cache invalidation errors.
   }
 }
+
+export async function invalidateKeysByPrefix(prefix: string): Promise<void> {
+  const redis = getRedis()
+  if (!redis) return
+
+  try {
+    const keys = await redis.keys(`${prefix}*`)
+    if (keys.length > 0) await redis.del(...keys)
+  } catch {
+    // Ignore cache invalidation errors.
+  }
+}

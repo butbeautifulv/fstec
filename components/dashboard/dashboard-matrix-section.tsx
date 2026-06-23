@@ -12,12 +12,14 @@ import {
   toDashboardInteractiveProps,
 } from "@/lib/dashboard/interactive-props"
 import { mapSerializedMatrixToPublicItems } from "@/lib/public/map-public-items"
+import type { PeriodBounds } from "@/lib/dashboard/period-range"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { ScopedDashboardPageShellProps } from "@/components/dashboard/dashboard-page-shell"
 
 type DashboardMatrixSectionProps = ScopedDashboardPageShellProps & {
   scope: DashboardScope
   itemLimit?: number
+  periodBounds?: PeriodBounds
 }
 
 export async function DashboardMatrixSection({
@@ -26,6 +28,7 @@ export async function DashboardMatrixSection({
   overdueOnly,
   emptyMessage,
   suspenseCharts,
+  periodBounds,
   ...shellProps
 }: DashboardMatrixSectionProps) {
   const dashboard = await getCachedScopedDashboard(
@@ -76,6 +79,10 @@ export async function DashboardMatrixSection({
         overdueOnly
       )}
       dashboardScope={scope}
+      showStatCards={itemCount > 0}
+      showCharts={itemCount > 0}
+      showMatrix={itemCount > 0}
+      periodBounds={periodBounds}
     />
   )
 
@@ -91,12 +98,11 @@ export async function DashboardMatrixSection({
         </Alert>
       ) : null}
 
-      {itemCount > 0 &&
-        (suspenseCharts ? (
-          <Suspense fallback={<DashboardChartsSkeleton />}>{interactive}</Suspense>
-        ) : (
-          interactive
-        ))}
+      {suspenseCharts ? (
+        <Suspense fallback={<DashboardChartsSkeleton />}>{interactive}</Suspense>
+      ) : (
+        interactive
+      )}
     </>
   )
 }

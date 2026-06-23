@@ -29,7 +29,7 @@ describe("mapOrderItemsToPublicItems", () => {
             id: 10,
             dueAt,
             measure: { name: "M1", code: "C1", description: "Desc" },
-            status: { id: 1, name: "К исполнению", isTerminal: false },
+            status: { id: 1, name: "В работе", isTerminal: false },
             subdivision: { id: 3, name: "IT" },
           },
         ]
@@ -40,7 +40,7 @@ describe("mapOrderItemsToPublicItems", () => {
         orderId: 1,
         dueAt: "2024-02-15T00:00:00.000Z",
         measure: { name: "M1", code: "C1", description: "Desc" },
-        status: { id: 1, name: "К исполнению", isTerminal: false },
+        status: { id: 1, name: "В работе", isTerminal: false },
         orderTitle: "Order A",
         orderIssuedAt: "2024-01-15T00:00:00.000Z",
         subdivisionName: "IT",
@@ -57,7 +57,7 @@ describe("mapOrderItemsToPublicItems", () => {
           id: 10,
           dueAt: new Date("2024-02-01T00:00:00.000Z"),
           measure: { name: "M", code: null, description: null },
-          status: { id: 1, name: "К исполнению", isTerminal: false },
+          status: { id: 1, name: "В работе", isTerminal: false },
         },
       ]
     )
@@ -77,7 +77,7 @@ describe("mapOrdersToPublicItems", () => {
             id: 10,
             dueAt: new Date("2024-02-01T00:00:00.000Z"),
             measure: { name: "M", code: null, description: null },
-            status: { id: 1, name: "К исполнению", isTerminal: false },
+            status: { id: 1, name: "В работе", isTerminal: false },
           },
         ],
       },
@@ -112,7 +112,7 @@ describe("mapMatrixItemToPublicItem", () => {
       issuedAt: "2024-01-01T00:00:00.000Z",
       organization: { id: 1, name: "Org" },
     },
-    status: { id: 1, name: "К исполнению", isTerminal: false },
+    status: { id: 1, name: "В работе", isTerminal: false },
     subdivision: { id: 3, name: "Sub" },
   }
 
@@ -122,7 +122,7 @@ describe("mapMatrixItemToPublicItem", () => {
       orderId: 2,
       dueAt: "2024-05-01T00:00:00.000Z",
       measure: { name: "M", code: "C", description: null },
-      status: { id: 1, name: "К исполнению", isTerminal: false },
+      status: { id: 1, name: "В работе", isTerminal: false },
       orderTitle: "Order",
       orderIssuedAt: "2024-01-01T00:00:00.000Z",
       subdivisionName: "Sub",
@@ -162,7 +162,7 @@ describe("mapSerializedMatrixToPublicItems", () => {
           issuedAt: "2024-01-01T00:00:00.000Z",
           organization: { id: 1, name: "Org" },
         },
-        status: { id: 1, name: "К исполнению", isTerminal: false },
+        status: { id: 1, name: "В работе", isTerminal: false },
         subdivision: null,
       },
     ])
@@ -174,8 +174,8 @@ describe("mapSerializedMatrixToPublicItems", () => {
 describe("serializePublicStatuses", () => {
   it("maps status fields", () => {
     expect(
-      serializePublicStatuses([{ id: 1, name: "К исполнению", isTerminal: false }])
-    ).toEqual([{ id: 1, name: "К исполнению", isTerminal: false }])
+      serializePublicStatuses([{ id: 1, name: "В работе", isTerminal: false }])
+    ).toEqual([{ id: 1, name: "В работе", isTerminal: false }])
   })
 })
 
@@ -286,7 +286,7 @@ describe("identity serializers", () => {
         orderId: 1,
         dueAt: "2024-01-01T00:00:00.000Z",
         measure: { name: "M", code: null, description: null },
-        status: { id: 1, name: "К исполнению", isTerminal: false },
+        status: { id: 1, name: "В работе", isTerminal: false },
         orderTitle: "O",
         orderIssuedAt: "2024-01-01T00:00:00.000Z",
         subdivisionName: null,

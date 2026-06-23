@@ -16,6 +16,7 @@ import {
 import { seedReportLink, seedWorkflowShowcaseOrder, SHOWCASE_SCENARIO_COUNT } from "./mock-workflow-showcase.js"
 import { WORKFLOW_STATUS } from "../lib/statuses/workflow"
 
+/** @deprecated Not used by corpus seed — use `db:seed:corpus` (Sheremetyevo orgs). Only `db:seed:mock`. */
 const MOCK_ORG_PREFIX = "DEV-"
 const MEASURE_COUNT = 120
 const ORDERS_PER_ORG = 30
@@ -43,7 +44,6 @@ async function getStatusMap(prisma: PrismaClient) {
   const statuses = await prisma.status.findMany()
   const byName = new Map(statuses.map((s) => [s.name, s.id]))
   return {
-    notStarted: byName.get(WORKFLOW_STATUS.NOT_STARTED)!,
     inProgress: byName.get(WORKFLOW_STATUS.IN_PROGRESS)!,
     completed: byName.get(WORKFLOW_STATUS.COMPLETED)!,
   }
@@ -252,9 +252,8 @@ async function seedOrganization(
 
         for (const [itemIndex, measureId] of picked.entries()) {
           const { status, dueDaysOffset } = pickStatusAndDue(itemIndex + orderIndex)
-          let statusId = statusIds.notStarted
+          let statusId = statusIds.inProgress
           if (status === "completed") statusId = statusIds.completed
-          else if (status === "inProgress" || status === "overdue") statusId = statusIds.inProgress
 
           const dueAt = daysFromNow(dueDaysOffset)
           const subdivisionName = subNames[(itemIndex + orderIndex) % subNames.length]

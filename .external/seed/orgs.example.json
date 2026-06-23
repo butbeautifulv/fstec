@@ -1,0 +1,15 @@
+{
+  "headOrganization": {
+    "name": "АО \"Международный аэропорт Шереметьево\"",
+    "shortCode": "SVO",
+    "subdivisions": ["ДЦОД", "ДИТСБ", "ДКИТИ", "ДИТСС", "СЭПС", "ДИТСУП"]
+  },
+  "supervisedOrganizations": [
+    { "name": "ООО \"Шереметьево Хэндлинг\"", "shortCode": "SVO-HDL" },
+    { "name": "ООО \"Шереметьево Паркинг\"", "shortCode": "SVO-PRK" },
+    { "name": "АО \"Шереметьево Безопасность\"", "shortCode": "SVO-SEC" },
+    { "name": "ООО \"Шереметьево ВИП\"", "shortCode": "SVO-VIP" },
+    { "name": "ООО \"Шереметьево Реклама\"", "shortCode": "SVO-ADV" },
+    { "name": "ООО \"ТЗК Аэро\"", "shortCode": "SVO-TZK" }
+  ]
+}

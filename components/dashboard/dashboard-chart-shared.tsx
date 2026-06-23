@@ -302,31 +302,74 @@ export function DashboardChartLegend({
   items,
   onItemClick,
 }: {
-  items: { key: string; label: string; color: string; active?: boolean }[]
+  items: {
+    key: string
+    label: string
+    color: string
+    active?: boolean
+    visible?: boolean
+    disabled?: boolean
+  }[]
   onItemClick?: (key: string) => void
 }) {
   return (
     <div className="flex h-full flex-col overflow-hidden border-t pt-2">
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-2 gap-x-2 gap-y-1 sm:grid-cols-3">
-          {items.map((item) => (
-            <button
-              key={item.key}
-              type="button"
-              className={cn(
-                "inline-flex min-w-0 items-start gap-1.5 text-left text-[11px] leading-tight",
-                onItemClick && "cursor-pointer hover:opacity-80",
-                item.active ? "font-medium text-foreground" : "text-muted-foreground"
-              )}
-              onClick={() => onItemClick?.(item.key)}
-            >
-              <span
-                className="mt-0.5 h-2 w-2 shrink-0 rounded-[2px]"
-                style={{ backgroundColor: item.color }}
-              />
-              <OverflowText className="min-w-0 flex-1">{item.label}</OverflowText>
-            </button>
-          ))}
+          {items.map((item) => {
+            const isVisible = item.visible ?? true
+            const content = (
+              <>
+                <span
+                  className={cn(
+                    "mt-0.5 h-2 w-2 shrink-0 rounded-[2px]",
+                    !isVisible && "opacity-40"
+                  )}
+                  style={{ backgroundColor: item.color }}
+                />
+                <OverflowText
+                  className={cn("min-w-0 flex-1", !isVisible && "line-through")}
+                >
+                  {item.label}
+                </OverflowText>
+              </>
+            )
+
+            if (!onItemClick) {
+              return (
+                <div
+                  key={item.key}
+                  className={cn(
+                    "inline-flex min-w-0 items-start gap-1.5 text-left text-[11px] leading-tight",
+                    item.active ? "font-medium text-foreground" : "text-muted-foreground",
+                    !isVisible && "opacity-50"
+                  )}
+                >
+                  {content}
+                </div>
+              )
+            }
+
+            return (
+              <button
+                key={item.key}
+                type="button"
+                disabled={item.disabled}
+                className={cn(
+                  "inline-flex min-w-0 items-start gap-1.5 text-left text-[11px] leading-tight",
+                  !item.disabled && "cursor-pointer hover:opacity-80",
+                  item.disabled && "cursor-not-allowed opacity-60",
+                  item.active ? "font-medium text-foreground" : "text-muted-foreground",
+                  !isVisible && "opacity-50"
+                )}
+                onClick={() => {
+                  if (!item.disabled) onItemClick(item.key)
+                }}
+              >
+                {content}
+              </button>
+            )
+          })}
         </div>
       </div>
     </div>

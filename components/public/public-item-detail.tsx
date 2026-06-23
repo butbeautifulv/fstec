@@ -13,7 +13,6 @@ import {
   usePublicBreadcrumbMiddle,
 } from "@/components/public/public-breadcrumb"
 import { Button } from "@/components/ui/button"
-import { MotionActionButton } from "@/components/motion"
 import { notify } from "@/lib/ui/feedback"
 import { WORKFLOW_STATUS } from "@/lib/statuses/workflow"
 import { getItemDetailDisplayState } from "@/lib/ui/item-detail-display"
@@ -56,7 +55,7 @@ export function PublicItemDetail({
   latestResponse: LatestResponse | null
 }) {
   const statusMeta = statuses.find((s) => s.id === initialItem.status.id)
-  const [item, setItem] = useState({
+  const [item] = useState({
     ...initialItem,
     status: {
       ...initialItem.status,
@@ -68,17 +67,13 @@ export function PublicItemDetail({
   const [result, setResult] = useState("")
   const [commentaryState, setCommentaryState] = useCommentaryAttachmentsState()
   const [delayOpen, setDelayOpen] = useState(false)
-  const [starting, setStarting] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [startSuccessPulseKey, setStartSuccessPulseKey] = useState(0)
-  const [submitSuccessPulseKey, setSubmitSuccessPulseKey] = useState(0)
 
   const {
     isOverdue,
     completed,
     isPendingReview,
     isRejected,
-    canStart,
     canSubmitReport,
     displayStatus,
     workflowStatusName,
@@ -100,32 +95,6 @@ export function PublicItemDetail({
 
   usePublicBreadcrumbMiddle(middleCrumbs)
   usePublicBreadcrumbLabel(item.measure.name)
-
-  async function startWork() {
-    setStarting(true)
-    const res = await fetch(`/api/public/${token}/items/${item.id}/status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "start" }),
-    })
-    setStarting(false)
-    if (res.ok) {
-      const updated = await res.json()
-      setItem((prev) => ({
-        ...prev,
-        status: {
-          id: updated.status.id,
-          name: updated.status.name,
-          isTerminal: updated.status.isTerminal,
-        },
-      }))
-      notify.success("Мера взята в работу")
-      setStartSuccessPulseKey((key) => key + 1)
-    } else {
-      const data = await res.json().catch(() => null)
-      notify.error(data?.error ?? "Не удалось взять меру в работу")
-    }
-  }
 
   async function submitReport() {
     setSubmitting(true)
@@ -153,7 +122,6 @@ export function PublicItemDetail({
       setResult("")
       setCommentaryState({ commentary: "", attachmentIds: [] })
       notify.success("Отчёт отправлен, ожидает проверки")
-      setSubmitSuccessPulseKey((key) => key + 1)
     } else {
       const data = await res.json().catch(() => null)
       notify.error(data?.error ?? "Не удалось отправить отчёт")
@@ -184,15 +152,6 @@ export function PublicItemDetail({
             </Button>
           ) : undefined
         }
-        dueStatusChildren={
-          canStart ? (
-            <MotionActionButton successPulseKey={startSuccessPulseKey}>
-              <Button onClick={startWork} disabled={starting} className="w-full sm:w-auto">
-                Взять в работу
-              </Button>
-            </MotionActionButton>
-          ) : undefined
-        }
       >
         <ItemReportWorkflowCard
           completed={completed}
@@ -212,7 +171,6 @@ export function PublicItemDetail({
           presignUrl={`/api/public/${token}/items/${item.id}/attachments/presign`}
           onSubmit={submitReport}
           submitting={submitting}
-          submitSuccessPulseKey={submitSuccessPulseKey}
         />
       </ItemDetailOverview>
 

@@ -16,7 +16,7 @@ const scopedStats = {
   statusBreakdown: [
     {
       label: "Org A",
-      [WORKFLOW_STATUS.NOT_STARTED]: 1,
+      [WORKFLOW_STATUS.IN_PROGRESS]: 1,
       [WORKFLOW_STATUS.IN_PROGRESS]: 0,
       [WORKFLOW_STATUS.COMPLETED]: 2,
       [OVERDUE_LABEL]: 0,
@@ -57,7 +57,7 @@ describe("getDashboardStats", () => {
       {
         org: "Org A",
         completed: 2,
-        active: 1,
+        active: 0,
       },
     ])
   })

@@ -124,11 +124,11 @@ describe("serializeStatuses", () => {
   it("maps status fields and includes sortOrder when present", () => {
     expect(
       serializeStatuses([
-        { id: 1, name: "К исполнению", isTerminal: false, sortOrder: 0 },
+        { id: 1, name: "В работе", isTerminal: false, sortOrder: 0 },
         { id: 2, name: "Выполнено", isTerminal: true },
       ])
     ).toEqual([
-      { id: 1, name: "К исполнению", isTerminal: false, sortOrder: 0 },
+      { id: 1, name: "В работе", isTerminal: false, sortOrder: 0 },
       { id: 2, name: "Выполнено", isTerminal: true },
     ])
   })

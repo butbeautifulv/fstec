@@ -126,7 +126,7 @@ describe("fetchInboxDocxImports", () => {
       expect.objectContaining({
         template: "import-from-inbox",
         relatedType: "measure_import",
-        relatedId: 99,
+        relatedId: 42,
       })
     )
     expect(mockMessageFlagsAdd).toHaveBeenCalledWith({ uid: 42 }, ["\\Seen"])

@@ -28,7 +28,7 @@ describe("batchCreateOrders", () => {
     mockGetDefaultStatusId.mockResolvedValue(7)
     mockPrisma.measure.findMany.mockResolvedValue([{ id: 10 }])
     mockPrisma.organization.findMany.mockResolvedValue([
-      { id: 1, subdivisions: [{ id: 10 }] },
+      { id: 1, subdivisions: [{ id: 10 }, { id: 11 }] },
     ])
   })
 
@@ -171,5 +171,33 @@ describe("batchCreateOrders", () => {
         }),
       })
     )
+  })
+
+  it("creates orders with per-target measureIds", async () => {
+    const dueAt = new Date("2026-07-01T12:00:00Z")
+    mockPrisma.measure.findMany.mockResolvedValue([{ id: 10 }, { id: 20 }])
+    mockPrisma.$transaction.mockImplementation(async (cb) => {
+      mockPrisma.order.create.mockResolvedValue({
+        id: 102,
+        title: "Split",
+        organization: { id: 1, name: "Org" },
+        _count: { items: 1 },
+      })
+      return cb(mockPrisma)
+    })
+
+    await batchCreateOrders(
+      {
+        title: "Split",
+        defaultDueAt: dueAt,
+        targets: [
+          { organizationId: 1, subdivisionId: 10, measureIds: [10] },
+          { organizationId: 1, subdivisionId: 11, measureIds: [20] },
+        ],
+      },
+      1
+    )
+
+    expect(mockPrisma.order.create).toHaveBeenCalledTimes(2)
   })
 })

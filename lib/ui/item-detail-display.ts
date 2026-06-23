@@ -3,7 +3,6 @@ import {
   getDisplayStatusName,
   isCompleted,
   isInProgress,
-  isNotStarted,
   isOrderItemOverdue,
 } from "@/lib/statuses/workflow"
 import { getItemDetailStatusVariant } from "@/lib/ui/item-detail-status"
@@ -30,7 +29,6 @@ export function getItemDetailDisplayState(
     latestResponse?.reviewStatus === ResponseReviewStatus.PENDING
   const isRejected =
     latestResponse?.reviewStatus === ResponseReviewStatus.REJECTED
-  const canStart = isNotStarted(item.status.name)
   const canSubmitReport =
     isInProgress(item.status.name) &&
     !completed &&
@@ -55,7 +53,6 @@ export function getItemDetailDisplayState(
     completed,
     isPendingReview,
     isRejected,
-    canStart,
     canSubmitReport,
     workflowStatusName,
     reportStatusLabel,
@@ -65,7 +62,6 @@ export function getItemDetailDisplayState(
 }
 
 export type ItemWorkflowPhase =
-  | "not_started"
   | "in_progress_form"
   | "pending_review"
   | "rejected"
@@ -80,6 +76,5 @@ export function getItemWorkflowPhase(
   if (state.completed) return "completed"
   if (state.isPendingReview) return "pending_review"
   if (state.isRejected) return "rejected"
-  if (state.canSubmitReport) return "in_progress_form"
-  return "not_started"
+  return "in_progress_form"
 }

@@ -24,7 +24,10 @@ export type ExtractedMetadata = {
   documentNumber: string | null
   title: string | null
   reportDueAt: Date | null
+  needsAppendix: boolean
 }
+
+const APPENDIX_REF_RE = /Приложение\s*:/i
 
 export function extractDocumentNumber(
   paragraphs: string[],
@@ -70,14 +73,31 @@ export function extractReportDueAt(paragraphs: string[]): Date | null {
   return new Date(Date.UTC(year, month, day, 12, 0, 0))
 }
 
+export function extractNeedsAppendix(
+  paragraphs: string[],
+  measureCount: number
+): boolean {
+  return measureCount === 0 && paragraphs.some((p) => APPENDIX_REF_RE.test(p))
+}
+
 export function extractMetadata(
   paragraphs: string[],
-  originalName: string
+  originalName: string,
+  measureCount = -1
 ): ExtractedMetadata {
+  const docNumber = extractDocumentNumber(paragraphs, originalName)
+  const title = extractTitle(paragraphs)
+  const reportDueAt = extractReportDueAt(paragraphs)
+  const needsAppendix =
+    measureCount >= 0
+      ? extractNeedsAppendix(paragraphs, measureCount)
+      : paragraphs.some((p) => APPENDIX_REF_RE.test(p))
+
   return {
-    documentNumber: extractDocumentNumber(paragraphs, originalName),
-    title: extractTitle(paragraphs),
-    reportDueAt: extractReportDueAt(paragraphs),
+    documentNumber: docNumber,
+    title,
+    reportDueAt,
+    needsAppendix,
   }
 }
 

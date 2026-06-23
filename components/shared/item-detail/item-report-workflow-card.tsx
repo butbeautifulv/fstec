@@ -8,7 +8,6 @@ import {
 import { ItemResponseCard } from "@/components/shared/item-detail/item-response-card"
 import { ResponseRevisionAlert } from "@/components/shared/response-revision-alert"
 import {
-  MotionActionButton,
   MotionPulseText,
   MotionStagger,
   MotionStaggerItem,
@@ -66,7 +65,6 @@ export function ItemReportWorkflowCard({
   presignUrl,
   onSubmit,
   submitting,
-  submitSuccessPulseKey = 0,
 }: {
   completed: boolean
   isPendingReview: boolean
@@ -83,7 +81,6 @@ export function ItemReportWorkflowCard({
   presignUrl?: string
   onSubmit?: () => void
   submitting?: boolean
-  submitSuccessPulseKey?: number
 }) {
   const phase = getItemWorkflowPhase({
     completed,
@@ -112,10 +109,8 @@ export function ItemReportWorkflowCard({
     phase === "pending_review"
       ? "Отчёт отправлен и ожидает проверки оператором."
       : phase === "rejected"
-        ? "Исправьте замечания и отправьте отчёт повторно."
-        : phase === "in_progress_form"
-          ? "Опишите выполненные работы и отправьте отчёт."
-          : "Сначала возьмите меру в работу."
+        ? "Исправьте замечания и приложите отчёт повторно."
+        : "Опишите выполненные работы и приложите отчёт."
 
   return (
     <Card className={workflowCardClassName(phase)}>
@@ -130,11 +125,7 @@ export function ItemReportWorkflowCard({
             <ResponseRevisionAlert reviewNote={latestResponse.reviewNote} />
           )}
 
-          {phase === "not_started" ? (
-            <p className="text-sm text-muted-foreground">
-              Нажмите «Взять в работу», чтобы открыть форму отчёта.
-            </p>
-          ) : phase === "pending_review" ? (
+          {phase === "pending_review" ? (
             <MotionPulseText active>
               <p className="text-sm text-muted-foreground">
                 После проверки статус меры обновится автоматически.
@@ -183,14 +174,9 @@ export function ItemReportWorkflowCard({
 
         {canSubmitReport && onSubmit && (
           <CardFooter>
-            <MotionActionButton successPulseKey={submitSuccessPulseKey}>
-              <Button
-                onClick={onSubmit}
-                disabled={!result?.trim() || submitting}
-              >
-                {phase === "rejected" ? "Отправить повторно" : "Отправить отчёт"}
-              </Button>
-            </MotionActionButton>
+            <Button onClick={onSubmit} disabled={!result?.trim() || submitting}>
+              {phase === "rejected" ? "Отправить повторно" : "Приложить отчёт"}
+            </Button>
           </CardFooter>
         )}
       </MotionWorkflowPanel>

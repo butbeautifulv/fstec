@@ -165,7 +165,54 @@ npm run dev
 
 **Seed-учётка:** `admin@fstec.local` / `admin123`
 
-**Public links:** после `npm run db:seed:mock` токены `/p/{token}` выводятся в консоль.
+**Mock-данные (опционально):** `npm run db:seed:mock` — 4 ДЗО, 120 мер, демо-поручения; токены `/p/{token}` в консоли. По умолчанию `db:seed` моки **не** загружает.
+
+### Dev с корпусом DOCX (Шереметьево + routing)
+
+DOCX и корпус **не коммитятся** — см. [`.external/docx_examples/README.md`](.external/docx_examples/README.md).
+
+**Организации в corpus seed:** головная АО «Международный аэропорт Шереметьево» (подразделения ДЦОД, ДИТСБ, …) и 6 подведомственных ДЗО без подразделений (Хэндлинг, Паркинг, Безопасность, ВИП, Реклама, ТЗК Аэро). Моки Сбер/Ростех (`db:seed:mock`) — отдельно, не для demo-стенда.
+
+```bash
+# 1. Положить архив: .external/240 93 6837/…
+#    или нарезка: npm run corpus:prepare-slice
+
+# 2. Орг-структура (копируется автоматически при первом сиде):
+cp .external/seed/orgs.example.json .external/seed/orgs.json
+
+make dev-corpus
+# infra → build manifest → db:reset → corpus seed → gap report → next dev
+```
+
+После сида:
+- импорт 6837: `/panel/measures/imports/{id}` — теги `network` / `siem`
+- **воркфлоу:** commit import → `/panel/orders/new?importId={id}` → по умолчанию **МАШ (6 подразделений) + все ДЗО**
+- матрица routing для МАШ: вероятности **ДЦОД 85%** и др.; ДЗО получают все меры org-level
+- полный импорт корпуса: `npm run db:seed:corpus:full` (долго, MinIO)
+- история из Excel: `npm run corpus:history && npm run corpus:reconcile-history`
+- опционально статусы из отчётов: `SEED_XLSX_HISTORY=1 npm run db:seed:corpus`
+
+**Дашборд:** 3 статуса (в работе / выполнено / просрочено), срез по `Order.issuedAt` — пресеты 30д / 90д / год / всё и двойной слайдер на `/panel`, org/sub дашбордах и share-репортах `/report/{token}`. Таблица писем `/panel/measures/imports` фильтруется по `createdAt` в том же периоде (общие `from`/`to` в URL).
+
+**Портал отчётов** `/p/{token}/reports`: период по `submittedAt`, кнопки статуса сохраняют даты в query.
+
+**Отчёты:** `corpus-gap-report.json`, `corpus-triage.json` (P0/P1/P2 приоритеты парсера).
+
+**Smoke checklist:**
+- [ ] 6837 imported, measures committed
+- [ ] Order create: 6 МАШ subdivisions + 6 DZO selected by default
+- [ ] Routing matrix shows ДЦОД 85% for network
+- [ ] Batch creates up to 12 orders
+- [ ] Dashboard: 3 KPI, period presets + slider work on panel and report links
+- [ ] Portal reports: period + status filters preserve query
+
+Проверка gitignore перед push:
+
+```bash
+git check-ignore -v .external/docx_examples/corpus/ prisma/seed-manifest.generated.json corpus-gap-report.json
+```
+
+Профили routing из отчётов (локально, не в git): `npm run corpus:labels && npm run corpus:profiles`
 
 ### Проверка перед коммитом
 
@@ -189,8 +236,17 @@ npm run build
 | `npm run test:unit:all` | Все тесты одним vitest-процессом (быстрее, больше RAM) |
 | `npm run test:coverage` | Coverage одним процессом (порог 97% lines / 90% branches) |
 | `npm run db:migrate` | Prisma migrate |
-| `npm run db:seed` | Seed: admin + статусы + dev mock (120 мер, 120 поручений) |
+| `npm run db:seed` | Seed: admin + статусы (без mock) |
 | `npm run db:seed:mock` | Сброс mock-данных и повторный seed |
+| `npm run db:boot:corpus` | Reset БД + corpus seed (DOCX импорты) |
+| `npm run db:seed:corpus` | Sheremetyevo orgs + manifest imports + gap report |
+| `make dev-corpus` | Infra + manifest + boot corpus + dev |
+| `npm run corpus:prepare-slice` | Локальная нарезка DOCX в ignored `corpus/` |
+| `npm run corpus:build-seed-manifest` | Scan corpus → `prisma/seed-manifest.generated.json` |
+| `npm run corpus:gap-report` | Parser coverage gaps → `corpus-gap-report.json` |
+| `npm run corpus:history` | Excel history → `corpus-history.jsonl` |
+| `npm run corpus:reconcile-history` | History vs model → `corpus-history-reconcile.json` |
+| `npm run db:seed:corpus:full` | `SEED_IMPORT_ALL=1` — весь разбираемый корпус |
 | `npm run db:studio` | Prisma Studio |
 | `npm run generate:favicons` | Пересборка favicon из `app/icon.svg` |
 

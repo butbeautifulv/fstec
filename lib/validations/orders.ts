@@ -32,14 +32,20 @@ export type OrderItemUpdateInput = z.infer<typeof orderItemUpdateSchema>
 export const batchOrderTargetSchema = z.object({
   organizationId: z.number().int().positive(),
   subdivisionId: z.number().int().positive().nullable().optional(),
+  measureIds: z.array(z.number().int().positive()).min(1).optional(),
 })
 
 export const batchCreateOrdersSchema = z.object({
   title: z.string().min(1).max(500),
   defaultDueAt: z.coerce.date(),
-  measureIds: z.array(z.number().int().positive()).min(1),
+  measureIds: z.array(z.number().int().positive()).min(1).optional(),
   sourceImportId: z.number().int().positive().optional().nullable(),
   targets: z.array(batchOrderTargetSchema).min(1),
-})
+}).refine(
+  (data) =>
+    data.measureIds != null ||
+    data.targets.every((t) => t.measureIds != null && t.measureIds.length > 0),
+  { message: "measureIds required globally or per target" }
+)
 
 export type BatchCreateOrdersInput = z.infer<typeof batchCreateOrdersSchema>

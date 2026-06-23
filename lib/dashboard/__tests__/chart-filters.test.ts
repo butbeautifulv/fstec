@@ -7,16 +7,14 @@ import {
   hasChartLinkedFilters,
   isBreakdownFilterActive,
   isCompletionSegmentActive,
-  isOverdueLegendActive,
+  isDashboardStatusFilterActive,
   isOverdueSegmentHighlighted,
   isStatusBreakdownActive,
   isStatusFilterActive,
   isStatusSegmentHighlighted,
-  NON_OVERDUE_STATUSES,
   overdueInitialFilters,
   toggleBreakdownFilter,
   toggleCompletionSegmentFilter,
-  toggleOverdueLegendFilter,
   toggleOverdueSegmentFilter,
   toggleStatusBreakdownFilter,
   toggleStatusFilter,
@@ -32,7 +30,7 @@ function makeItem(overrides: Partial<ScopedDashboardItem> = {}): ScopedDashboard
     orderId: 1,
     dueAt: new Date("2099-01-01T00:00:00.000Z"),
     subdivisionId: null,
-    status: { id: 1, name: WORKFLOW_STATUS.NOT_STARTED, isTerminal: false },
+    status: { id: 1, name: WORKFLOW_STATUS.IN_PROGRESS, isTerminal: false },
     measure: { id: 1, name: "M", code: null, description: null },
     subdivision: null,
     order: {
@@ -81,13 +79,49 @@ describe("overdueInitialFilters", () => {
   })
 })
 
-describe("NON_OVERDUE_STATUSES", () => {
-  it("lists non-overdue workflow statuses", () => {
-    expect(NON_OVERDUE_STATUSES).toEqual([
-      WORKFLOW_STATUS.NOT_STARTED,
-      WORKFLOW_STATUS.IN_PROGRESS,
-      WORKFLOW_STATUS.COMPLETED,
+describe("toggleOverdueSegmentFilter", () => {
+  it("sets breakdown and status for overdue segment", () => {
+    const next = toggleOverdueSegmentFilter([], "global", "Org A", "overdue")
+    expect(next).toEqual([
+      { id: "organization", value: ["Org A"] },
+      { id: "status", value: [OVERDUE_LABEL] },
     ])
+  })
+
+  it("sets in-progress status for inProgress segment", () => {
+    const next = toggleOverdueSegmentFilter([], "organization", "IT", "inProgress")
+    expect(next).toEqual([
+      { id: "subdivisionName", value: ["IT"] },
+      { id: "status", value: [WORKFLOW_STATUS.IN_PROGRESS] },
+    ])
+  })
+
+  it("sets completed status for completed segment", () => {
+    const next = toggleOverdueSegmentFilter([], "organization", "IT", "completed")
+    expect(next).toEqual([
+      { id: "subdivisionName", value: ["IT"] },
+      { id: "status", value: [WORKFLOW_STATUS.COMPLETED] },
+    ])
+  })
+
+  it("clears filters when toggling same segment again", () => {
+    const filters: ColumnFiltersState = [
+      { id: "organization", value: ["Org A"] },
+      { id: "status", value: [OVERDUE_LABEL] },
+    ]
+    expect(toggleOverdueSegmentFilter(filters, "global", "Org A", "overdue")).toEqual(
+      []
+    )
+  })
+
+  it("clears in-progress segment when toggling same combination again", () => {
+    const filters: ColumnFiltersState = [
+      { id: "subdivisionName", value: ["IT"] },
+      { id: "status", value: [WORKFLOW_STATUS.IN_PROGRESS] },
+    ]
+    expect(
+      toggleOverdueSegmentFilter(filters, "organization", "IT", "inProgress")
+    ).toEqual([])
   })
 })
 
@@ -141,77 +175,6 @@ describe("toggleStatusFilterPreserveBreakdown", () => {
     expect(toggleStatusFilterPreserveBreakdown(filters, WORKFLOW_STATUS.COMPLETED)).toEqual([
       { id: "organization", value: ["Org"] },
     ])
-  })
-})
-
-describe("toggleOverdueSegmentFilter", () => {
-  it("sets breakdown and status for overdue segment", () => {
-    const next = toggleOverdueSegmentFilter([], "global", "Org A", "overdue")
-    expect(next).toEqual([
-      { id: "organization", value: ["Org A"] },
-      { id: "status", value: [OVERDUE_LABEL] },
-    ])
-  })
-
-  it("sets non-overdue statuses for nonOverdue segment", () => {
-    const next = toggleOverdueSegmentFilter([], "organization", "IT", "nonOverdue")
-    expect(next).toEqual([
-      { id: "subdivisionName", value: ["IT"] },
-      { id: "status", value: [...NON_OVERDUE_STATUSES] },
-    ])
-  })
-
-  it("clears filters when toggling same segment again", () => {
-    const filters: ColumnFiltersState = [
-      { id: "organization", value: ["Org A"] },
-      { id: "status", value: [OVERDUE_LABEL] },
-    ]
-    expect(toggleOverdueSegmentFilter(filters, "global", "Org A", "overdue")).toEqual(
-      []
-    )
-  })
-
-  it("clears non-overdue segment when toggling same combination again", () => {
-    const filters: ColumnFiltersState = [
-      { id: "subdivisionName", value: ["IT"] },
-      { id: "status", value: [...NON_OVERDUE_STATUSES] },
-    ]
-    expect(
-      toggleOverdueSegmentFilter(filters, "organization", "IT", "nonOverdue")
-    ).toEqual([])
-  })
-})
-
-describe("toggleOverdueLegendFilter", () => {
-  it("sets overdue legend filter", () => {
-    const next = toggleOverdueLegendFilter([], "overdue")
-    expect(next).toEqual([{ id: "status", value: [OVERDUE_LABEL] }])
-  })
-
-  it("toggleOverdueLegendFilter clears when same legend is active", () => {
-    const filters: ColumnFiltersState = [{ id: "status", value: [OVERDUE_LABEL] }]
-    expect(toggleOverdueLegendFilter(filters, "overdue")).toEqual([])
-  })
-
-  it("toggleOverdueLegendFilter replaces status when breakdown filters exist", () => {
-    const filters: ColumnFiltersState = [
-      { id: "organization", value: ["Org A"] },
-      { id: "status", value: [OVERDUE_LABEL] },
-    ]
-    const next = toggleOverdueLegendFilter(filters, "nonOverdue")
-    expect(next).toEqual([{ id: "status", value: [...NON_OVERDUE_STATUSES] }])
-  })
-
-  it("sets non-overdue legend filter", () => {
-    const next = toggleOverdueLegendFilter([], "nonOverdue")
-    expect(next).toEqual([{ id: "status", value: [...NON_OVERDUE_STATUSES] }])
-  })
-
-  it("clears non-overdue legend when active", () => {
-    const filters: ColumnFiltersState = [
-      { id: "status", value: [...NON_OVERDUE_STATUSES] },
-    ]
-    expect(toggleOverdueLegendFilter(filters, "nonOverdue")).toEqual([])
   })
 })
 
@@ -273,11 +236,7 @@ describe("toggleCompletionSegmentFilter", () => {
 
   it("sets active segment with multiple statuses", () => {
     const next = toggleCompletionSegmentFilter([], "global", "Org", "active")
-    expect(next[1]?.value).toEqual([
-      WORKFLOW_STATUS.NOT_STARTED,
-      WORKFLOW_STATUS.IN_PROGRESS,
-      OVERDUE_LABEL,
-    ])
+    expect(next[1]?.value).toEqual([WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL])
   })
 
   it("clears completed segment when toggling same combination again", () => {
@@ -291,11 +250,7 @@ describe("toggleCompletionSegmentFilter", () => {
   })
 
   it("clears active segment when toggling same combination again", () => {
-    const activeStatuses = [
-      WORKFLOW_STATUS.NOT_STARTED,
-      WORKFLOW_STATUS.IN_PROGRESS,
-      OVERDUE_LABEL,
-    ]
+    const activeStatuses = [WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL]
     const filters: ColumnFiltersState = [
       { id: "organization", value: ["Org"] },
       { id: "status", value: activeStatuses },
@@ -347,13 +302,6 @@ describe("filter active helpers", () => {
     expect(isOverdueSegmentHighlighted([], "global", "Org A", "overdue")).toBe(false)
   })
 
-  it("isOverdueLegendActive", () => {
-    expect(isOverdueLegendActive([{ id: "status", value: [OVERDUE_LABEL] }], "overdue")).toBe(
-      true
-    )
-    expect(isOverdueLegendActive(filters, "overdue")).toBe(false)
-  })
-
   it("isStatusBreakdownActive", () => {
     expect(
       isStatusBreakdownActive(filters, "global", "Org A", OVERDUE_LABEL)
@@ -393,11 +341,7 @@ describe("filter active helpers", () => {
       { id: "organization", value: ["Org"] },
       {
         id: "status",
-        value: [
-          WORKFLOW_STATUS.NOT_STARTED,
-          WORKFLOW_STATUS.IN_PROGRESS,
-          OVERDUE_LABEL,
-        ],
+        value: [WORKFLOW_STATUS.IN_PROGRESS, OVERDUE_LABEL],
       },
     ]
     expect(isCompletionSegmentActive(activeFilters, "global", "Org", "active")).toBe(
@@ -417,5 +361,20 @@ describe("filter active helpers", () => {
   it("hasChartLinkedFilters", () => {
     expect(hasChartLinkedFilters(filters)).toBe(true)
     expect(hasChartLinkedFilters([])).toBe(false)
+  })
+
+  it("isDashboardStatusFilterActive matches in progress filter", () => {
+    const inProgressFilters: ColumnFiltersState = [
+      {
+        id: "status",
+        value: [WORKFLOW_STATUS.IN_PROGRESS],
+      },
+    ]
+    expect(
+      isDashboardStatusFilterActive(inProgressFilters, WORKFLOW_STATUS.IN_PROGRESS)
+    ).toBe(true)
+    expect(
+      isDashboardStatusFilterActive(inProgressFilters, WORKFLOW_STATUS.COMPLETED)
+    ).toBe(false)
   })
 })

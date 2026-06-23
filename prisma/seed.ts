@@ -5,37 +5,11 @@ import { seedMockData } from "./mock-data.js"
 const prisma = new PrismaClient()
 
 const DEFAULT_STATUSES = [
-  { name: "К исполнению", sortOrder: 0, isTerminal: false },
-  { name: "В работе", sortOrder: 1, isTerminal: false },
-  { name: "Выполнено", sortOrder: 2, isTerminal: true },
+  { name: "В работе", sortOrder: 0, isTerminal: false },
+  { name: "Выполнено", sortOrder: 1, isTerminal: true },
 ]
 
-const LEGACY_NOT_STARTED_STATUS = "Не начато"
 const LEGACY_OVERDUE_STATUS = "Просрочено"
-
-async function migrateLegacyNotStartedStatus() {
-  const legacy = await prisma.status.findUnique({
-    where: { name: LEGACY_NOT_STARTED_STATUS },
-  })
-  if (!legacy) return
-
-  const target = await prisma.status.findUnique({
-    where: { name: "К исполнению" },
-  })
-
-  if (target && target.id !== legacy.id) {
-    await prisma.orderItem.updateMany({
-      where: { statusId: legacy.id },
-      data: { statusId: target.id },
-    })
-    await prisma.status.delete({ where: { id: legacy.id } })
-  } else {
-    await prisma.status.update({
-      where: { id: legacy.id },
-      data: { name: "К исполнению" },
-    })
-  }
-}
 
 async function migrateLegacyOverdueStatus() {
   const overdueStatus = await prisma.status.findUnique({
@@ -56,8 +30,30 @@ async function migrateLegacyOverdueStatus() {
   await prisma.status.delete({ where: { id: overdueStatus.id } })
 }
 
+async function migrateRemovedNotStartedStatus() {
+  const inProgress = await prisma.status.findUnique({
+    where: { name: "В работе" },
+  })
+  if (!inProgress) return
+
+  const removed = await prisma.status.findMany({
+    where: { name: { in: ["К исполнению", "Не начато"] } },
+    select: { id: true },
+  })
+  if (removed.length === 0) return
+
+  await prisma.orderItem.updateMany({
+    where: { statusId: { in: removed.map((s) => s.id) } },
+    data: { statusId: inProgress.id },
+  })
+
+  await prisma.status.deleteMany({
+    where: { id: { in: removed.map((s) => s.id) } },
+  })
+}
+
 async function main() {
-  await migrateLegacyNotStartedStatus()
+  await migrateRemovedNotStartedStatus()
 
   for (const status of DEFAULT_STATUSES) {
     await prisma.status.upsert({
@@ -92,7 +88,7 @@ async function main() {
 
   console.log("Seed complete: statuses + admin user", email)
 
-  if (process.env.SEED_MOCK !== "false") {
+  if (process.env.SEED_MOCK === "force" || process.env.SEED_MOCK === "true") {
     await seedMockData(prisma, admin.id, {
       force: process.env.SEED_MOCK === "force",
     })

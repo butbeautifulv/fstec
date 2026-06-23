@@ -9,14 +9,10 @@ import { ChartsLazyBoundary } from "@/components/dashboard/charts-lazy-boundary"
 import { ChartEmptyState } from "@/components/dashboard/dashboard-chart-shared"
 import { StatusPieChartSection } from "@/components/dashboard/status-pie-chart-section"
 import type {
-  BreakdownRow,
   StatusBreakdownRow,
   StatusDistribution,
 } from "@/lib/dashboard/stats"
-import type {
-  ChartFilterScope,
-  OverdueChartSegment,
-} from "@/lib/dashboard/chart-filters"
+import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
 import { cn } from "@/lib/utils"
 
 const OverdueBreakdownChartSection = dynamic(
@@ -38,41 +34,33 @@ const CompletionBreakdownChartSection = dynamic(
 export function ScopedDashboardCharts({
   scope,
   statusDistribution,
-  overdueBreakdown,
   statusBreakdown,
   overdueTitle,
   completionTitle,
   columnFilters = [],
+  visibleChartStatuses,
   onStatusClick,
   onOverdueBarClick,
-  onOverdueSegmentClick,
-  onOverdueLegendClick,
   onStatusBreakdownClick,
-  onCompletionLegendClick,
 }: {
   scope: ChartFilterScope
   statusDistribution: StatusDistribution[]
-  overdueBreakdown: BreakdownRow[]
   statusBreakdown: StatusBreakdownRow[]
   overdueTitle: string
   completionTitle: string
   columnFilters?: ColumnFiltersState
+  visibleChartStatuses: ReadonlySet<string>
   onStatusClick?: (status: string) => void
   onOverdueBarClick?: (label: string) => void
-  onOverdueSegmentClick?: (label: string, segment: OverdueChartSegment) => void
-  onOverdueLegendClick?: (segment: OverdueChartSegment) => void
   onStatusBreakdownClick?: (label: string, status: string) => void
-  onCompletionLegendClick?: (status: string) => void
 }) {
   const barChartProps = {
     scope,
     statusDistribution,
     columnFilters,
+    visibleChartStatuses,
     onOverdueBarClick,
-    onOverdueSegmentClick,
-    onOverdueLegendClick,
     onStatusBreakdownClick,
-    onCompletionLegendClick,
   }
 
   return (
@@ -85,6 +73,7 @@ export function ScopedDashboardCharts({
           <StatusPieChartSection
             statusDistribution={statusDistribution}
             columnFilters={columnFilters}
+            visibleChartStatuses={visibleChartStatuses}
             onStatusClick={onStatusClick}
             size="expanded"
           />
@@ -96,6 +85,7 @@ export function ScopedDashboardCharts({
           <StatusPieChartSection
             statusDistribution={statusDistribution}
             columnFilters={columnFilters}
+            visibleChartStatuses={visibleChartStatuses}
             onStatusClick={onStatusClick}
           />
         )}
@@ -105,18 +95,18 @@ export function ScopedDashboardCharts({
         <DashboardChartCard
           className="h-full"
           title={overdueTitle}
-          expandable={overdueBreakdown.length > 0}
+          expandable={statusBreakdown.length > 0}
           renderExpanded={() => (
             <OverdueBreakdownChartSection
               {...barChartProps}
-              overdueBreakdown={overdueBreakdown}
+              statusBreakdown={statusBreakdown}
               size="expanded"
             />
           )}
         >
           <OverdueBreakdownChartSection
             {...barChartProps}
-            overdueBreakdown={overdueBreakdown}
+            statusBreakdown={statusBreakdown}
           />
         </DashboardChartCard>
       </ChartsLazyBoundary>

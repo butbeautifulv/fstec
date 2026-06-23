@@ -21,20 +21,56 @@ import { MotionFadeIn } from "@/components/motion"
 import type { ChartSize } from "@/components/dashboard/chart-category-viewport"
 import { cn } from "@/lib/utils"
 import { isStatusFilterActive } from "@/lib/dashboard/chart-filters"
+import {
+  filterStatusDistribution,
+  isChartStatusVisible,
+} from "@/lib/dashboard/chart-visibility"
 import type { StatusDistribution } from "@/lib/dashboard/stats"
+import { DASHBOARD_STATUS_ORDER } from "@/lib/statuses/workflow"
+
+const CHART_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+]
+
+function buildFullDistribution(
+  statusDistribution: StatusDistribution[]
+): StatusDistribution[] {
+  const countByStatus = Object.fromEntries(
+    statusDistribution.map((row) => [row.status, row.count])
+  )
+  const fillByStatus = Object.fromEntries(
+    statusDistribution.map((row) => [row.status, row.fill])
+  )
+
+  return DASHBOARD_STATUS_ORDER.map((status, index) => ({
+    status,
+    count: countByStatus[status] ?? 0,
+    fill: fillByStatus[status] ?? CHART_COLORS[index % CHART_COLORS.length] ?? "var(--chart-1)",
+  }))
+}
 
 export function StatusPieChartSection({
   statusDistribution,
   columnFilters = [],
+  visibleChartStatuses,
   onStatusClick,
   size = "card",
 }: {
   statusDistribution: StatusDistribution[]
   columnFilters?: ColumnFiltersState
+  visibleChartStatuses: ReadonlySet<string>
   onStatusClick?: (status: string) => void
   size?: ChartSize
 }) {
-  const statusChartConfig = statusDistribution.reduce<ChartConfig>((acc, row, i) => {
+  const fullDistribution = buildFullDistribution(statusDistribution)
+  const visibleDistribution = filterStatusDistribution(
+    fullDistribution,
+    visibleChartStatuses
+  )
+
+  const statusChartConfig = fullDistribution.reduce<ChartConfig>((acc, row, i) => {
     acc[row.status] = {
       label: row.status,
       color: row.fill ?? `var(--chart-${(i % 5) + 1})`,
@@ -43,14 +79,20 @@ export function StatusPieChartSection({
   }, { count: { label: "Количество" } })
 
   const statusFilterActive = hasStatusFilter(columnFilters)
-  const statusTotal = statusDistribution.reduce((s, r) => s + r.count, 0)
+  const statusTotal = visibleDistribution.reduce((s, r) => s + r.count, 0)
   const metrics = chartMetrics(size)
   const isCard = size === "card"
 
-  const statusLegendItems = statusDistribution.map((entry) => ({
+  const statusLegendItems = fullDistribution.map((entry) => ({
     key: entry.status,
-    label: formatChartLegendLabel(entry.status, entry.count, statusTotal),
+    label: formatChartLegendLabel(
+      entry.status,
+      isChartStatusVisible(visibleChartStatuses, entry.status) ? entry.count : 0,
+      statusTotal
+    ),
     color: entry.fill,
+    visible: isChartStatusVisible(visibleChartStatuses, entry.status),
+    active: isStatusFilterActive(columnFilters, entry.status),
   }))
 
   const chart = (
@@ -79,7 +121,7 @@ export function StatusPieChartSection({
           <PieChart margin={{ top: 12, right: 20, bottom: 12, left: 20 }}>
             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
             <Pie
-              data={statusDistribution}
+              data={visibleDistribution}
               dataKey="count"
               nameKey="status"
               cx="50%"
@@ -91,11 +133,11 @@ export function StatusPieChartSection({
               label={PieSliceLabel}
               labelLine={false}
               onClick={(_, index) => {
-                const entry = statusDistribution[index]
+                const entry = visibleDistribution[index]
                 if (entry && onStatusClick) onStatusClick(entry.status)
               }}
             >
-              {statusDistribution.map((entry) => {
+              {visibleDistribution.map((entry) => {
                 const active = isStatusFilterActive(columnFilters, entry.status)
                 const dimmed = statusFilterActive && !active
                 return (
@@ -125,9 +167,7 @@ export function StatusPieChartSection({
     <DashboardChartLayout
       size={size}
       chart={chart}
-      legend={
-        <DashboardChartLegend items={statusLegendItems} onItemClick={onStatusClick} />
-      }
+      legend={<DashboardChartLegend items={statusLegendItems} />}
     />
   )
 }

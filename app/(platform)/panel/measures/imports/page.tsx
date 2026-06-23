@@ -1,18 +1,22 @@
 import Link from "next/link"
 import { Suspense } from "react"
 import { MeasureImportsTable } from "@/components/platform/measure-imports-table"
+import {
+  DashboardPeriodSection,
+  DASHBOARD_PERIOD_LABELS,
+} from "@/components/dashboard/dashboard-period-section"
 import { PageHeader } from "@/components/shared/page-header"
-import { TableOnlySkeleton } from "@/components/shared/skeletons/table-only-skeleton"
-import { Button } from "@/components/ui/button"
+import { boundsFromIsoDates } from "@/lib/dashboard/period-filter-rows"
 import { listMeasureImports } from "@/lib/measure-imports"
 import { serializeMeasureImports } from "@/lib/serialize/panel"
+import { Button } from "@/components/ui/button"
 
-async function ImportsTableSection() {
+export default async function MeasureImportsPage() {
   const imports = await listMeasureImports()
-  return <MeasureImportsTable initialImports={serializeMeasureImports(imports)} />
-}
+  const lettersOnly = imports.filter((row) => row.kind === "LETTER")
+  const rows = serializeMeasureImports(lettersOnly)
+  const bounds = boundsFromIsoDates(rows.map((row) => row.createdAt))
 
-export default function MeasureImportsPage() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -26,8 +30,12 @@ export default function MeasureImportsPage() {
           </Button>
         }
       />
-      <Suspense fallback={<TableOnlySkeleton />}>
-        <ImportsTableSection />
+      <DashboardPeriodSection
+        bounds={bounds}
+        label={DASHBOARD_PERIOD_LABELS.imports}
+      />
+      <Suspense fallback={null}>
+        <MeasureImportsTable initialImports={rows} />
       </Suspense>
     </div>
   )

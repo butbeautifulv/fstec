@@ -24,11 +24,11 @@ describe("statuses index", () => {
     vi.clearAllMocks()
   })
 
-  it("getDefaultStatusId resolves not-started status", async () => {
-    mockPrisma.status.findFirst.mockResolvedValue({ id: 1, name: WORKFLOW_STATUS.NOT_STARTED })
+  it("getDefaultStatusId resolves in-progress status", async () => {
+    mockPrisma.status.findFirst.mockResolvedValue({ id: 1, name: WORKFLOW_STATUS.IN_PROGRESS })
     await expect(getDefaultStatusId()).resolves.toBe(1)
     expect(mockPrisma.status.findFirst).toHaveBeenCalledWith({
-      where: { name: WORKFLOW_STATUS.NOT_STARTED },
+      where: { name: WORKFLOW_STATUS.IN_PROGRESS },
     })
   })
 
@@ -45,12 +45,12 @@ describe("statuses index", () => {
   it("throws when status not found", async () => {
     mockPrisma.status.findFirst.mockResolvedValue(null)
     await expect(getDefaultStatusId()).rejects.toThrow(
-      `Status not found: ${WORKFLOW_STATUS.NOT_STARTED}`
+      `Status not found: ${WORKFLOW_STATUS.IN_PROGRESS}`
     )
   })
 
   it("getWorkflowStatuses delegates to cache", async () => {
-    const statuses = [{ id: 1, name: WORKFLOW_STATUS.NOT_STARTED }]
+    const statuses = [{ id: 1, name: WORKFLOW_STATUS.IN_PROGRESS }]
     getCachedWorkflowStatuses.mockResolvedValue(statuses)
     await expect(getWorkflowStatuses()).resolves.toEqual(statuses)
   })

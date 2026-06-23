@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import type { ScopedDashboardPageShellProps } from "@/components/dashboard/dashboard-page-shell"
+import type { PeriodBounds } from "@/lib/dashboard/period-range"
 import type { DashboardVariant } from "@/lib/dashboard/variant-config"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { PublicStatus } from "@/lib/public/types"
@@ -20,6 +21,7 @@ type BuildDashboardPagePropsInput = {
   itemLimit?: number
   beforeContent?: ReactNode
   breadcrumbEffect?: ReactNode
+  periodBounds?: PeriodBounds
 }
 
 export function dashboardBaseHref(
@@ -68,6 +70,7 @@ export function buildDashboardPageProps(
     itemLimit: input.itemLimit,
     beforeContent: input.beforeContent,
     breadcrumbEffect: input.breadcrumbEffect,
+    periodBounds: input.periodBounds,
   }
 
   if (input.variant === "platform") {

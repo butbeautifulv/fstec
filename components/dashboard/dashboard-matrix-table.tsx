@@ -15,7 +15,7 @@ import { createSubdivisionColumn } from "@/lib/data-table/columns/subdivision-co
 import type { ChartFilterScope } from "@/lib/dashboard/chart-filters"
 import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
 import { labels } from "@/lib/ui/branding"
-import { getDisplayStatusName } from "@/lib/statuses/workflow"
+import { getDashboardDisplayStatusName } from "@/lib/statuses/workflow"
 
 export type DashboardMatrixLinkTargets = {
   organization: (orgId: number) => string
@@ -90,7 +90,7 @@ export function DashboardMatrixTable({
         }
       ),
       createMatrixWorkflowStatusColumn(
-        (row) => getDisplayStatusName(row),
+        (row) => getDashboardDisplayStatusName(row),
         (row) => row.isOverdue
       ),
       createDueAtColumn<DashboardMatrixRow>("dueAt")
@@ -116,7 +116,7 @@ export function DashboardMatrixTable({
           row.subdivision?.name,
           row.order.title,
           row.measure.name,
-          getDisplayStatusName(row),
+          getDashboardDisplayStatusName(row),
         ]
           .filter(Boolean)
           .join(" ")

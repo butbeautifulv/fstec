@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db"
 import { getAppBaseUrl, getOperatorNotifyEmail } from "@/lib/email/config"
 import { sendEmail } from "@/lib/email/send"
 import { importFromInboxTemplate } from "@/lib/email/templates"
-import { createMeasureImportUpload, parseMeasureImport } from "@/lib/measure-imports"
+import { processInboxAttachments } from "@/lib/mail-inbox/process-attachments"
 import { isDocxFilename } from "@/lib/regulatory-docs/config"
 
 type AttachmentPart = {
@@ -108,26 +108,22 @@ export async function fetchInboxDocxImports() {
           continue
         }
 
-        for (const part of parts) {
-          const downloaded = await client.download(message.uid, part.part, { uid: true })
-          const buffer = await streamToBuffer(downloaded.content as AsyncIterable<Buffer>)
+        const processedCount = await processInboxAttachments(
+          parts,
+          async (partId) => {
+            const dl = await client.download(message.uid, partId, { uid: true })
+            return streamToBuffer(dl.content as AsyncIterable<Buffer>)
+          },
+          uploadedById
+        )
 
-          const record = await createMeasureImportUpload({
-            buffer,
-            originalName: part.filename,
-            mimeType: part.type,
-            uploadedById,
-            uploadedVia: "EMAIL",
-          })
-
-          const parsedImport = await parseMeasureImport(record.id)
-          const itemCount = parsedImport?.items.length ?? 0
-
-          const importUrl = `${getAppBaseUrl()}/panel/measures/imports/${record.id}`
+        if (processedCount > 0) {
+          const lastPart = parts[parts.length - 1]!
+          const importUrl = `${getAppBaseUrl()}/panel/measures/imports`
           const template = importFromInboxTemplate({
-            documentNumber: parsedImport?.documentNumber ?? null,
-            originalName: part.filename,
-            measureCount: itemCount,
+            documentNumber: null,
+            originalName: lastPart.filename,
+            measureCount: processedCount,
             importUrl,
           })
 
@@ -138,11 +134,11 @@ export async function fetchInboxDocxImports() {
             html: template.html,
             template: "import-from-inbox",
             relatedType: "measure_import",
-            relatedId: record.id,
-            dedupeKey: `import-inbox:${record.id}`,
+            relatedId: message.uid,
+            dedupeKey: `import-inbox:${message.uid}`,
           })
 
-          processed += 1
+          processed += processedCount
         }
 
         await client.messageFlagsAdd({ uid: message.uid }, ["\\Seen"])

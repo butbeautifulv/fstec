@@ -234,6 +234,7 @@ export function serializeMeasureImports(
     originalName: string
     title: string | null
     reportDueAt: Date | null
+    needsAppendix: boolean
     createdAt: Date
     _count: { items: number; measures: number; orders: number; appendices: number }
   }[]
@@ -247,6 +248,7 @@ export function serializeMeasureImports(
     originalName: item.originalName,
     title: item.title,
     reportDueAt: toIso(item.reportDueAt),
+    needsAppendix: item.needsAppendix,
     createdAt: toIso(item.createdAt)!,
     _count: item._count,
   }))

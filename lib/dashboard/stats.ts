@@ -1,8 +1,8 @@
 import {
-  getDisplayStatusName,
+  getDashboardDisplayStatusName,
   isOrderItemOverdue,
   OVERDUE_LABEL,
-  STATUS_DISPLAY_ORDER,
+  DASHBOARD_STATUS_ORDER,
   WORKFLOW_STATUS,
 } from "@/lib/statuses/workflow"
 import type { ScopedDashboardItem } from "@/lib/dashboard/fetch-scoped-items"
@@ -15,7 +15,12 @@ export type BreakdownRow = { label: string; count: number; total: number }
 export type StatusBreakdownRow = {
   label: string
 } & {
-  [K in (typeof STATUS_DISPLAY_ORDER)[number]]: number
+  [K in (typeof DASHBOARD_STATUS_ORDER)[number]]: number
+}
+
+export type DashboardDateRange = {
+  issuedFrom?: Date
+  issuedTo?: Date
 }
 
 /**
@@ -24,9 +29,13 @@ export type StatusBreakdownRow = {
  * scope.type drives breakdown columns (org → subdivision → order).
  */
 export type DashboardScope =
-  | { type: "global" }
-  | { type: "organization"; organizationId: number }
-  | { type: "subdivision"; organizationId: number; subdivisionId: number }
+  | ({ type: "global" } & DashboardDateRange)
+  | ({ type: "organization"; organizationId: number } & DashboardDateRange)
+  | ({
+      type: "subdivision"
+      organizationId: number
+      subdivisionId: number
+    } & DashboardDateRange)
 
 export type ScopedDashboardStats = {
   scope: DashboardScope["type"]
@@ -62,11 +71,11 @@ export function buildScopedStatsFromItems(
 function buildStatusDistribution(items: ItemRow[], now: Date): StatusDistribution[] {
   const statusCounts = new Map<string, number>()
   for (const item of items) {
-    const label = getDisplayStatusName(item, now)
+    const label = getDashboardDisplayStatusName(item, now)
     statusCounts.set(label, (statusCounts.get(label) ?? 0) + 1)
   }
 
-  const ordered = STATUS_DISPLAY_ORDER.filter((status) => statusCounts.has(status)).map(
+  const ordered = DASHBOARD_STATUS_ORDER.filter((status) => statusCounts.has(status)).map(
     (status, i) => ({
       status,
       count: statusCounts.get(status)!,
@@ -74,7 +83,7 @@ function buildStatusDistribution(items: ItemRow[], now: Date): StatusDistributio
     })
   )
 
-  const known = new Set<string>(STATUS_DISPLAY_ORDER)
+  const known = new Set<string>(DASHBOARD_STATUS_ORDER)
   const extras = [...statusCounts.entries()]
     .filter(([status]) => !known.has(status))
     .map(([status, count], i) => ({
@@ -88,7 +97,6 @@ function buildStatusDistribution(items: ItemRow[], now: Date): StatusDistributio
 
 function emptyStatusBreakdown(): Omit<StatusBreakdownRow, "label"> {
   return {
-    [WORKFLOW_STATUS.NOT_STARTED]: 0,
     [WORKFLOW_STATUS.IN_PROGRESS]: 0,
     [WORKFLOW_STATUS.COMPLETED]: 0,
     [OVERDUE_LABEL]: 0,
@@ -100,7 +108,7 @@ function incrementStatusBreakdown(
   item: ItemRow,
   now: Date
 ) {
-  const status = getDisplayStatusName(item, now) as keyof typeof row
+  const status = getDashboardDisplayStatusName(item, now) as keyof typeof row
   if (status in row) row[status] += 1
 }
 
@@ -219,10 +227,7 @@ export async function getDashboardStats() {
     completionByOrganization: stats.statusBreakdown.map((r) => ({
       org: r.label,
       completed: r[WORKFLOW_STATUS.COMPLETED],
-      active:
-        r[WORKFLOW_STATUS.NOT_STARTED] +
-        r[WORKFLOW_STATUS.IN_PROGRESS] +
-        r[OVERDUE_LABEL],
+      active: r[WORKFLOW_STATUS.IN_PROGRESS] + r[OVERDUE_LABEL],
     })),
   }
 }

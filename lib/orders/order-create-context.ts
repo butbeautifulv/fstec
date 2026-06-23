@@ -2,7 +2,7 @@ import { notFound } from "next/navigation"
 import { getCommittedMeasureIds } from "@/lib/measure-imports/commit"
 import { getMeasureImport } from "@/lib/measure-imports"
 import { defaultOrderTitle } from "@/lib/measure-imports/extract-metadata"
-import { listSupervisedOrganizations } from "@/lib/organizations"
+import { listBatchOrganizations } from "@/lib/organizations"
 import { prisma } from "@/lib/db"
 import { format } from "date-fns"
 
@@ -27,6 +27,7 @@ export type OrderCreateContext = {
     name: string
     subdivisions: Array<{ id: number; name: string }>
   }>
+  headOrganizationId: number | null
 }
 
 function defaultDueFromDate(date: Date | null | undefined): string {
@@ -38,7 +39,7 @@ function defaultDueFromDate(date: Date | null | undefined): string {
 export async function loadOrderCreateContext(input: {
   importId?: number
 }): Promise<OrderCreateContext> {
-  const organizations = await listSupervisedOrganizations()
+  const { headOrganizationId, organizations } = await listBatchOrganizations()
   const initialOrganizations = organizations.map((org) => ({
     id: org.id,
     name: org.name,
@@ -56,6 +57,7 @@ export async function loadOrderCreateContext(input: {
       measureIds: [],
       measures: [],
       organizations: initialOrganizations,
+      headOrganizationId,
     }
   }
 
@@ -85,5 +87,6 @@ export async function loadOrderCreateContext(input: {
       createdAt: measure.createdAt.toISOString(),
     })),
     organizations: initialOrganizations,
+    headOrganizationId,
   }
 }

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { buildDashboardPageProps } from "@/lib/dashboard/build-dashboard-page-props"
+import { getOrderIssuedAtBounds } from "@/lib/dashboard/period-bounds"
+import { resolveDashboardSearch } from "@/lib/dashboard/resolve-dashboard-search"
 import { getOrganization, getSubdivision } from "@/lib/organizations"
 import { labels } from "@/lib/ui/branding"
 import { validateReportToken } from "@/lib/report-links/validate-token"
@@ -12,16 +14,29 @@ export default async function ReportPage({
   searchParams,
 }: {
   params: Params["params"]
-  searchParams: Promise<{ overdue?: string }>
+  searchParams: Promise<{
+    overdue?: string
+    from?: string
+    to?: string
+    period?: string
+  }>
 }) {
   const { token } = await params
-  const { overdue: overdueParam } = await searchParams
-  const overdueOnly = overdueParam === "1"
+  const query = await searchParams
 
-  const ctx = await validateReportToken(token)
+  const [ctx, bounds] = await Promise.all([
+    validateReportToken(token),
+    getOrderIssuedAtBounds(),
+  ])
   if (!ctx) notFound()
 
   const { scope } = ctx
+  const { overdueOnly, scope: scopedWithPeriod } = resolveDashboardSearch(
+    scope,
+    query,
+    bounds
+  )
+
   let title = `Сводка по ${labels.orgPluralGenitive}`
   let description = "Статусы исполнения мер по поручениям"
   let emptyMessage = <>Нет данных для отображения.</>
@@ -49,12 +64,13 @@ export default async function ReportPage({
     <ScopedDashboardPageShell
       {...buildDashboardPageProps({
         variant: "report",
-        scope,
+        scope: scopedWithPeriod,
         linkScope: scope,
         token,
         title,
         description,
         overdueOnly,
+        periodBounds: bounds,
         emptyMessage,
       })}
     />

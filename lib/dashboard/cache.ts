@@ -1,7 +1,7 @@
 import "server-only"
 
 import { cache } from "react"
-import { getCachedJson, invalidateKeys } from "@/lib/cache/json-cache"
+import { getCachedJson, invalidateKeysByPrefix } from "@/lib/cache/json-cache"
 import { getDashboardCacheTtl } from "@/lib/cache/redis"
 import { getScopedDashboard } from "@/lib/dashboard/get-scoped-dashboard"
 import { dashboardCacheKey } from "@/lib/dashboard/scope-key"
@@ -42,8 +42,6 @@ export const getCachedScopedDashboard = cache(
     loadCachedScopedDashboard(scope, options)
 )
 
-export async function invalidateDashboardCache(scope?: DashboardScope): Promise<void> {
-  const keys = ["dashboard:global"]
-  if (scope) keys.push(dashboardCacheKey(scope))
-  await invalidateKeys(...keys)
+export async function invalidateDashboardCache(_scope?: DashboardScope): Promise<void> {
+  await invalidateKeysByPrefix("dashboard:")
 }

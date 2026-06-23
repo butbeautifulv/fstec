@@ -1,3 +1,10 @@
+import { expandCompositeBlocks, shouldExpandComposites, type NumberedBlock } from "@/lib/measure-imports/parse-composite"
+import { parseUnnumberedMeasures } from "@/lib/measure-imports/parse-unnumbered"
+import {
+  extractDocxTablesAsync,
+  tableRowsToParagraphs,
+} from "@/lib/measure-imports/parse-docx-tables"
+
 export async function extractDocxParagraphsAsync(buffer: Buffer): Promise<string[]> {
   const JSZip = (await import("jszip")).default
   const zip = await JSZip.loadAsync(buffer)
@@ -10,6 +17,14 @@ export async function extractDocxParagraphsAsync(buffer: Buffer): Promise<string
   for (const match of docXml.matchAll(paragraphRegex)) {
     const line = extractParagraphText(match[0])
     if (line) paragraphs.push(line)
+  }
+
+  if (paragraphs.filter((p) => /^\d/.test(p.trim())).length === 0) {
+    const tables = await extractDocxTablesAsync(buffer)
+    const fromTables = tableRowsToParagraphs(tables)
+    if (fromTables.length > 0) {
+      paragraphs.push(...fromTables)
+    }
   }
 
   return paragraphs
@@ -38,24 +53,62 @@ export type ParsedMeasureItem = {
   sortOrder: number
 }
 
-type NumberedBlock = {
-  code: string
-  paragraphs: string[]
-}
-
 const NUMBERED_ITEM_RE = /^(\d+(?:\.\d+)+|\d+)\.\s*(.+)$/
 const NUMBERED_BLOCK_START_RE = /^(\d+(?:\.\d+)*)\.\s*(.*)$/
 const BDU_CODE_RE = /BDU:\d{4}-\d{5}/
+const SHA256_LINE_RE = /^[a-f0-9]{64}$/i
 const LETTER_FOOTER_START_RE = /^По результатам выполнения/i
 const LETTER_APPENDIX_LINE_RE = /^Приложение\s*:/i
 const LETTER_EXECUTOR_LINE_RE = /^Исп\.\s*и\s*отп\./i
 const LETTER_PHONE_LINE_RE = /^тел\.\s*\(/i
 const LETTER_SIGNATORY_LINE_RE = /^[А-ЯA-Z]\.[А-ЯA-Z][а-яa-zё-]+$/
+const LETTER_FOOTER_SUBORDINATE_RE = /^В случае направления данных рекомендаций/i
+const LETTER_FOOTER_EDITABLE_RE = /редактируемом формате/i
+const LETTER_FOOTER_REPORT_RE = /просим проинформировать ФСТЭК/i
+const LETTER_FOOTER_INLINE_RE = /\n\nПо результатам выполнения[\s\S]*$/i
+
+export type AppendixKind = "IOC" | "RECOMMENDATIONS"
+
+function countSha256(paragraphs: string[]): number {
+  return paragraphs.filter((p) => SHA256_LINE_RE.test(p.trim())).length
+}
+
+function countNumbered(paragraphs: string[]): number {
+  return paragraphs.filter((p) => NUMBERED_ITEM_RE.test(p)).length
+}
+
+export function classifyAppendixKind(
+  paragraphs: string[],
+  originalName: string
+): AppendixKind | null {
+  const nameLower = originalName.toLowerCase()
+  const numberedCount = countNumbered(paragraphs)
+  const shaCount = countSha256(paragraphs)
+  const shaRatio = paragraphs.length > 0 ? shaCount / paragraphs.length : 0
+
+  const hasNestedNumbering = paragraphs.some((p) => /^\d+\.\d+\./.test(p.trim()))
+  if (hasNestedNumbering && numberedCount >= 3 && !nameLower.includes("приложение")) {
+    return null
+  }
+
+  if (numberedCount >= 3 && shaRatio < 0.3) return "RECOMMENDATIONS"
+  if (nameLower.includes("приложение") && numberedCount >= 1 && shaRatio < 0.5) {
+    return "RECOMMENDATIONS"
+  }
+  if (shaCount >= 3 && numberedCount === 0) return "IOC"
+  if (nameLower.includes("приложение") && shaRatio >= 0.1) return "IOC"
+  if (nameLower.includes("приложение")) return "IOC"
+  if (numberedCount === 0 && shaCount >= 3) return "IOC"
+  return null
+}
 
 function isLetterFooterParagraph(text: string): boolean {
   const line = text.trim()
   if (!line) return true
   if (LETTER_FOOTER_START_RE.test(line)) return true
+  if (LETTER_FOOTER_SUBORDINATE_RE.test(line)) return true
+  if (LETTER_FOOTER_EDITABLE_RE.test(line)) return true
+  if (LETTER_FOOTER_REPORT_RE.test(line)) return true
   if (LETTER_APPENDIX_LINE_RE.test(line)) return true
   if (LETTER_EXECUTOR_LINE_RE.test(line)) return true
   if (LETTER_PHONE_LINE_RE.test(line)) return true
@@ -63,38 +116,28 @@ function isLetterFooterParagraph(text: string): boolean {
   return false
 }
 
-/** Remove trailing letter footer (report instructions, appendix line, signature). */
 function trimBlockFooter(block: NumberedBlock): NumberedBlock {
   if (block.paragraphs.length <= 1) return block
 
-  let cutIndex = block.paragraphs.length
-  for (let i = block.paragraphs.length - 1; i >= 1; i--) {
+  for (let i = 1; i < block.paragraphs.length; i++) {
     if (isLetterFooterParagraph(block.paragraphs[i]!)) {
-      cutIndex = i
-    } else {
-      break
+      return { ...block, paragraphs: block.paragraphs.slice(0, i) }
     }
   }
 
-  if (cutIndex < block.paragraphs.length) {
-    return { ...block, paragraphs: block.paragraphs.slice(0, cutIndex) }
-  }
   return block
 }
 
+function stripInlineLetterFooter(description: string): string {
+  return description.replace(LETTER_FOOTER_INLINE_RE, "").trimEnd()
+}
+
+/** @deprecated Use classifyAppendixKind */
 export function isAppendixDocument(
   paragraphs: string[],
   originalName: string
 ): boolean {
-  const nameLower = originalName.toLowerCase()
-  if (nameLower.includes("приложение")) return true
-
-  const numbered = paragraphs.filter((p) => NUMBERED_ITEM_RE.test(p))
-  if (numbered.length === 0) {
-    const shaCount = paragraphs.filter((p) => /^[a-f0-9]{64}$/i.test(p)).length
-    return shaCount >= 3
-  }
-  return false
+  return classifyAppendixKind(paragraphs, originalName) != null
 }
 
 function groupNumberedBlocks(paragraphs: string[]): NumberedBlock[] {
@@ -142,13 +185,21 @@ function splitBlockContent(block: NumberedBlock): {
   const bduMatch = fullText.match(BDU_CODE_RE)
   const code = bduMatch?.[0] ?? block.code
 
-  return { code, description: fullText }
+  return { code, description: stripInlineLetterFooter(fullText) }
 }
 
 export function parseMeasureItemsFromParagraphs(
   paragraphs: string[]
 ): ParsedMeasureItem[] {
-  const blocks = filterMeasureBlocks(groupNumberedBlocks(paragraphs)).map(trimBlockFooter)
+  const grouped = groupNumberedBlocks(paragraphs)
+  const expanded = shouldExpandComposites(grouped)
+    ? expandCompositeBlocks(grouped)
+    : grouped
+  const blocks = filterMeasureBlocks(expanded).map(trimBlockFooter)
+
+  if (blocks.length === 0) {
+    return parseUnnumberedMeasures(paragraphs)
+  }
 
   return blocks.map((block, sortOrder) => {
     const { code, description } = splitBlockContent(block)
@@ -160,5 +211,16 @@ export function detectImportKind(
   paragraphs: string[],
   originalName: string
 ): "LETTER" | "APPENDIX" {
-  return isAppendixDocument(paragraphs, originalName) ? "APPENDIX" : "LETTER"
+  return classifyAppendixKind(paragraphs, originalName) != null ? "APPENDIX" : "LETTER"
+}
+
+export function isRecommendationsAppendix(
+  paragraphs: string[],
+  originalName: string
+): boolean {
+  return classifyAppendixKind(paragraphs, originalName) === "RECOMMENDATIONS"
+}
+
+export function isIocAppendix(paragraphs: string[], originalName: string): boolean {
+  return classifyAppendixKind(paragraphs, originalName) === "IOC"
 }

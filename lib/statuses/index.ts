@@ -10,7 +10,7 @@ async function getStatusIdByName(name: string) {
 }
 
 export async function getDefaultStatusId() {
-  return getStatusIdByName(WORKFLOW_STATUS.NOT_STARTED)
+  return getStatusIdByName(WORKFLOW_STATUS.IN_PROGRESS)
 }
 
 export async function getInProgressStatusId() {

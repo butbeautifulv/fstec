@@ -57,6 +57,13 @@ describe("extractReportDueAt", () => {
   it("returns null when no due phrase", () => {
     expect(extractReportDueAt(["Срок не указан"])).toBeNull()
   })
+
+  it("parses due date from FSTEC report footer (2616)", () => {
+    const date = extractReportDueAt([
+      "По результатам выполнения указанных рекомендаций просим проинформировать ФСТЭК России по адресу электронной почты otd93@fstec.ru до 20 июня 2026 г. в форме письма с электронным вложением",
+    ])
+    expect(date?.toISOString()).toBe("2026-06-20T12:00:00.000Z")
+  })
 })
 
 describe("extractMetadata", () => {
@@ -70,6 +77,15 @@ describe("extractMetadata", () => {
     expect(meta.documentNumber).toBe("240/93/4164")
     expect(meta.title).toMatch(TITLE)
     expect(meta.reportDueAt?.getUTCFullYear()).toBe(2026)
+  })
+
+  it("sets needsAppendix when routing letter references appendix", () => {
+    const meta = extractMetadata(
+      ["Приложение: Рекомендации на 6 л."],
+      "240 93 1409.docx",
+      0
+    )
+    expect(meta.needsAppendix).toBe(true)
   })
 })
 

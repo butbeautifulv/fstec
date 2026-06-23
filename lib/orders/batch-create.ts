@@ -13,13 +13,16 @@ export async function batchCreateOrders(
 ) {
   const defaultStatusId = await getDefaultStatusId()
   const dueAt = input.defaultDueAt
+  const globalMeasureIds = input.measureIds ?? []
+
   const targets = await validateBatchTargets(
     prisma,
     input.targets.map((target) => ({
       organizationId: target.organizationId,
       subdivisionId: target.subdivisionId ?? null,
+      measureIds: target.measureIds ?? globalMeasureIds,
     })),
-    input.measureIds
+    globalMeasureIds
   )
 
   if (input.sourceImportId != null) {
@@ -45,7 +48,7 @@ export async function batchCreateOrders(
           defaultDueAt: dueAt,
           items: {
             create: buildOrderItemsCreate({
-              measureIds: input.measureIds,
+              measureIds: target.measureIds,
               dueAt,
               statusId: defaultStatusId,
               subdivisionId: target.subdivisionId ?? null,

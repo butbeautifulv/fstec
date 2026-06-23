@@ -1,14 +1,35 @@
 import { prismaRead } from "@/lib/db"
 import type { DashboardScope } from "@/lib/dashboard/stats"
+import type { Prisma } from "@prisma/client"
+
+function buildOrderWhere(scope: DashboardScope): Prisma.OrderWhereInput {
+  const orderWhere: Prisma.OrderWhereInput = {}
+
+  if (scope.type === "organization") {
+    orderWhere.organizationId = scope.organizationId
+  }
+
+  if (scope.issuedFrom || scope.issuedTo) {
+    orderWhere.issuedAt = {
+      ...(scope.issuedFrom ? { gte: scope.issuedFrom } : {}),
+      ...(scope.issuedTo ? { lte: scope.issuedTo } : {}),
+    }
+  }
+
+  return orderWhere
+}
 
 export async function fetchScopedItems(scope: DashboardScope) {
+  const orderWhere = buildOrderWhere(scope)
+
   return prismaRead.orderItem.findMany({
     where: {
-      ...(scope.type === "organization" && {
-        order: { organizationId: scope.organizationId },
-      }),
+      ...(Object.keys(orderWhere).length > 0 ? { order: orderWhere } : {}),
       ...(scope.type === "subdivision" && {
-        order: { organizationId: scope.organizationId },
+        order: {
+          ...orderWhere,
+          organizationId: scope.organizationId,
+        },
         subdivisionId: scope.subdivisionId,
       }),
     },

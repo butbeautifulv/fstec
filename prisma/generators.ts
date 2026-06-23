@@ -50,7 +50,7 @@ const SUBDIVISION_TEMPLATES = [
   "Управление закупок",
 ] as const
 
-export type StatusPick = "completed" | "inProgress" | "overdue" | "notStarted"
+export type StatusPick = "completed" | "inProgress" | "overdue"
 
 export function generateMeasures(count = 120): GeneratedMeasure[] {
   const measures: GeneratedMeasure[] = []
@@ -110,7 +110,7 @@ export function pickStatusAndDue(itemIndex: number): {
   if (cycle === 0) return { status: "completed", dueDaysOffset: -5 }
   if (cycle === 1) return { status: "inProgress", dueDaysOffset: 20 }
   if (cycle === 2) return { status: "overdue", dueDaysOffset: -7 }
-  return { status: "notStarted", dueDaysOffset: -3 }
+  return { status: "inProgress", dueDaysOffset: 14 }
 }
 
 export function pickMeasureCount(orderIndex: number): number {

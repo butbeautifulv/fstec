@@ -106,10 +106,10 @@ export function toDashboardInteractiveProps(
 }
 
 export function dashboardShowsEmptyInteractive(
-  variant: DashboardVariant,
-  itemCount: number
+  _variant: DashboardVariant,
+  _itemCount: number
 ): boolean {
-  return variant === "public" || itemCount > 0
+  return true
 }
 
 export type { DashboardVariant }

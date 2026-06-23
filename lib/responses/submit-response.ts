@@ -1,7 +1,7 @@
 import { ResponseReviewStatus } from "@prisma/client"
 import { prisma } from "@/lib/db"
 import { linkAttachmentsToResponse } from "@/lib/attachments"
-import { isInProgress } from "@/lib/statuses/workflow"
+import { canSubmitOrderItemReport } from "@/lib/statuses/workflow"
 import type { ResponseInput } from "@/lib/validations/public"
 
 export async function submitOrderItemResponse(
@@ -14,7 +14,7 @@ export async function submitOrderItemResponse(
   })
   if (!item) throw new Error("NOT_FOUND")
 
-  if (!isInProgress(item.status.name) || item.status.isTerminal) {
+  if (!canSubmitOrderItemReport(item.status)) {
     throw new Error("INVALID_STATUS")
   }
 

@@ -7,11 +7,8 @@ import { DashboardScopedTable } from "@/components/dashboard/dashboard-scoped-ta
 import type { ScopedDashboardStats, DashboardScope } from "@/lib/dashboard/stats"
 import {
   toggleBreakdownFilter,
-  toggleOverdueLegendFilter,
-  toggleOverdueSegmentFilter,
   toggleStatusBreakdownFilter,
   toggleStatusFilter,
-  toggleStatusFilterPreserveBreakdown,
   type ChartFilterScope,
 } from "@/lib/dashboard/chart-filters"
 import type { PublicItem, PublicStatus } from "@/lib/public/types"
@@ -30,6 +27,9 @@ type ScopedDashboardViewProps = {
   showSubdivisionColumn?: boolean
   columnFilters: ColumnFiltersState
   onColumnFiltersChange: Dispatch<SetStateAction<ColumnFiltersState>>
+  visibleChartStatuses: ReadonlySet<string>
+  showCharts?: boolean
+  showMatrix?: boolean
 }
 
 export function ScopedDashboardView({
@@ -43,55 +43,49 @@ export function ScopedDashboardView({
   statuses,
   columnFilters,
   onColumnFiltersChange,
+  visibleChartStatuses,
+  showCharts = true,
+  showMatrix = true,
 }: ScopedDashboardViewProps) {
   return (
     <>
-      <ScopedDashboardCharts
-        scope={scope}
-        statusDistribution={stats.statusDistribution}
-        overdueBreakdown={stats.overdueBreakdown}
-        statusBreakdown={stats.statusBreakdown}
-        overdueTitle={stats.chartLabels.overdueTitle}
-        completionTitle={stats.chartLabels.completionTitle}
-        columnFilters={columnFilters}
-        onStatusClick={(status) =>
-          onColumnFiltersChange((prev) => toggleStatusFilter(prev, status))
-        }
-        onOverdueBarClick={(label) =>
-          onColumnFiltersChange((prev) => toggleBreakdownFilter(prev, scope, label))
-        }
-        onOverdueSegmentClick={(label, segment) =>
-          onColumnFiltersChange((prev) =>
-            toggleOverdueSegmentFilter(prev, scope, label, segment)
-          )
-        }
-        onOverdueLegendClick={(segment) =>
-          onColumnFiltersChange((prev) => toggleOverdueLegendFilter(prev, segment))
-        }
-        onStatusBreakdownClick={(label, status) =>
-          onColumnFiltersChange((prev) =>
-            toggleStatusBreakdownFilter(prev, scope, label, status)
-          )
-        }
-        onCompletionLegendClick={(status) =>
-          onColumnFiltersChange((prev) =>
-            toggleStatusFilterPreserveBreakdown(prev, status)
-          )
-        }
-      />
+      {showCharts ? (
+        <ScopedDashboardCharts
+          scope={scope}
+          statusDistribution={stats.statusDistribution}
+          statusBreakdown={stats.statusBreakdown}
+          overdueTitle={stats.chartLabels.overdueTitle}
+          completionTitle={stats.chartLabels.completionTitle}
+          columnFilters={columnFilters}
+          visibleChartStatuses={visibleChartStatuses}
+          onStatusClick={(status) =>
+            onColumnFiltersChange((prev) => toggleStatusFilter(prev, status))
+          }
+          onOverdueBarClick={(label) =>
+            onColumnFiltersChange((prev) => toggleBreakdownFilter(prev, scope, label))
+          }
+          onStatusBreakdownClick={(label, status) =>
+            onColumnFiltersChange((prev) =>
+              toggleStatusBreakdownFilter(prev, scope, label, status)
+            )
+          }
+        />
+      ) : null}
 
-      <DashboardScopedTable
-        variant={variant}
-        chartScope={scope}
-        dashboardScope={dashboardScope}
-        linkScope={linkScope}
-        token={token}
-        items={items}
-        statuses={statuses}
-        columnFilters={columnFilters}
-        onColumnFiltersChange={onColumnFiltersChange}
-        pageSize={50}
-      />
+      {showMatrix ? (
+        <DashboardScopedTable
+          variant={variant}
+          chartScope={scope}
+          dashboardScope={dashboardScope}
+          linkScope={linkScope}
+          token={token}
+          items={items}
+          statuses={statuses}
+          columnFilters={columnFilters}
+          onColumnFiltersChange={onColumnFiltersChange}
+          pageSize={50}
+        />
+      ) : null}
     </>
   )
 }

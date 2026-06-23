@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation"
 import { ScopedDashboardPageShell } from "@/components/dashboard/dashboard-page-shell"
 import { buildDashboardPageProps } from "@/lib/dashboard/build-dashboard-page-props"
+import { getOrderIssuedAtBounds } from "@/lib/dashboard/period-bounds"
+import { resolveDashboardSearch } from "@/lib/dashboard/resolve-dashboard-search"
 import { getOrganization, getSubdivision } from "@/lib/organizations"
 import {
   assertReportScopeAllowed,
@@ -14,7 +16,12 @@ export default async function ReportSubdivisionDashboardPage({
   searchParams,
 }: {
   params: Params["params"]
-  searchParams: Promise<{ overdue?: string }>
+  searchParams: Promise<{
+    overdue?: string
+    from?: string
+    to?: string
+    period?: string
+  }>
 }) {
   const { token, id, subId } = await params
   const organizationId = Number(id)
@@ -27,10 +34,13 @@ export default async function ReportSubdivisionDashboardPage({
     subdivisionId,
   }
 
-  const [ctx, org, subdivision] = await Promise.all([
+  const query = await searchParams
+
+  const [ctx, org, subdivision, bounds] = await Promise.all([
     validateReportToken(token),
     getOrganization(organizationId),
     getSubdivision(subdivisionId),
+    getOrderIssuedAtBounds(),
   ])
   if (
     !ctx ||
@@ -42,19 +52,19 @@ export default async function ReportSubdivisionDashboardPage({
     notFound()
   }
 
-  const { overdue } = await searchParams
-  const overdueOnly = overdue === "1"
+  const { overdueOnly, scope } = resolveDashboardSearch(requestedScope, query, bounds)
 
   return (
     <ScopedDashboardPageShell
       {...buildDashboardPageProps({
         variant: "report",
-        scope: requestedScope,
+        scope,
         linkScope: ctx.scope,
         token,
         title: subdivision.name,
         description: `Статусы исполнения мер · ${org.name}`,
         overdueOnly,
+        periodBounds: bounds,
         emptyMessage: <>Нет данных по этому подразделению.</>,
       })}
     />

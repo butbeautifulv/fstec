@@ -3,6 +3,11 @@ import "server-only"
 import { cache } from "react"
 import { ResponseReviewStatus } from "@prisma/client"
 import { prismaRead } from "@/lib/db"
+import {
+  boundsFromIsoDates,
+  filterRowsByPeriod,
+} from "@/lib/dashboard/period-filter-rows"
+import type { PeriodRange } from "@/lib/dashboard/period-range"
 import { isCompleted } from "@/lib/statuses/workflow"
 import { publicItemScopeWhere, validateAccessLink } from "@/lib/public/validate-token"
 
@@ -109,11 +114,18 @@ const fetchAllPublicReportRows = cache(async (token: string) => {
 })
 
 export const fetchPublicReportItems = cache(
-  async (token: string, statusFilter?: PublicReportStatusFilter) => {
+  async (
+    token: string,
+    statusFilter?: PublicReportStatusFilter,
+    period?: PeriodRange
+  ) => {
     const result = await fetchAllPublicReportRows(token)
     if (!result) return null
 
-    const rows = result.rows.filter((row) => matchesReportFilter(row, statusFilter))
+    let rows = result.rows.filter((row) => matchesReportFilter(row, statusFilter))
+    if (period) {
+      rows = filterRowsByPeriod(rows, period, "submittedAt")
+    }
 
     return {
       organization: result.ctx.organization,
@@ -122,6 +134,12 @@ export const fetchPublicReportItems = cache(
     }
   }
 )
+
+export async function getPublicReportPeriodBounds(token: string) {
+  const result = await fetchAllPublicReportRows(token)
+  if (!result) return null
+  return boundsFromIsoDates(result.rows.map((row) => row.submittedAt))
+}
 
 export const countPublicReportsNeedingRevision = cache(async (token: string) => {
   const result = await fetchAllPublicReportRows(token)

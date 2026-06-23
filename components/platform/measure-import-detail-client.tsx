@@ -25,11 +25,13 @@ type ImportItem = {
   code: string | null
   name: string
   description: string | null
+  tags: string[]
   included: boolean
   measureId: number | null
 }
 
 type ImportDetail = ImportHeaderRecord & {
+  needsAppendix?: boolean
   items: ImportItem[]
 }
 
@@ -176,6 +178,23 @@ export function MeasureImportDetailClient({
         ),
       },
       {
+        accessorKey: "tags",
+        header: "Теги",
+        meta: colMeta("Теги", {
+          faceted: false,
+          cellClassName: "w-32 min-w-32 max-w-32 align-top",
+        }),
+        cell: ({ row }) => (
+          <div className="flex flex-wrap gap-1">
+            {(row.original.tags ?? []).map((tag) => (
+              <Badge key={tag} variant="secondary" className="text-[10px] font-normal">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+        ),
+      },
+      {
         accessorKey: "description",
         header: "Мера",
         meta: colMeta("Мера", {
@@ -228,6 +247,13 @@ export function MeasureImportDetailClient({
   return (
     <div className="flex flex-col gap-6">
       <MeasureImportDetailHeader record={record} onRecordChange={handleRecordChange} />
+
+      {record.needsAppendix && items.length === 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm">
+          Письмо ссылается на приложение с мерами. Загрузите файл «Приложение …docx» и
+          привяжите его к этому импорту.
+        </div>
+      )}
 
       {items.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">

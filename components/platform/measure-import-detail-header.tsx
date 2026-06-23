@@ -20,6 +20,7 @@ type ImportHeaderRecord = {
   reportDueAt: string | null
   originalName: string
   parseError: string | null
+  needsAppendix?: boolean
   ordersCount: number
 }
 
@@ -52,6 +53,7 @@ export function MeasureImportDetailHeader({
       title: data.title,
       reportDueAt: data.reportDueAt,
       parseError: data.parseError,
+      needsAppendix: data.needsAppendix,
     })
     notify.success("Документ разобран")
     router.refresh()

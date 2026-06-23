@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { useMemo, useState } from "react"
 import type { ColumnDef } from "@tanstack/react-table"
 import { ConfirmDeleteAlert } from "@/components/platform/crud/confirm-delete-alert"
@@ -13,6 +14,9 @@ import { dateSortFn } from "@/lib/data-table/sort-helpers"
 import { TextCell } from "@/lib/data-table/text-cell"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { filterRowsByPeriod } from "@/lib/dashboard/period-filter-rows"
+import { parsePeriodFromSearchParams } from "@/lib/dashboard/period-range"
+import { isRoutingShellImport } from "@/lib/measure-imports/resolve-parse-status"
 import { format } from "date-fns"
 import { ExternalLink, Plus, Trash2 } from "lucide-react"
 
@@ -25,15 +29,32 @@ export type MeasureImportRow = {
   originalName: string
   title: string | null
   reportDueAt: string | null
+  needsAppendix: boolean
   createdAt: string
   _count: { items: number; measures: number; orders: number }
 }
 
-const STATUS_LABELS: Record<MeasureImportRow["status"], string> = {
+const STATUS_LABELS: Record<MeasureImportRow["status"] | "ROUTING", string> = {
   UPLOADED: "Загружен",
   PARSED: "Разобран",
   IMPORTED: "Импортирован",
   FAILED: "Ошибка",
+  ROUTING: "Маршрутизация",
+}
+
+function importStatusLabel(row: MeasureImportRow): string {
+  if (
+    isRoutingShellImport({
+      kind: row.kind,
+      status: row.status,
+      needsAppendix: row.needsAppendix,
+      itemCount: row._count.items,
+      measureCount: row._count.measures,
+    })
+  ) {
+    return STATUS_LABELS.ROUTING
+  }
+  return STATUS_LABELS[row.status]
 }
 
 const KIND_LABELS: Record<MeasureImportRow["kind"], string> = {
@@ -46,6 +67,11 @@ export function MeasureImportsTable({
 }: {
   initialImports: MeasureImportRow[]
 }) {
+  const searchParams = useSearchParams()
+  const period = useMemo(
+    () => parsePeriodFromSearchParams(Object.fromEntries(searchParams.entries())),
+    [searchParams]
+  )
   const [imports, setImports] = useState(initialImports)
   const { deleteId, deleting, requestDelete, confirmDelete, cancelDelete } =
     useResourceDelete({
@@ -116,10 +142,13 @@ export function MeasureImportsTable({
         header: "Статус",
         cell: ({ row }) => (
           <Badge variant={row.original.status === "FAILED" ? "destructive" : "secondary"}>
-            {STATUS_LABELS[row.original.status]}
+            {importStatusLabel(row.original)}
           </Badge>
         ),
-        meta: colMeta("Статус", { cellClassName: "w-32", valueLabels: STATUS_LABELS }),
+        meta: colMeta("Статус", {
+          cellClassName: "w-32",
+          valueLabels: STATUS_LABELS,
+        }),
       },
       {
         id: "counts",
@@ -181,6 +210,11 @@ export function MeasureImportsTable({
     [requestDelete]
   )
 
+  const filteredImports = useMemo(
+    () => filterRowsByPeriod(imports, period, "createdAt"),
+    [imports, period]
+  )
+
   const deleteDescription =
     deletingRecord?.status === "IMPORTED"
       ? "Документ будет удалён. Меры, уже добавленные в каталог, останутся."
@@ -190,9 +224,14 @@ export function MeasureImportsTable({
 
   return (
     <>
+      {imports.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Показано {filteredImports.length} из {imports.length}
+        </p>
+      )}
       <DataTable
         columns={columns}
-        data={imports}
+        data={filteredImports}
         searchPlaceholder="Поиск по номеру, названию, файлу…"
         initialSorting={[{ id: "createdAt", desc: true }]}
         hideOnMobileColumnIds={["counts", "reportDueAt"]}

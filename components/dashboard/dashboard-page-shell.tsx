@@ -3,6 +3,7 @@ import { DashboardChartsSkeleton } from "@/components/dashboard/dashboard-charts
 import { DashboardMatrixSection } from "@/components/dashboard/dashboard-matrix-section"
 import { OverdueFilterActions } from "@/components/dashboard/overdue-filter-actions"
 import { PageHeader } from "@/components/shared/page-header"
+import type { PeriodBounds } from "@/lib/dashboard/period-range"
 import type { PublicStatus } from "@/lib/public/types"
 import type { DashboardScope } from "@/lib/dashboard/stats"
 import type { DashboardVariant } from "@/lib/dashboard/interactive-props"
@@ -21,6 +22,7 @@ type BaseShellProps = {
   itemLimit?: number
   beforeContent?: ReactNode
   breadcrumbEffect?: ReactNode
+  periodBounds?: PeriodBounds
 }
 
 type PlatformShellProps = BaseShellProps & {
@@ -57,6 +59,7 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
     itemLimit,
     beforeContent,
     breadcrumbEffect,
+    periodBounds,
   } = props
 
   const config = getDashboardVariantConfig(props.variant)
@@ -86,6 +89,7 @@ export function ScopedDashboardPageShell(props: ScopedDashboardPageShellProps) {
           overdueOnly={overdueOnly}
           emptyMessage={emptyMessage}
           suspenseCharts={suspenseCharts}
+          periodBounds={periodBounds}
         />
       </Suspense>
     </div>
