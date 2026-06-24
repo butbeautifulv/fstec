@@ -65,9 +65,17 @@ Full-stack Next.js app for FSTEC security measures tracking across subsidiaries 
 | 47-gui-reexports-tier2 | fstec/phase-47-gui-reexports-tier2 | done |
 | 48-gui-dashboard | fstec/phase-48-gui-dashboard | done |
 | 49-gui-docs | fstec/phase-49-gui-docs | done |
-| 50-gui-pause | fstec/gui-detach-wip | **paused** |
+| 50-gui-pause | fstec/gui-detach-wip | done (snapshot) |
+| 51-gui-shared-gui | fstec/gui-detach-wip | **in progress** — Tabula + `shared/gui` consumer |
 
-### Phases 44–49 (cxado-gui migration)
+### Phase 51 (shared/gui hub)
+
+| Item | DoD |
+|------|-----|
+| Tabula scaffold | fstec at `projects/tabula/fstec` in cxado |
+| Consumer dep | `file:../../../shared/gui` + tsconfig/next aliases |
+| CSS preset | `globals.css` imports `@cxado/gui/tailwind.preset.css` |
+| Build | `npm run build` green on WIP; master untouched |
 
 | Phase | DoD |
 |-------|-----|

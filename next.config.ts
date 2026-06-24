@@ -3,7 +3,7 @@ import path from "path"
 import { fileURLToPath } from "url"
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url))
-const guiSrc = path.join(rootDir, "../cxado-gui/src")
+const guiSrc = path.join(rootDir, "../../../shared/gui/src")
 
 const nextConfig: NextConfig = {
   output: "standalone",

@@ -52,7 +52,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1073.0",
     "@prisma/client": "^6.19.3",
     "@tanstack/react-table": "^8.21.3",
-    "@cxado/gui": "file:../cxado-gui",
+    "@cxado/gui": "file:../../../shared/gui",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

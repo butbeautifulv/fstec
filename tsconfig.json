@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@cxado/gui/*": ["../cxado-gui/src/*"]
+      "@cxado/gui/*": ["../../../shared/gui/src/*"]
     }
   },
   "include": [
