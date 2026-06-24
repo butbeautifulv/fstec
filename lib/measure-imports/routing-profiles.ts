@@ -7,16 +7,20 @@ export type StaticProfile = {
   confidence: number
 }
 
-export const STATIC_ROUTING_PROFILES: Record<
-  string,
-  StaticProfile | { [sub: string]: Record<string, number> }
-> = {
+export const STATIC_SUBDIVISION_PROFILES: Record<string, StaticProfile> = {
   ДЦОД: { tags: ["network", "ioc"], confidence: 0.85 },
   ДИТСБ: { tags: ["siem", "vulnerability"], confidence: 0.75 },
   ДИТСС: { tags: ["siem", "vulnerability"], confidence: 0.7 },
   ДКИТИ: { tags: ["email", "organizational"], confidence: 0.65 },
   ДИТСУП: { tags: ["organizational", "vulnerability"], confidence: 0.6 },
-  _generated: loadGeneratedProfiles(),
+}
+
+export const GENERATED_ROUTING_PROFILES = loadGeneratedProfiles()
+
+/** @deprecated Use STATIC_SUBDIVISION_PROFILES + GENERATED_ROUTING_PROFILES */
+export const STATIC_ROUTING_PROFILES = {
+  ...STATIC_SUBDIVISION_PROFILES,
+  _generated: GENERATED_ROUTING_PROFILES,
 }
 
 function loadGeneratedProfiles(): Record<string, Record<string, number>> {

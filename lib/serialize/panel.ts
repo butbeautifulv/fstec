@@ -269,6 +269,7 @@ export function serializeMeasureImportDetail(record: {
     code: string | null
     name: string
     description: string | null
+    tags: string[]
     included: boolean
     measureId: number | null
   }[]
@@ -288,6 +289,7 @@ export function serializeMeasureImportDetail(record: {
       code: item.code,
       name: item.name,
       description: item.description,
+      tags: item.tags,
       included: item.included,
       measureId: item.measureId,
     })),

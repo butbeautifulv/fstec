@@ -1,5 +1,9 @@
 import type { MeasureTag } from "@/lib/measure-imports/tag-measure"
-import { STATIC_ROUTING_PROFILES } from "@/lib/measure-imports/routing-profiles"
+import {
+  GENERATED_ROUTING_PROFILES,
+  STATIC_SUBDIVISION_PROFILES,
+  type StaticProfile,
+} from "@/lib/measure-imports/routing-profiles"
 
 export type RoutingSuggestion = {
   subdivisionName: string
@@ -26,13 +30,19 @@ function scoreSubdivision(
   return Math.min(0.95, 0.15 + hit / Math.max(total, 1))
 }
 
+function isStaticProfile(
+  profile: StaticProfile | undefined,
+): profile is StaticProfile {
+  return profile != null
+}
+
 export function suggestRouting(input: RoutingInput): RoutingSuggestion[] {
   const { measureTags, subdivisions } = input
   const results: RoutingSuggestion[] = []
 
   for (const sub of subdivisions) {
-    const staticProfile = STATIC_ROUTING_PROFILES[sub.name]
-    if (staticProfile) {
+    const staticProfile = STATIC_SUBDIVISION_PROFILES[sub.name]
+    if (isStaticProfile(staticProfile)) {
       const matched = measureTags.filter((t) => staticProfile.tags.includes(t))
       if (matched.length > 0) {
         results.push({
@@ -44,9 +54,7 @@ export function suggestRouting(input: RoutingInput): RoutingSuggestion[] {
       }
     }
 
-    const generated = STATIC_ROUTING_PROFILES._generated?.[sub.name] as
-      | Record<string, number>
-      | undefined
+    const generated = GENERATED_ROUTING_PROFILES[sub.name]
     if (generated) {
       const total = Object.values(generated).reduce((a, b) => a + b, 0)
       const confidence = scoreSubdivision(measureTags, generated, total)

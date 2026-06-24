@@ -28,7 +28,7 @@ export function expandDzoTargets(
 ): BatchTarget[] {
   return orgs
     .filter((org) => org.id !== headOrganizationId)
-    .flatMap((org) =>
+    .flatMap((org): BatchTarget[] =>
       org.subdivisions.length > 0
         ? org.subdivisions.map((sub) => ({
             organizationId: org.id,
