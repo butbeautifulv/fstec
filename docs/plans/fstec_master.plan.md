@@ -53,8 +53,31 @@ Full-stack Next.js app for FSTEC security measures tracking across subsidiaries 
 | 35-order-import-prefill | fstec/phase-35-order-import-prefill | done |
 | 36-batch-orders | fstec/phase-36-batch-orders | done |
 | 37-import-polish | fstec/phase-37-import-polish | done |
+| 38-decouple-prisma | fstec/phase-38-decouple-prisma | done |
+| 39-table-labels | fstec/phase-39-table-labels | done |
+| 40-tracked-items-table | fstec/phase-40-tracked-items-table | done |
+| 41-chart-sections-dry | fstec/phase-41-chart-sections-dry | done |
+| 42-dashboard-presentation-config | fstec/phase-42-dashboard-presentation-config | done |
+| 43-extraction-boundaries | fstec/phase-43-extraction-boundaries | done |
+| 44-gui-repo | fstec/phase-44-gui-repo | done |
+| 45-gui-decouple | fstec/phase-45-gui-decouple | done |
+| 46-gui-reexports-tier1 | fstec/phase-46-gui-reexports-tier1 | done |
+| 47-gui-reexports-tier2 | fstec/phase-47-gui-reexports-tier2 | done |
+| 48-gui-dashboard | fstec/phase-48-gui-dashboard | done |
+| 49-gui-docs | fstec/phase-49-gui-docs | done |
+| 50-gui-pause | fstec/gui-detach-wip | **paused** |
 
-## RBAC
+### Phases 44–49 (cxado-gui migration)
+
+| Phase | DoD |
+|-------|-----|
+| 44-gui-repo | `@cxado/gui` on GitHub; `shared/gui` submodule in cys_framework; `make gui-link` |
+| 45-gui-decouple | `cd cxado-gui && npm run typecheck` green; zero `@/` imports in package |
+| 46-gui-reexports-tier1 | FSTEC `ui/`, `shell/`, `motion/`, `theme`, `data-table/`, `skeletons/`, `utils`, `hooks` → re-export |
+| 47-gui-reexports-tier2 | layout, forms, tables, columns, chart primitives → re-export or thin wrapper |
+| 48-gui-dashboard | gui dashboard lib decoupled; FSTEC client dashboard → gui + `presentation` injection |
+| 49-gui-docs | `ui-layers.md`, `gui-consumer.md`, master plan updated |
+
 
 Roles: `SUPER_ADMIN`, `OPERATOR`, `VIEWER` — permissions in `lib/auth/permissions.ts`. Platform nav and create actions gated by permission; API enforced via `requirePermission`.
 

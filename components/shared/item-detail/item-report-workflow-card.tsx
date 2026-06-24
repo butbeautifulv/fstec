@@ -1,6 +1,6 @@
 "use client"
 
-import { ResponseReviewStatus } from "@prisma/client"
+import type { ReviewStatus } from "@/lib/ui/review-status"
 import {
   CommentaryAttachmentsField,
   type CommentaryAttachmentsValue,
@@ -29,7 +29,7 @@ import { getItemWorkflowPhase } from "@/lib/ui/item-detail-display"
 import { cn } from "@/lib/utils"
 
 type ReadonlyResponse = {
-  reviewStatus: ResponseReviewStatus
+  reviewStatus: ReviewStatus
   reviewNote?: string | null
   result: string
   commentary: string | null

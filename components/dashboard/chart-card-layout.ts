@@ -1,2 +1,1 @@
-export const DASHBOARD_CARD_CHART_HEIGHT_CLASS = "h-72"
-export const DASHBOARD_CARD_LEGEND_HEIGHT_CLASS = "h-14"
+export * from "@cxado/gui/charts/chart-card-layout"

@@ -1,32 +1,18 @@
 "use client"
 
-import { useMemo } from "react"
-import type { ColumnDef, ColumnFiltersState } from "@tanstack/react-table"
+import type { ColumnFiltersState } from "@tanstack/react-table"
+import { TrackedItemsDataTable } from "@/components/shared/tracked-items-data-table"
+import { FSTEC_TABLE_LABELS } from "@/lib/ui/table-labels"
 import {
-  DataTable,
-  DataTableRowLink,
-} from "@/components/data-table"
-import { actionsColumnMeta } from "@/lib/data-table/column-meta"
-import {
-  createCodeColumn,
-  createDueAtColumn,
-  createMeasureColumn,
-  createOrderColumn,
-  createWorkflowStatusColumn,
-} from "@/lib/data-table/columns"
-import { createSubdivisionColumn } from "@/lib/data-table/columns/subdivision-column"
-import { getDisplayStatusName, isOrderItemOverdue } from "@/lib/statuses/workflow"
+  getDisplayStatusName,
+  isOrderItemOverdue,
+} from "@/lib/statuses/workflow"
 import type {
   MeasuresTableItem,
   MeasuresTableStatus,
 } from "@/lib/measures/table-types"
 
 export type { MeasuresTableItem, MeasuresTableStatus } from "@/lib/measures/table-types"
-
-type MeasuresRow = MeasuresTableItem & {
-  isOverdue: boolean
-  displayStatus: string
-}
 
 export function MeasuresDataTable({
   basePath,
@@ -51,122 +37,23 @@ export function MeasuresDataTable({
   onColumnFiltersChange?: (filters: ColumnFiltersState) => void
   pageSize?: number
 }) {
-  const statusById = useMemo(
-    () => new Map(statuses.map((s) => [s.id, s])),
-    [statuses]
-  )
-
-  const rows: MeasuresRow[] = useMemo(() => {
-    const now = new Date()
-    return items.map((item) => {
-      const meta = statusById.get(item.status.id)
-      const statusWithTerminal = {
-        name: item.status.name,
-        isTerminal: meta?.isTerminal ?? item.status.isTerminal ?? false,
-      }
-      const rowItem = { ...item, status: statusWithTerminal, dueAt: item.dueAt }
-      return {
-        ...item,
-        isOverdue: isOrderItemOverdue(rowItem, now),
-        displayStatus: getDisplayStatusName(rowItem, now),
-      }
-    })
-  }, [items, statusById])
-
-  const columns = useMemo<ColumnDef<MeasuresRow>[]>(() => {
-    const base: ColumnDef<MeasuresRow>[] = []
-
-    if (showOrderColumn && items.some((item) => item.orderTitle)) {
-      base.push(
-        createOrderColumn(
-          (row) => ({ id: row.orderId ?? 0, title: row.orderTitle ?? "—" }),
-          (order) => `${basePath}/orders/${order.id}`,
-          "w-[18%]"
-        )
-      )
-    }
-
-    if (showSubdivisionColumn) {
-      base.push(
-        createSubdivisionColumn(
-          (row) =>
-            row.subdivisionId != null && row.subdivisionName
-              ? { id: row.subdivisionId, name: row.subdivisionName }
-              : null,
-          (sub) => (subdivisionHref ? subdivisionHref(sub.id) : undefined),
-          "w-[16%]"
-        )
-      )
-    }
-
-    base.push(
-      createMeasureColumn(
-        (row) => ({ id: row.id, name: row.measure.name }),
-        () => "#",
-        {
-          width: "min-w-[10rem] w-[28%]",
-          linkClassName: undefined,
-          hrefFromRow: (row) => `${basePath}/items/${row.id}`,
-        }
-      ),
-      createCodeColumn((row) => row.measure.code),
-      createDueAtColumn<MeasuresRow>("dueAt"),
-      createWorkflowStatusColumn(),
-      {
-        id: "actions",
-        header: "",
-        enableSorting: false,
-        enableHiding: false,
-        enableColumnFilter: false,
-        cell: ({ row }) => (
-          <DataTableRowLink
-            href={`${basePath}/items/${row.original.id}`}
-            label={actionLabel}
-          />
-        ),
-        meta: actionsColumnMeta(),
-      }
-    )
-
-    return base
-  }, [basePath, showSubdivisionColumn, showOrderColumn, subdivisionHref, actionLabel, items])
-
-  const hideOnMobileColumnIds = useMemo(() => {
-    const ids: string[] = []
-    if (showSubdivisionColumn) ids.push("subdivisionName")
-    if (showOrderColumn) ids.push("orderTitle")
-    return ids.length > 0 ? ids : undefined
-  }, [showSubdivisionColumn, showOrderColumn])
-
   return (
-    <DataTable
-      columns={columns}
-      data={rows}
-      pageSize={pageSize}
+    <TrackedItemsDataTable
+      basePath={basePath}
+      items={items}
+      statuses={statuses}
+      preset={{
+        showSubdivisionColumn,
+        showOrderColumn,
+        subdivisionHref,
+        actionLabel,
+      }}
+      labels={FSTEC_TABLE_LABELS}
+      getDisplayStatusName={getDisplayStatusName}
+      isOverdue={isOrderItemOverdue}
       columnFilters={columnFilters}
       onColumnFiltersChange={onColumnFiltersChange}
-      hideOnMobileColumnIds={hideOnMobileColumnIds}
-      searchPlaceholder={
-        showOrderColumn
-          ? "Поиск по мере, коду, поручению…"
-          : "Поиск по мере, коду…"
-      }
-      globalFilterFn={(row, _columnId, filterValue) => {
-        const q = String(filterValue).toLowerCase()
-        if (!q) return true
-        return [
-          row.measure.name,
-          row.measure.code ?? "",
-          row.orderTitle ?? "",
-          row.subdivisionName ?? "",
-        ]
-          .join(" ")
-          .toLowerCase()
-          .includes(q)
-      }}
-      empty={
-        <p className="py-8 text-center text-sm text-muted-foreground">Меры не найдены</p>
-      }
+      pageSize={pageSize}
     />
   )
 }

@@ -1,4 +1,4 @@
-import { ResponseReviewStatus } from "@prisma/client"
+import type { ReviewStatus } from "@/lib/ui/review-status"
 import { format } from "date-fns"
 import { AttachmentGallery } from "@/components/shared/attachment-gallery"
 import { Badge } from "@/components/ui/badge"
@@ -32,7 +32,7 @@ export function ItemResponseCard({
   commentary?: string | null
   submittedAt: string
   submittedByLabel?: string | null
-  reviewStatus: ResponseReviewStatus
+  reviewStatus: ReviewStatus
   attachments?: ItemResponseAttachment[]
   attachmentViewUrl?: (attachmentId: number) => string
 }) {

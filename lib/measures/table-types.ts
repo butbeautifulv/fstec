@@ -1,16 +1,4 @@
-export type MeasuresTableStatus = {
-  id: number
-  name: string
-  isTerminal: boolean
-}
-
-export type MeasuresTableItem = {
-  id: number
-  orderId?: number
-  dueAt: string
-  measure: { name: string; code: string | null; description?: string | null }
-  status: { id: number; name: string; isTerminal?: boolean }
-  orderTitle?: string
-  subdivisionName?: string | null
-  subdivisionId?: number | null
-}
+export type {
+  TrackedItemRow as MeasuresTableItem,
+  TrackedItemStatus as MeasuresTableStatus,
+} from "@/lib/ui/tracked-item-types"

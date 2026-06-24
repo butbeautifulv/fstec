@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ResponseReviewStatus } from "@prisma/client"
 import { ItemDetailOverview } from "@/components/shared/item-detail/item-detail-overview"
 import { ItemReportWorkflowCard } from "@/components/shared/item-detail/item-report-workflow-card"
 import {
@@ -15,13 +14,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { notify } from "@/lib/ui/feedback"
 import { WORKFLOW_STATUS } from "@/lib/statuses/workflow"
-import { getItemDetailDisplayState } from "@/lib/ui/item-detail-display"
+import { REVIEW_STATUS, type ReviewStatus } from "@/lib/ui/review-status"
+import { useItemDetailDisplay } from "@/lib/ui/use-item-detail-display"
 import { CalendarClockIcon } from "lucide-react"
 
 type PublicStatus = { id: number; name: string; isTerminal: boolean }
 
 type LatestResponse = {
-  reviewStatus: ResponseReviewStatus
+  reviewStatus: ReviewStatus
   reviewNote: string | null
   result: string
   commentary: string | null
@@ -79,7 +79,7 @@ export function PublicItemDetail({
     workflowStatusName,
     reportStatusLabel,
     statusVariant,
-  } = getItemDetailDisplayState(item, latestResponse)
+  } = useItemDetailDisplay(item, latestResponse)
 
   const middleCrumbs = useMemo(
     () => [
@@ -112,7 +112,7 @@ export function PublicItemDetail({
     if (res.ok) {
       const data = await res.json()
       setLatestResponse({
-        reviewStatus: ResponseReviewStatus.PENDING,
+        reviewStatus: REVIEW_STATUS.PENDING,
         reviewNote: null,
         result: data.response.result,
         commentary: data.response.commentary,

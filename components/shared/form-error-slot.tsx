@@ -1,4 +1,1 @@
-export function FormErrorSlot({ error }: { error?: string }) {
-  if (!error) return null
-  return <div className="text-sm text-destructive">{error}</div>
-}
+export * from "@cxado/gui/layout/form-error-slot"

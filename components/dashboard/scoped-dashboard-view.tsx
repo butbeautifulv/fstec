@@ -1,30 +1,16 @@
 "use client"
 
-import type { Dispatch, SetStateAction } from "react"
-import type { ColumnFiltersState } from "@tanstack/react-table"
-import { ScopedDashboardCharts } from "@/components/dashboard/scoped-dashboard-charts"
-import { DashboardScopedTable } from "@/components/dashboard/dashboard-scoped-table"
-import type { ScopedDashboardStats, DashboardScope } from "@/lib/dashboard/stats"
 import {
-  toggleBreakdownFilter,
-  toggleStatusBreakdownFilter,
-  toggleStatusFilter,
-  type ChartFilterScope,
-} from "@/lib/dashboard/chart-filters"
-import type { PublicItem, PublicStatus } from "@/lib/public/types"
-import type { DashboardMatrixRow } from "@/lib/dashboard/serialize-dashboard"
-import type { DashboardVariant } from "@/lib/dashboard/variant-config"
+  ScopedDashboardView as GuiScopedDashboardView,
+} from "@cxado/gui/dashboard/scoped-dashboard-view"
+import { FSTEC_DASHBOARD_PRESENTATION } from "@/lib/dashboard/presentation-config"
+import { DashboardScopedTable } from "@/components/dashboard/dashboard-scoped-table"
+import type { DashboardInteractiveProps } from "@/lib/dashboard/interactive-props"
+import type { ScopedTableRenderProps } from "@cxado/gui/lib/dashboard/interactive-props"
+import type { ColumnFiltersState } from "@tanstack/react-table"
+import type { Dispatch, SetStateAction } from "react"
 
-type ScopedDashboardViewProps = {
-  variant: DashboardVariant
-  scope: ChartFilterScope
-  dashboardScope: DashboardScope
-  linkScope?: DashboardScope
-  stats: ScopedDashboardStats
-  items: DashboardMatrixRow[] | PublicItem[]
-  token?: string
-  statuses?: PublicStatus[]
-  showSubdivisionColumn?: boolean
+type ScopedDashboardViewProps = DashboardInteractiveProps & {
   columnFilters: ColumnFiltersState
   onColumnFiltersChange: Dispatch<SetStateAction<ColumnFiltersState>>
   visibleChartStatuses: ReadonlySet<string>
@@ -32,60 +18,47 @@ type ScopedDashboardViewProps = {
   showMatrix?: boolean
 }
 
+function renderScopedTable(ctx: ScopedTableRenderProps) {
+  return (
+    <DashboardScopedTable
+      variant={ctx.variant}
+      chartScope={ctx.scope}
+      dashboardScope={ctx.dashboardScope}
+      linkScope={"linkScope" in ctx ? ctx.linkScope : undefined}
+      token={"token" in ctx ? ctx.token : undefined}
+      items={ctx.items}
+      statuses={"statuses" in ctx ? ctx.statuses : undefined}
+      columnFilters={ctx.columnFilters}
+      onColumnFiltersChange={ctx.onColumnFiltersChange}
+    />
+  )
+}
+
 export function ScopedDashboardView({
-  variant,
-  scope,
-  dashboardScope,
-  linkScope,
-  stats,
-  items,
-  token,
-  statuses,
   columnFilters,
   onColumnFiltersChange,
   visibleChartStatuses,
   showCharts = true,
   showMatrix = true,
+  ...props
 }: ScopedDashboardViewProps) {
-  return (
-    <>
-      {showCharts ? (
-        <ScopedDashboardCharts
-          scope={scope}
-          statusDistribution={stats.statusDistribution}
-          statusBreakdown={stats.statusBreakdown}
-          overdueTitle={stats.chartLabels.overdueTitle}
-          completionTitle={stats.chartLabels.completionTitle}
-          columnFilters={columnFilters}
-          visibleChartStatuses={visibleChartStatuses}
-          onStatusClick={(status) =>
-            onColumnFiltersChange((prev) => toggleStatusFilter(prev, status))
-          }
-          onOverdueBarClick={(label) =>
-            onColumnFiltersChange((prev) => toggleBreakdownFilter(prev, scope, label))
-          }
-          onStatusBreakdownClick={(label, status) =>
-            onColumnFiltersChange((prev) =>
-              toggleStatusBreakdownFilter(prev, scope, label, status)
-            )
-          }
-        />
-      ) : null}
+  const scopedTableCtx = {
+    ...props,
+    columnFilters,
+    onColumnFiltersChange,
+  } as unknown as ScopedTableRenderProps
 
-      {showMatrix ? (
-        <DashboardScopedTable
-          variant={variant}
-          chartScope={scope}
-          dashboardScope={dashboardScope}
-          linkScope={linkScope}
-          token={token}
-          items={items}
-          statuses={statuses}
-          columnFilters={columnFilters}
-          onColumnFiltersChange={onColumnFiltersChange}
-          pageSize={50}
-        />
-      ) : null}
-    </>
+  return (
+    <GuiScopedDashboardView
+      {...(props as unknown as Parameters<typeof GuiScopedDashboardView>[0])}
+      presentation={FSTEC_DASHBOARD_PRESENTATION}
+      columnFilters={columnFilters}
+      onColumnFiltersChange={onColumnFiltersChange}
+      visibleChartStatuses={visibleChartStatuses}
+      showCharts={showCharts}
+      showMatrix={showMatrix}
+      scopedTableCtx={scopedTableCtx}
+      renderScopedTable={renderScopedTable}
+    />
   )
 }

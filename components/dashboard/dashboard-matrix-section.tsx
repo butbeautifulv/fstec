@@ -78,7 +78,6 @@ export async function DashboardMatrixSection({
         dashboard.stats,
         overdueOnly
       )}
-      dashboardScope={scope}
       showStatCards={itemCount > 0}
       showCharts={itemCount > 0}
       showMatrix={itemCount > 0}

@@ -1,4 +1,3 @@
-import { ResponseReviewStatus } from "@prisma/client"
 import {
   getDisplayStatusName,
   isCompleted,
@@ -6,6 +5,11 @@ import {
   isOrderItemOverdue,
 } from "@/lib/statuses/workflow"
 import { getItemDetailStatusVariant } from "@/lib/ui/item-detail-status"
+import {
+  isReviewPending,
+  isReviewRejected,
+  type ReviewStatus,
+} from "@/lib/ui/review-status"
 
 type ItemStatusLike = {
   status: { name: string; isTerminal?: boolean }
@@ -13,7 +17,7 @@ type ItemStatusLike = {
 }
 
 type LatestResponseLike = {
-  reviewStatus: ResponseReviewStatus
+  reviewStatus: ReviewStatus
 } | null | undefined
 
 export function getItemDetailDisplayState(
@@ -26,9 +30,9 @@ export function getItemDetailDisplayState(
     name: item.status.name,
   })
   const isPendingReview =
-    latestResponse?.reviewStatus === ResponseReviewStatus.PENDING
+    latestResponse != null && isReviewPending(latestResponse.reviewStatus)
   const isRejected =
-    latestResponse?.reviewStatus === ResponseReviewStatus.REJECTED
+    latestResponse != null && isReviewRejected(latestResponse.reviewStatus)
   const canSubmitReport =
     isInProgress(item.status.name) &&
     !completed &&

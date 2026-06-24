@@ -1,9 +1,9 @@
 "use client"
 
-import { ResponseReviewStatus } from "@prisma/client"
 import { ItemDetailOverview } from "@/components/shared/item-detail/item-detail-overview"
 import { ItemReportWorkflowCard } from "@/components/shared/item-detail/item-report-workflow-card"
-import { getItemDetailDisplayState } from "@/lib/ui/item-detail-display"
+import type { ReviewStatus } from "@/lib/ui/review-status"
+import { useItemDetailDisplay } from "@/lib/ui/use-item-detail-display"
 
 type ReportItem = {
   id: number
@@ -15,7 +15,7 @@ type ReportItem = {
   organizationName: string
   subdivisionName: string | null
   latestResponse: {
-    reviewStatus: ResponseReviewStatus
+    reviewStatus: ReviewStatus
     result: string
     commentary: string | null
     submittedAt: string
@@ -41,7 +41,7 @@ export function ReportItemDetail({
     workflowStatusName,
     reportStatusLabel,
     statusVariant,
-  } = getItemDetailDisplayState(item, item.latestResponse)
+  } = useItemDetailDisplay(item, item.latestResponse)
 
   return (
     <ItemDetailOverview

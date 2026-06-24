@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { ResponseReviewStatus } from "@prisma/client"
+import { REVIEW_STATUS } from "@/lib/ui/review-status"
 import {
   getItemDetailDisplayState,
   getItemWorkflowPhase,
@@ -21,7 +21,7 @@ describe("getItemDetailDisplayState", () => {
 
   it("blocks submission while pending review", () => {
     const state = getItemDetailDisplayState(baseItem, {
-      reviewStatus: ResponseReviewStatus.PENDING,
+      reviewStatus: REVIEW_STATUS.PENDING,
     })
     expect(state.canSubmitReport).toBe(false)
     expect(state.isPendingReview).toBe(true)
@@ -30,7 +30,7 @@ describe("getItemDetailDisplayState", () => {
 
   it("allows resubmission after rejection", () => {
     const state = getItemDetailDisplayState(baseItem, {
-      reviewStatus: ResponseReviewStatus.REJECTED,
+      reviewStatus: REVIEW_STATUS.REJECTED,
     })
     expect(state.canSubmitReport).toBe(true)
     expect(state.isRejected).toBe(true)
