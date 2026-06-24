@@ -3,7 +3,7 @@ import { createMockPrisma, type MockPrisma } from "@/lib/__tests__/helpers/mock-
 
 const mocks = vi.hoisted(() => ({ prisma: null as MockPrisma | null }))
 const mockNotFound = vi.hoisted(() => vi.fn())
-const mockListSupervisedOrganizations = vi.hoisted(() => vi.fn())
+const mockListBatchOrganizations = vi.hoisted(() => vi.fn())
 const mockGetMeasureImport = vi.hoisted(() => vi.fn())
 const mockGetCommittedMeasureIds = vi.hoisted(() => vi.fn())
 const mockDefaultOrderTitle = vi.hoisted(() => vi.fn())
@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
 }))
 
 vi.mock("@/lib/organizations", () => ({
-  listSupervisedOrganizations: mockListSupervisedOrganizations,
+  listBatchOrganizations: mockListBatchOrganizations,
 }))
 
 vi.mock("@/lib/measure-imports", () => ({
@@ -53,7 +53,10 @@ describe("loadOrderCreateContext", () => {
     mockNotFound.mockImplementation(() => {
       throw new Error("NEXT_NOT_FOUND")
     })
-    mockListSupervisedOrganizations.mockResolvedValue(organizations)
+    mockListBatchOrganizations.mockResolvedValue({
+      headOrganizationId: null,
+      organizations,
+    })
   })
 
   it("returns empty defaults without importId", async () => {
